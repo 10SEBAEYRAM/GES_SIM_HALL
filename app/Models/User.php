@@ -13,18 +13,27 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * Définition de la table associée à ce modèle.
+     *
+     * @var string
+     */
+    protected $table = 'users'; 
+
+    /**
+
      *
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'email',
+        'nom_utili',
+        'prenom_utili',
+        'email_utili',
+        'num_utili',
         'password',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+   
      *
      * @var array<int, string>
      */
@@ -34,15 +43,21 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',  
+    ];
+
+    /**
+    
+     * @return string
+     */
+    public function getAuthIdentifierName()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return 'email_utili';
     }
 }
