@@ -29,7 +29,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'nom_utili' => 'required|string|max:50',
             'prenom_utili' => 'required|string|max:50',
-            'email_utili' => 'required|string|email|max:50|unique:utilisateurs,email_utili', 
+            'email_utili' => 'required|string|email|max:50|unique:users,email_utili', 
             'num_utili' => 'required|string|max:50',
             'password' => 'required|string|min:8',
         ]);
@@ -59,7 +59,7 @@ class UserController extends Controller
         $validated = $request->validate([
             'nom_utili' => 'required|string|max:50',
             'prenom_utili' => 'required|string|max:50',
-            'email_utili' => 'required|string|email|max:50|unique:utilisateurs,email_utili,' . $id, 
+            'email_utili' => 'required|string|email|max:50|unique:users,email_utili,' . $id, 
             'num_utili' => 'required|string|max:50',
             'password' => 'nullable|string|min:8', 
         ]);

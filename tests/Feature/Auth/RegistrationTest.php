@@ -1,15 +1,15 @@
 <?php
 
-test('registration screen can be rendered', function () {
+test('la page d\'inscription peut être affichée', function () {
     $response = $this->get('/register');
 
     $response->assertStatus(200);
 });
 
-test('new users can register', function () {
+test('de nouveaux utilisateurs peuvent s\'inscrire', function () {
     $response = $this->post('/register', [
-        'name' => 'Test User',
-        'email' => 'test@example.com',
+        'nom_utili' => 'Test User',  // Changement ici
+        'email_utili' => 'test@example.com',  // Changement ici
         'password' => 'password',
         'password_confirmation' => 'password',
     ]);

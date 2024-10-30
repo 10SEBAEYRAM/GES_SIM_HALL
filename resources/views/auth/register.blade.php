@@ -2,21 +2,21 @@
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
-        <!-- Name -->
+        <!-- Nom -->
         <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+            <x-input-label for="nom_utili" :value="__('Nom')" />
+            <x-text-input id="nom_utili" class="block mt-1 w-full" type="text" name="nom_utili" :value="old('nom_utili')" required autofocus autocomplete="name" />
+            <x-input-error :messages="$errors->get('nom_utili')" class="mt-2" />
         </div>
 
-        <!-- Email Address -->
+        <!-- Adresse Email -->
         <div class="mt-4">
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <x-input-label for="email_utili" :value="__('Email')" />
+            <x-text-input id="email_utili" class="block mt-1 w-full" type="email" name="email_utili" :value="old('email_utili')" required autocomplete="username" />
+            <x-input-error :messages="$errors->get('email_utili')" class="mt-2" />
         </div>
 
-        <!-- Password -->
+        <!-- Mot de passe -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
 
@@ -28,7 +28,7 @@
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <!-- Confirm Password -->
+        <!-- Confirmer le mot de passe -->
         <div class="mt-4">
             <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
 

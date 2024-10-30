@@ -9,15 +9,15 @@ use Illuminate\Validation\Rule;
 class ProfileUpdateRequest extends FormRequest
 {
     /**
-     * Get the validation rules that apply to the request.
+     * Récupère les règles de validation qui s'appliquent à la requête.
      *
      * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
      */
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
+            'nom_utili' => ['required', 'string', 'max:255'], // Assurez-vous que le champ correspond
+            'email_utili' => [
                 'required',
                 'string',
                 'lowercase',

@@ -28,8 +28,9 @@ class ProfileController extends Controller
     {
         $request->user()->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // Vérifie si l'email a été modifié
+        if ($request->user()->isDirty('email_utili')) {
+            $request->user()->email_utili_verified_at = null;
         }
 
         $request->user()->save();
@@ -42,19 +43,30 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Validation du mot de passe pour la suppression
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
 
-        Auth::logout();
+        Auth::logout(); // Déconnexion de l'utilisateur
 
-        $user->delete();
+        $user->delete(); // Suppression du compte utilisateur
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $request->session()->invalidate(); // Invalidation de la session
+        $request->session()->regenerateToken(); // Régénération du token CSRF
 
-        return Redirect::to('/');
+        return Redirect::to('/')->with('status', 'Account deleted successfully.');
+    }
+
+    /**
+     * Display the user's profile.
+     */
+    public function show(Request $request): View
+    {
+        return view('profile.show', [
+            'user' => $request->user(),
+        ]);
     }
 }
