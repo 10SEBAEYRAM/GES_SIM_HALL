@@ -1,237 +1,145 @@
+{{-- resources/views/users/index.blade.php --}}
 @extends('layouts.app')
 
 @section('content')
-<div class="container">
-    <h2>Liste des Utilisateurs</h2>
-    
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
-            {{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert" id="error-alert">
-            {{ session('error') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    @endif
-
-    @if(session('info'))
-        <div class="alert alert-info alert-dismissible fade show" role="alert" id="info-alert">
-            {{ session('info') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    @endif
-    
-    <div class="d-flex justify-content-end mb-3">
-        <a href="{{ route('users.create') }}" class="btn btn-primary">Ajouter un Utilisateur</a>
+<div class="container mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Liste des Utilisateurs</h1>
+        <a href="{{ route('users.create') }}" 
+           class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition duration-200">
+            Nouvel Utilisateur
+        </a>
     </div>
 
-    <table class="table mt-3">
-        <thead>
-            <tr>
-                <th>Nom</th>
-                <th>Prénom</th>
-                <th>Email</th>
-                <th>Numéro de téléphone</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($users as $user)
-                <tr>
-                    <td>
-                        <form action="{{ route('users.update', $user->id) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('PUT')
-                            <input type="text" name="nom_utili" value="{{ $user->nom_utili }}" class="form-control" required disabled>
-                    </td>
-                    <td>
-                            <input type="text" name="prenom_utili" value="{{ $user->prenom_utili }}" class="form-control" required disabled>
-                    </td>
-                    <td>
-                            <input type="email" name="email_utili" value="{{ $user->email_utili }}" class="form-control" required disabled>
-                    </td>
-                    <td>
-                            <input type="text" name="num_utili" value="{{ $user->num_utili }}" class="form-control" required disabled>
-                    </td>
-                    <td>
-                            <button type="button" class="btn btn-secondary edit-button" data-user-id="{{ $user->id }}">Modifier</button>
-                            <button type="submit" class="btn btn-secondary save-button d-none">Sauvegarder</button>
-                        </form>
-                        <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger">Supprimer</button>
-                        </form>
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="5" class="text-center">Aucun utilisateur trouvé.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+    {{-- Messages flash --}}
+    @if(session()->has('success'))
+        <div id="alert-success" 
+             class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" 
+             role="alert">
+            {{ session('success') }}
+        </div>
+    @endif
 
-    {{ $users->links() }} 
+    @if(session()->has('error'))
+        <div id="alert-error" 
+             class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" 
+             role="alert">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    {{-- Table des utilisateurs --}}
+    <div class="bg-white shadow overflow-hidden rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Nom
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                    </th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @forelse($users as $user)
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">
+                                {{ $user->nom_util }} {{ $user->prenom_util }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-500">
+                                {{ $user->email_util }}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                {{ $user->typeUser?->name ?? 'N/A' }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-3">
+                                <a href="{{ route('users.edit', $user->id_util) }}" 
+                                   class="text-indigo-600 hover:text-indigo-900 transition duration-200">
+                                    Modifier
+                                </a>
+                                <form action="{{ route('users.destroy', $user->id_util) }}" 
+                                      method="POST" 
+                                      class="delete-user-form inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            class="text-red-600 hover:text-red-900 transition duration-200">
+                                        Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+                            Aucun utilisateur trouvé
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    {{-- Pagination --}}
+    <div class="mt-4">
+        {{ $users->links() }}
+    </div>
 </div>
 
+@push('scripts')
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const successAlert = document.getElementById('success-alert');
-        const errorAlert = document.getElementById('error-alert');
-        const infoAlert = document.getElementById('info-alert');
-        
-        // Fonction pour masquer les alertes après 5 secondes
-        const hideAlert = (alert) => {
-            if (alert) {
-                setTimeout(() => {
-                    alert.classList.add('d-none'); // Cacher l'alerte
-                }, 5000); 
-            }
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion des alertes
+    const hideAlert = (alertId) => {
+        const alert = document.getElementById(alertId);
+        if (alert) {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.5s ease-in-out';
+                setTimeout(() => alert.remove(), 500);
+            }, 5000);
         }
+    };
 
-        hideAlert(successAlert);
-        hideAlert(errorAlert);
-        hideAlert(infoAlert);
+    ['alert-success', 'alert-error'].forEach(hideAlert);
 
-        document.querySelectorAll('.btn-danger').forEach(button => {
-            button.addEventListener('click', function(event) {
-                if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) {
-                    event.preventDefault();
-                }
-            });
-        });
-
-        // Fonctionnalité d'édition
-        document.querySelectorAll('.edit-button').forEach(button => {
-            button.addEventListener('click', function() {
-                const row = button.closest('tr');
-                const inputs = row.querySelectorAll('input');
-
-                inputs.forEach(input => {
-                    input.disabled = false; // Activer les champs de saisie
-                });
-
-                button.classList.add('d-none'); // Cacher le bouton Modifier
-                row.querySelector('.save-button').classList.remove('d-none'); // Afficher le bouton Sauvegarder
-            });
+    // Confirmation de suppression
+    document.querySelectorAll('.delete-user-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+                this.submit();
+            }
         });
     });
+});
 </script>
+@endpush
 
+@push('styles')
 <style>
-    /* Conteneur principal */
-   
+/* On garde uniquement les styles personnalisés qui ne sont pas déjà couverts par Tailwind */
+.alert {
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+}
 
-    /* Titre */
-    h2 {
-        font-size: 24px; 
-        margin-bottom: 20px; 
-    }
-
-    /* Tableaux */
-    .table {
-        width: 100%; 
-        border-collapse: collapse; 
-    }
-
-    .table th,
-    .table td {
-        border: 1px solid #dee2e6; 
-        padding: 12px; 
-        text-align: left; 
-    }
-
-    .table th {
-        background-color: #f8f9fa; 
-        font-weight: bold; 
-    }
-
-    /* Alertes */
-    .alert {
-        position: relative; 
-        z-index: 1; 
-        margin-bottom: 20px; 
-        border-radius: 5px; /* Ajout d'une bordure arrondie */
-        padding: 15px; /* Espacement intérieur */
-    }
-
-    .alert-success {
-        background-color: #28a745; /* Fond vert */
-        color: white; 
-    }
-
-    .alert-danger {
-        background-color: #dc3545; /* Fond rouge */
-        color: white; 
-    }
-
-    .alert-info {
-        background-color: #007bff; /* Fond bleu */
-        color: white; 
-    }
-
-    /* Cacher l'alerte */
-    .d-none {
-        display: none;
-    }
-
-    /* Bouton "Ajouter un Utilisateur" */
-    .btn-primary {
-        background-color: #007bff; 
-        color: white; 
-        padding: 10px 15px; 
-        border: none; 
-        border-radius: 5px; 
-        cursor: pointer; 
-        text-decoration: none; 
-        transition: background-color 0.3s; 
-    }
-
-    .btn-primary:hover {
-        background-color: #0056b3; 
-    }
-
-    /* Boutons d'action dans la table */
-    .btn-secondary {
-        background-color: #6c757d; 
-        color: white; 
-        padding: 5px 10px; 
-        border: none; 
-        border-radius: 5px; 
-        cursor: pointer; 
-        text-decoration: none; 
-        transition: background-color 0.3s; 
-    }
-
-    .btn-secondary:hover {
-        background-color: #5a6268; 
-    }
-
-    /* Bouton de suppression */
-    .btn-danger {
-        background-color: #dc3545; 
-        color: white; 
-        padding: 5px 10px; 
-        border: none; 
-        border-radius: 5px; 
-        cursor: pointer; 
-        text-decoration: none; 
-        transition: background-color 0.3s; 
-    }
-
-    .btn-danger:hover {
-        background-color: #c82333; 
-    }
+/* Les autres styles sont gérés par les classes Tailwind */
 </style>
+@endpush
 @endsection

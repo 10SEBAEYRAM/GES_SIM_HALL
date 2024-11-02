@@ -1,88 +1,25 @@
-@extends('layouts.app')
-
-@section('content')
-<div class="container">
-    <h2>Modifier l'Utilisateur</h2>
-    <form action="{{ route('users.update', $user->id) }}" method="POST" class="mt-4">
-        @csrf
-        @method('PUT')
-
-        <div class="form-group">
-            <label for="nom_utili">Nom</label>
-            <input type="text" name="nom_utili" value="{{ old('nom_utili', $user->nom_utili) }}" class="form-control" required>
-        </div>
-
-        <div class="form-group">
-            <label for="prenom_utili">Prénom</label>
-            <input type="text" name="prenom_utili" value="{{ old('prenom_utili', $user->prenom_utili) }}" class="form-control" required>
-        </div>
-
-        <div class="form-group">
-            <label for="email_utili">Email</label>
-            <input type="email" name="email_utili" value="{{ old('email_utili', $user->email_utili) }}" class="form-control" required>
-        </div>
-
-        <div class="form-group">
-            <label for="num_utili">Numéro de téléphone</label>
-            <input type="text" name="num_utili" value="{{ old('num_utili', $user->num_utili) }}" class="form-control" required>
-        </div>
-
-        <button type="submit" class="btn btn-primary">Mettre à jour</button>
-    </form>
 </div>
 
-<style>
-    /* Conteneur principal */
-    .container {
-        max-width: 800px; 
-        margin: 0 auto; 
-        padding: 20px; 
-        background-color: #fff;
-        border-radius: 8px; 
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
-    }
+<div>
+    <label class="block text-sm font-medium text-gray-700">Adresse</label>
+    <input type="text" name="adress_util" value="{{ old('adress_util', $user->adress_util) }}" 
+           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+</div>
 
-    /* Titre */
-    h2 {
-        font-size: 24px; 
-        margin-bottom: 20px; 
-    }
+<div>
+    <label class="block text-sm font-medium text-gray-700">Mot de passe</label>
+    <input type="password" name="password" 
+           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+    <p class="text-sm text-gray-500">Laissez vide si vous ne souhaitez pas changer le mot de passe.</p>
+</div>
 
-    /* Formulaire */
-    .form-group {
-        margin-bottom: 15px; 
-    }
-
-    label {
-        font-weight: bold; 
-        margin-bottom: 5px; 
-    }
-
-    .form-control {
-        border: 1px solid #ced4da; 
-        border-radius: 5px; 
-        padding: 10px; 
-        transition: border-color 0.3s; 
-    }
-
-    .form-control:focus {
-        border-color: #007bff; /* Couleur de bordure au focus */
-        box-shadow: 0 0 5px rgba(0, 123, 255, 0.25); /* Ombre au focus */
-    }
-
-    /* Bouton */
-    .btn-primary {
-        background-color: #007bff; 
-        color: white; 
-        padding: 10px 15px; 
-        border: none; 
-        border-radius: 5px; 
-        cursor: pointer; 
-        transition: background-color 0.3s; 
-    }
-
-    .btn-primary:hover {
-        background-color: #0056b3; 
-    }
-</style>
+<div class="flex justify-end gap-4">
+    <a href="{{ route('users.index') }}" 
+       class="bg-gray-500 text-white px-4 py-2 rounded">Annuler</a>
+    <button type="submit" 
+            class="bg-blue-500 text-white px-4 py-2 rounded">Mettre à jour</button>
+</div>
+</form>
+</div>
+</div>
 @endsection

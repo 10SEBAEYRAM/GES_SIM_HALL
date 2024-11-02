@@ -2,123 +2,131 @@
 
 @section('content')
 <div class="container">
-    <h2>Ajouter un nouvel utilisateur</h2>
+    <h2>Ajouter un Utilisateur</h2>
 
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
+    @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul>
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
     @endif
-    
-    <form method="POST" action="{{ route('users.store') }}">
+
+    <form action="{{ route('users.store') }}" method="POST">
         @csrf
+        
         <div class="form-group">
             <label for="nom_utili">Nom</label>
-            <input type="text" name="nom_utili" class="form-control" value="{{ old('nom_utili') }}" required>
-            @error('nom_utili')
-                <span class="text-danger">{{ $message }}</span>
-            @enderror
+            <input type="text" class="form-control" id="nom_utili" name="nom_utili" value="{{ old('nom_utili') }}" required>
         </div>
 
         <div class="form-group">
             <label for="prenom_utili">Prénom</label>
-            <input type="text" name="prenom_utili" class="form-control" value="{{ old('prenom_utili') }}" required>
-            @error('prenom_utili')
-                <span class="text-danger">{{ $message }}</span>
-            @enderror
+            <input type="text" class="form-control" id="prenom_utili" name="prenom_utili" value="{{ old('prenom_utili') }}" required>
         </div>
 
         <div class="form-group">
             <label for="email_utili">Email</label>
-            <input type="email" name="email_utili" class="form-control" value="{{ old('email_utili') }}" required>
-            @error('email_utili')
-                <span class="text-danger">{{ $message }}</span>
-            @enderror
+            <input type="email" class="form-control" id="email_utili" name="email_utili" value="{{ old('email_utili') }}" required>
         </div>
 
         <div class="form-group">
             <label for="num_utili">Numéro de téléphone</label>
-            <input type="text" name="num_utili" class="form-control" value="{{ old('num_utili') }}" required>
-            @error('num_utili')
-                <span class="text-danger">{{ $message }}</span>
-            @enderror
+            <input type="text" class="form-control" id="num_utili" name="num_utili" value="{{ old('num_utili') }}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="adress_utili">Adresse</label>
+            <input type="text" class="form-control" id="adress_utili" name="adress_utili" value="{{ old('adress_utili') }}" required>
         </div>
 
         <div class="form-group">
             <label for="password">Mot de passe</label>
-            <input type="password" name="password" class="form-control" required>
-            @error('password')
-                <span class="text-danger">{{ $message }}</span>
-            @enderror
+            <input type="password" class="form-control" id="password" name="password" required>
         </div>
 
-        <button type="submit" class="btn btn-primary">Ajouter</button>
+        <div class="mt-3">
+            <a href="{{ route('users.index') }}" class="btn btn-secondary">Annuler</a>
+            <button type="submit" class="btn btn-primary">Créer</button>
+        </div>
     </form>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            console.log("Form submitted");
+            // Assurez-vous que le formulaire n'est pas annulé ici
+            // event.preventDefault(); // Ne pas utiliser cette ligne
+        });
+    });
+</script>
+
 <style>
-    /* Styles CSS comme précédemment */
-    .container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    h2 {
-        font-size: 24px;
-        margin-bottom: 20px;
-        text-align: center;
-    }
-
     .form-group {
-        margin-bottom: 15px;
-    }
-
-    label {
-        font-weight: bold;
-        margin-bottom: 5px;
-        display: block;
+        margin-bottom: 1rem;
     }
 
     .form-control {
-        border: 1px solid #ced4da;
-        border-radius: 5px;
-        padding: 10px;
+        display: block;
         width: 100%;
-        box-sizing: border-box;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
 
-    .text-danger {
-        font-size: 0.9em;
-        margin-top: 5px;
+    .alert {
+        position: relative;
+        padding: 0.75rem 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent;
+        border-radius: 0.25rem;
+    }
+
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+
+    .btn {
+        display: inline-block;
+        font-weight: 400;
+        text-align: center;
+        vertical-align: middle;
+        user-select: none;
+        padding: 0.375rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        border-radius: 0.25rem;
+        transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
     }
 
     .btn-primary {
+        color: #fff;
         background-color: #007bff;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        text-decoration: none;
-        transition: background-color 0.3s;
-        width: 100%;
+        border-color: #007bff;
     }
 
-    .btn-primary:hover {
-        background-color: #0056b3;
+    .btn-secondary {
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
     }
 
-    .alert-success {
-        padding: 10px;
-        margin-bottom: 20px;
-        border-radius: 5px;
-        background-color: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+    .mt-3 {
+        margin-top: 1rem;
     }
 </style>
 @endsection

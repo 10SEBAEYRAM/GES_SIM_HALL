@@ -12,26 +12,28 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('nom_utili', 50); 
-            $table->string('prenom_utili', 50); 
-            $table->string('email_utili', 50)->unique(); 
-            $table->string('num_utili', 50); 
-            $table->timestamp('email_utili_verified_at')->nullable();
+            $table->id('id_util');
+            $table->foreignId('type_users_id')->constrained('type_users', 'id_type_users')->onDelete('cascade');
+            $table->string('nom_util');
+            $table->string('prenom_util');
+            $table->string('email_util')->unique();
+            $table->string('num_util');
+            $table->string('adress_util');
             $table->string('password');
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
-            $table->string('email_utili_utili')->primary();
+            $table->string('email_util')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignId('user_id')->nullable()->index();
+            $table->foreignId('user_id')->nullable()->constrained('users', 'id_util')->onDelete('cascade');
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');
@@ -44,8 +46,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };
