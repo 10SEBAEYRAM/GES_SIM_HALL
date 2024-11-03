@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class GrilleTarifaire extends Model
 {
-    use SoftDeletes;
 
     protected $primaryKey = 'id_grille_tarifaire';
     
@@ -16,7 +15,6 @@ class GrilleTarifaire extends Model
         'montant_min',
         'montant_max',
         'commission_grille_tarifaire',
-        'date_validite'
     ];
 
     protected $casts = [

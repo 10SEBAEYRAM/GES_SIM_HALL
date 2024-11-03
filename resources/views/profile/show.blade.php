@@ -9,8 +9,8 @@
     </header>
 
     <div class="mt-6 space-y-4">
-        <p><strong>{{ __('Name:') }}</strong> {{ $user->nom_utili }}</p>
-        <p><strong>{{ __('Email:') }}</strong> {{ $user->email_utili }}</p>
+        <p><strong>{{ __('Name:') }}</strong> {{ $user->nom_util }}</p>
+        <p><strong>{{ __('Email:') }}</strong> {{ $user->email_util }}</p>
     </div>
 
     <div class="mt-6">

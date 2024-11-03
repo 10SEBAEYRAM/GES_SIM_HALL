@@ -33,15 +33,15 @@
         @endif
 
         <div>
-            <x-input-label for="nom_utili" :value="__('Nom')" />
-            <x-text-input id="nom_utili" name="nom_utili" type="text" class="mt-1 block w-full" :value="old('nom_utili', $user->nom_utili)" required autofocus autocomplete="name" />
-            <x-input-error class="mt-2" :messages="$errors->get('nom_utili')" />
+            <x-input-label for="nom_util" :value="__('Nom')" />
+            <x-text-input id="nom_util" name="nom_util" type="text" class="mt-1 block w-full" :value="old('nom_util', $user->nom_util)" required autofocus autocomplete="name" />
+            <x-input-error class="mt-2" :messages="$errors->get('nom_util')" />
         </div>
 
         <div>
-            <x-input-label for="email_utili" :value="__('Email')" />
-            <x-text-input id="email_utili" name="email_utili" type="email" class="mt-1 block w-full" :value="old('email_utili', $user->email_utili)" required autocomplete="username" />
-            <x-input-error class="mt-2" :messages="$errors->get('email_utili')" />
+            <x-input-label for="email_util" :value="__('Email')" />
+            <x-text-input id="email_util" name="email_util" type="email" class="mt-1 block w-full" :value="old('email_util', $user->email_util)" required autocomplete="username" />
+            <x-input-error class="mt-2" :messages="$errors->get('email_util')" />
         </div>
 
         <div class="flex items-center gap-4">

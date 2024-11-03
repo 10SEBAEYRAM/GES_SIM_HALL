@@ -16,7 +16,6 @@ return new class extends Migration
             $table->decimal('montant_trans', 15, 2);
             $table->decimal('commission_appliquee', 15, 2);
             $table->string('num_beneficiaire');
-            $table->enum('type_operation', ['DEPOT', 'RETRAIT']);
             $table->enum('statut', ['EN_COURS', 'COMPLETE', 'ANNULE']);
             $table->decimal('solde_avant', 15, 2);
             $table->decimal('solde_apres', 15, 2);

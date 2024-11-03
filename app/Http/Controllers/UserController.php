@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\TypeUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -14,7 +15,8 @@ class UserController extends Controller
     public function index()
     {
         $users = User::paginate(10);
-        return view('users.index', compact('users'));
+        $typeUsers = TypeUser::all();
+        return view('users.index', compact('users', 'typeUsers'));
     }
 
     /**
@@ -22,33 +24,36 @@ class UserController extends Controller
      */
     public function create()
     {
-        // Plus besoin de passer $typeUsers à la vue
-        return view('users.create');
+        $typeUsers = TypeUser::all();
+        return view('users.create', compact('typeUsers'));
     }
 
     /**
      * Gère l'insertion des utilisateurs dans la base de données
      */
     public function store(Request $request)
+
     {
-       
+
         try {
             $validated = $request->validate([
-                'nom_utili' => 'required|string|max:50',
-                'prenom_utili' => 'required|string|max:50',
-                'email_utili' => 'required|string|email|max:50|unique:users,email_utili',
-                'num_utili' => 'required|string|max:50',
-                'adress_utili' => 'nullable|string|max:255',
+                'nom_util' => 'required|string|max:50',
+                'prenom_util' => 'required|string|max:50',
+                'email_util' => 'required|string|email|max:50|unique:users,email_util',
+                'num_util' => 'required|string|max:50',
+                'adress_util' => 'nullable|string|max:255',
+                'password' => 'required|string|min:4',
+                'type_users_id' => 'required|exists:type_users,id_type_users',
             ]);
            
-
-            User::create([
-                'nom_utili' => $validated['nom_utili'],
-                'prenom_utili' => $validated['prenom_utili'],
-                'email_utili' => $validated['email_utili'],
-                'num_utili' => $validated['num_utili'],
-                'adress_utili' => $validated['adress_utili'],
+            $user = User::create([
+                'nom_util' => $validated['nom_util'],
+                'prenom_util' => $validated['prenom_util'],
+                'email_util' => $validated['email_util'],
+                'num_util' => $validated['num_util'],
+                'adress_util' => $validated['adress_util'],
                 'password' => Hash::make($validated['password']),
+                'type_users_id' => $validated['type_users_id'],
             ]);
 
             return redirect()
@@ -62,37 +67,43 @@ class UserController extends Controller
     }
 
     /**
+     * Affiche le formulaire de modification d'utilisateur
+     */
+    public function edit($id)
+    {
+        $user = User::where('id_util', $id)->firstOrFail();
+        $typeUsers = TypeUser::all();
+        return view('users.edit', compact('user', 'typeUsers'));
+    }
+
+    /**
      * Met à jour les informations d'un utilisateur
      */
     public function update(Request $request, $id)
     {
-        try {
-            $validated = $request->validate([
-                'nom_utili' => 'required|string|max:50',
-                'prenom_utili' => 'required|string|max:50',
-                'email_utili' => 'required|string|email|max:50|unique:users,email_utili,'.$id,
-                'num_utili' => 'required|string|max:50',
-                'adress_utili' => 'nullable|string|max:255',
-            ]);
+        $user = User::where('id_util', $id)->firstOrFail();
+        
+        $validated = $request->validate([
+            'nom_util' => 'required|string|max:50',
+            'prenom_util' => 'required|string|max:50',
+            'email_util' => 'required|string|email|max:50|unique:users,email_util,' . $user->id_util . ',id_util',
+            'num_util' => 'required|string|max:50',
+            'adress_util' => 'nullable|string|max:255',
+            'password' => 'nullable|string|min:4',
+            'type_users_id' => 'required|exists:type_users,id_type_users',
+        ]);
 
-            $user = User::findOrFail($id);
-            
-            $user->update([
-                'nom_utili' => $validated['nom_utili'],
-                'prenom_utili' => $validated['prenom_utili'],
-                'email_utili' => $validated['email_utili'],
-                'num_utili' => $validated['num_utili'],
-                'adress_utili' => $validated['adress_utili'],
-            ]);
-
-            return redirect()
-                ->route('users.index')
-                ->with('success', 'Utilisateur mis à jour avec succès.');
-        } catch (\Exception $e) {
-            return back()
-                ->withInput()
-                ->with('error', 'Une erreur est survenue lors de la mise à jour de l\'utilisateur.');
+        if (!empty($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        } else {
+            unset($validated['password']);
         }
+
+        $user->update($validated);
+
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'L\'utilisateur a été modifié avec succès.');
     }
 
     /**
@@ -100,8 +111,9 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+
         try {
-            $user = User::findOrFail($id);
+            $user = User::where('id_util', $id)->firstOrFail();
             $user->delete();
 
             return redirect()

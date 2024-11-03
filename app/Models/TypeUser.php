@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TypeUser extends Model
 {
-    use SoftDeletes;
 
     protected $primaryKey = 'id_type_users';
     protected $fillable = ['nom_type_users'];

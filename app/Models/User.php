@@ -5,10 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Models\TypeUser;
+use App\Models\Transaction;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
+
+
+    protected $primaryKey = 'id_util';
 
     /**
      * Définition de la table associée à ce modèle.
@@ -23,13 +28,13 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'type_users_id',
         'nom_util',
         'prenom_util',
         'email_util',
         'num_util',
         'adress_util',
         'password',
+        'type_users_id'
     ];
 
     /**

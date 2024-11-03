@@ -14,7 +14,6 @@ return new class extends Migration
             $table->decimal('montant_min', 15, 2);
             $table->decimal('montant_max', 15, 2);
             $table->decimal('commission_grille_tarifaire', 15, 2);
-            $table->date('date_validite');
             $table->timestamps();
             $table->softDeletes();
         });
