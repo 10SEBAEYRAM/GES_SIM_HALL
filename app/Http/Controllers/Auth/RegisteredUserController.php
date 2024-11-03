@@ -31,7 +31,7 @@ class RegisteredUserController extends Controller
 {
     $request->validate([
         'nom_utili' => ['required', 'string', 'max:255'], // Changer 'name' en 'nom_utili'
-        'email_utili' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email_utili'], // Changer 'email' en 'email_utili'
+        'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email_utili'], // Changer 'email' en 'email_utili'
         'password' => ['required', 'confirmed', Rules\Password::defaults()],
     ]);
 

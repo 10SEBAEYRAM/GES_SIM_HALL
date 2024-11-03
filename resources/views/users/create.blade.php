@@ -62,8 +62,7 @@
         const form = document.querySelector('form');
         form.addEventListener('submit', function(event) {
             console.log("Form submitted");
-            // Assurez-vous que le formulaire n'est pas annulé ici
-            // event.preventDefault(); // Ne pas utiliser cette ligne
+            /
         });
     });
 </script>

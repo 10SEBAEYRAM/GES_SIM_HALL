@@ -31,6 +31,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+       
         try {
             $validated = $request->validate([
                 'nom_utili' => 'required|string|max:50',
@@ -38,8 +39,8 @@ class UserController extends Controller
                 'email_utili' => 'required|string|email|max:50|unique:users,email_utili',
                 'num_utili' => 'required|string|max:50',
                 'adress_utili' => 'nullable|string|max:255',
-                'password' => 'required|string|min:8',
             ]);
+           
 
             User::create([
                 'nom_utili' => $validated['nom_utili'],

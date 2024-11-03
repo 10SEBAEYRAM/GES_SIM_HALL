@@ -5,9 +5,14 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route; 
 use App\Models\User;
-
+// Routes pour le gestionnaire type transaction
+Route::middleware(['auth'])->group(function () {
+    Route::resource('type-transactions', TypeTransactionController::class);
+});
 // Routes pour le gestionnaire d'utilisateurs
 Route::resource('users', UserController::class);
+Route::post('/users', [UserController::class, 'store'])->name('users.store');
+
 
 // Middleware pour les utilisateurs authentifiés
 Route::middleware(['auth'])->group(function () {
