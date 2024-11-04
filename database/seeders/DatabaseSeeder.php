@@ -21,11 +21,11 @@ class DatabaseSeeder extends Seeder
         ]);
 
         User::factory()->create([
-            'nom_util' => 'Test',
-            'prenom_util' => 'Test',
-            'email_util' => 'test@example.com',
-            'num_util' => '0000000000',
-            'adress_util' => 'Test',
+            'nom_util' => 'SEBA',
+            'prenom_util' => 'Eyram ',
+            'email_util' => 'koffieyramseba@gmail.com',
+            'num_util' => '96540056',
+            'adress_util' => 'Agbalepedogan',
             'type_users_id' => 1,    
             'password' => Hash::make('password'),
         ]);

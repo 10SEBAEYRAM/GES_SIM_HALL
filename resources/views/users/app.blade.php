@@ -1,54 +1,41 @@
-<!DOCTYPE html>
-<html lang="fr">
+le<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title }}</title> 
+    <title>{{ config('app.name', 'Laravel') }}</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <!-- Styles -->
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('/css/create.css') }}"> 
-    <link rel="stylesheet" href="{{ asset('/css/index.css') }}"> 
-    <!-- Inclure le CSS de Bootstrap dans le fichier layouts/app.blade.php -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQp3Fz0f6W1zWYBupY5gfbD5S5UJp6i6Yv5eKk7/f8x1JrD6eE" crossorigin="anonymous">
-    <!-- Lien CSS de Bootstrap dans la section <head> -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQp3Fz0f6W1zWYBupY5gfbD5S5UJp6i6Yv5eKk7/f8x1JrD6eE" crossorigin="anonymous">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"> 
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    @stack('scripts')
 </head>
-<body>
-    <header>
-       
-        <nav>
-            <ul>
-                <li><a href="{{ route('home') }}">Accueil</a></li>
-                <li><a href="{{ route('users.index') }}">Utilisateurs</a></li>
-            </ul>
-        </nav>
-    </header>
+<body class="font-sans antialiased">
+    <div class="min-h-screen bg-gray-100">
+        @include('layouts.navigation')
 
-    <main>
-        
-        <div class="container">
-            @yield('content') 
-        </div>
-    </main>
+        <!-- Page Heading -->
+        @isset($header)
+            <header class="bg-white shadow">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    {{ $header }}
+                </div>
+            </header>
+        @endisset
 
-    <footer>
-        <p>&copy; {{ date('Y') }} Mon Application. Tous droits réservés.</p>
-    </footer>
-
-    <!-- Scripts -->
-    <script src="{{ asset('js/app.js') }}"></script>
-    <script src="//unpkg.com/alpinejs" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-oBqDVmMz4fnFO9gybBogGzS9Gc/qMnl6U5ofb2VI5uFnVajDq4pbb4c02JwAoKTp" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.min.js" integrity="sha384-OERcA2zJG+bJ7V0f9FEeFgK3lrqz8P4B8NHZj+AK4jl9OBOdyl8k3h5LG5ozp3bc" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
-
-
-
+        <!-- Page Content -->
+        <main>
+            <div class="container mx-auto p-4">
+                @yield('content') <!-- Cette ligne affichera le contenu de la section 'content' de la vue enfant -->
+            </div>
+        </main>
+    </div>
 </body>
 </html>
