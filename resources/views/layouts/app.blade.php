@@ -15,6 +15,7 @@
 
     <!-- Styles -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('scripts')
 </head>
 <body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-100 flex">
@@ -32,11 +33,11 @@
             @endisset
 
             <!-- Contenu principal de la page -->
-            <main>
+            {{-- <main>
                 <div class="container mx-auto">
                     @yield('content') <!-- Affiche le contenu de la section 'content' des vues enfants -->
                 </div>
-            </main>
+            </main> --}}
         </div>
     </div>
 </body>
