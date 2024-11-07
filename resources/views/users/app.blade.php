@@ -1,4 +1,4 @@
-le<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
@@ -32,7 +32,7 @@ le<!DOCTYPE html>
 
         <!-- Page Content -->
         <main>
-            <div class="container mx-auto p-4">
+            <div class="max-w-screen-xl mx-auto p-6"> <!-- Augmenter la largeur ici -->
                 @yield('content') <!-- Cette ligne affichera le contenu de la section 'content' de la vue enfant -->
             </div>
         </main>

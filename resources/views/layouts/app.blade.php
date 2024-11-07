@@ -33,11 +33,7 @@
             @endisset
 
             <!-- Contenu principal de la page -->
-            {{-- <main>
-                <div class="container mx-auto">
-                    @yield('content') <!-- Affiche le contenu de la section 'content' des vues enfants -->
-                </div>
-            </main> --}}
+            
         </div>
     </div>
 </body>

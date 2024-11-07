@@ -8,6 +8,9 @@ use App\Http\Controllers\GrilleTarifaireController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
+use App\Http\Controllers\CaisseController;
+Route::resource('caisses', CaisseController::class);
+Route::get('caisses/{id_caisse}/edit', [CaisseController::class, 'edit'])->name('caisses.edit');
 
 // Route publique pour les types de transactions
 Route::get('/type-transactions', [TypeTransactionController::class, 'index'])
