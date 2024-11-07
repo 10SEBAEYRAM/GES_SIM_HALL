@@ -37,21 +37,25 @@ class Transaction extends Model
         'updated_at' => 'datetime'
     ];
 
+    // Définition de la relation 'typeTransaction'
     public function typeTransaction()
     {
         return $this->belongsTo(TypeTransaction::class, 'type_transaction_id', 'id_type_transa');
     }
 
+    // Définition de la relation 'produit'
     public function produit()
     {
         return $this->belongsTo(Produit::class, 'produit_id', 'id_prod');
     }
 
+    // Définition de la relation 'user'
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id_util');
     }
 
+    // Méthode statique pour calculer les soldes
     public static function calculerSoldes($produit_id, $montant, $type_transaction)
     {
         $produit = Produit::where('id_prod', $produit_id)->firstOrFail();
@@ -69,4 +73,3 @@ class Transaction extends Model
         ];
     }
 }
-

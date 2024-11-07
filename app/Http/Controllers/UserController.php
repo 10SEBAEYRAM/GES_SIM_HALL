@@ -16,7 +16,8 @@ class UserController extends Controller
     {
         $users = User::paginate(10);
         $typeUsers = TypeUser::all();
-        return view('users.index', compact('users', 'typeUsers'));
+        $totalUsers = User::count(); // Récupérer le nombre total d'utilisateurs
+        return view('users.index', compact('users', 'typeUsers', 'totalUsers'));
     }
 
     /**
@@ -32,9 +33,7 @@ class UserController extends Controller
      * Gère l'insertion des utilisateurs dans la base de données
      */
     public function store(Request $request)
-
     {
-
         try {
             $validated = $request->validate([
                 'nom_util' => 'required|string|max:50',
@@ -111,7 +110,6 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-
         try {
             $user = User::where('id_util', $id)->firstOrFail();
             $user->delete();
