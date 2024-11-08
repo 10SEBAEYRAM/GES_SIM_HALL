@@ -8,6 +8,7 @@ use App\Models\Transaction;
 use App\Models\Caisse;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -32,12 +33,11 @@ class DashboardController extends Controller
             'year' => '-1 year',
         });
 
-        // Statistiques des utilisateurs
+        // Calcul des évolutions
         $currentUsers = User::where('created_at', '>=', $startDate)->count();
         $previousUsers = User::whereBetween('created_at', [$previousStartDate, $startDate])->count();
         $totalUsers = User::count();
 
-        // Produits actifs
         $activeProducts = Produit::where('actif', true)->count();
 
         // Transactions
@@ -50,14 +50,45 @@ class DashboardController extends Controller
             ->where('created_at', '<', $startDate)
             ->sum('balance_caisse');
 
-        // Transactions par mois pour le graphique de ligne
-        $transactionsParMois = Transaction::selectRaw('
-            DATE_FORMAT(created_at, "%Y-%m") as mois,
-            SUM(montant_trans) as montant
-        ')
-        ->groupBy('mois')
-        ->orderBy('mois')
-        ->get();
+        // Transactions par mois
+        // Transactions par mois
+$transactionsParMois = Transaction::selectRaw('
+DATE_FORMAT(created_at, "%Y-%m") as mois,
+SUM(montant_trans) as montant
+')
+->groupBy('mois')
+->orderBy('mois', 'asc') // Ajout de la direction "asc" ou "desc"
+->get();
+
+// Transactions par jour
+$transactionsParJour = Transaction::selectRaw('
+DATE(created_at) as jour,
+SUM(montant_trans) as montant
+')
+->groupBy('jour')
+->orderBy('jour', 'asc') // Direction spécifiée
+->get();
+
+// Transactions par semaine
+$transactionsParSemaine = Transaction::selectRaw('
+YEAR(created_at) as annee,
+WEEK(created_at) as semaine,
+SUM(montant_trans) as montant
+')
+->groupBy('annee', 'semaine')
+->orderBy('annee', 'asc') // Ajout de la direction
+->orderBy('semaine', 'asc') // Ajout de la direction
+->get();
+
+// Transactions par année
+$transactionsParAnnee = Transaction::selectRaw('
+YEAR(created_at) as annee,
+SUM(montant_trans) as montant
+')
+->groupBy('annee')
+->orderBy('annee', 'asc') // Direction spécifiée
+->get();
+
 
         // Soldes des produits
         $produitsBalances = Produit::where('actif', true)
@@ -69,9 +100,6 @@ class DashboardController extends Controller
             ->latest()
             ->take(10)
             ->get();
-
-        // Répartition des types de transactions pour le graphique circulaire
-        $transactionTypesDistribution = $this->getTransactionTypesDistribution($startDate);
 
         // Calcul de l'évolution
         $dashboardData = [
@@ -92,37 +120,62 @@ class DashboardController extends Controller
                 'evolution' => $this->calculateEvolution($soldeCaisse, $previousSoldeCaisse)
             ],
             'transactionsParMois' => $transactionsParMois,
+            'transactionsParJour' => $transactionsParJour,
+            'transactionsParSemaine' => $transactionsParSemaine,
+            'transactionsParAnnee' => $transactionsParAnnee,
             'produitsBalances' => $produitsBalances,
-            'recentTransactions' => $recentTransactions,
-            'transactionTypesDistribution' => $transactionTypesDistribution // Nouvelle clé pour la répartition des transactions
+            'recentTransactions' => $recentTransactions
         ];
 
         return view('dashboard.index', compact('dashboardData'));
     }
 
-    /**
-     * Calcule l'évolution en pourcentage entre une valeur actuelle et une valeur précédente.
-     */
     private function calculateEvolution($current, $previous)
     {
         return $previous > 0 ? (($current - $previous) / $previous) * 100 : 0;
     }
 
-    /**
-     * Récupère la répartition des montants des transactions par type pour une période donnée.
-     */
-    private function getTransactionTypesDistribution($startDate)
+    public function getTransactionsByPeriod($period)
     {
-        return Transaction::selectRaw('type_transaction_id, SUM(montant_trans) as montant')
-            ->where('created_at', '>=', $startDate)
-            ->groupBy('type_transaction_id')
-            ->with('typeTransaction') // Assurez-vous que la relation `typeTransaction` est bien définie dans le modèle `Transaction`
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'name' => $item->typeTransaction->nom_type_transa,
-                    'amount' => $item->montant
-                ];
-            });
+        $data = [];
+        
+        switch ($period) {
+            case 'day':
+                $data['labels'] = $this->getTransactionsByDayLabels();
+                $data['data'] = $this->getTransactionsByDayData();
+                break;
+            case 'week':
+                $data['labels'] = $this->getTransactionsByWeekLabels();
+                $data['data'] = $this->getTransactionsByWeekData();
+                break;
+            case 'month':
+                $data['labels'] = $this->getTransactionsByMonthLabels();
+                $data['data'] = $this->getTransactionsByMonthData();
+                break;
+            case 'year':
+                $data['labels'] = $this->getTransactionsByYearLabels();
+                $data['data'] = $this->getTransactionsByYearData();
+                break;
+        }
+
+        return response()->json($data);
     }
+
+    public function getTransactionsByMonthLabels()
+    {
+        return DB::table('transactions')
+            ->select(DB::raw('MONTH(created_at) as month'))
+            ->groupBy(DB::raw('MONTH(created_at)'))
+            ->get();
+    }
+
+    public function getTransactionsByMonthData()
+    {
+        return DB::table('transactions')
+            ->select(DB::raw('SUM(montant_trans) as montant'))
+            ->groupBy(DB::raw('MONTH(created_at)'))
+            ->get();
+    }
+
+    // Ajoutez des méthodes similaires pour semaine, jour et année si nécessaire
 }

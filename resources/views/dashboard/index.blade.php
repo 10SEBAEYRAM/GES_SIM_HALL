@@ -118,161 +118,85 @@
         </div>
     </div>
 
-    <script>
-    // Données transmises depuis le contrôleur à JavaScript via la vue Blade
-    const transactionsData = @json($dashboardData);
-
-    let period = 'month'; // Période par défaut
-    let transactionsChart = null;
-    let pieChart = null;
-
-    const chartColors = {
-        primary: 'rgba(59, 130, 246, 1)',
-        primaryLight: 'rgba(59, 130, 246, 0.2)',
-        pieColors: ['#4299E1', '#48BB78', '#ED8936', '#ED64A6', '#9F7AEA', '#667EEA']
-    };
-
-    // Fonction pour formater l'argent
-    function formatMoney(value) {
-        return value.toFixed(2).replace('.', ',');
-    }
-
-    // Obtenir les labels de période en français
-    function getPeriodLabel(period) {
-        const labels = {
-            day: 'Jour',
-            week: 'Semaine',
-            month: 'Mois',
-            year: 'Année'
-        };
-        return labels[period] || 'Mois';
-    }
-
-    // Création du graphique de lignes pour les transactions par mois
-    function createChart() {
-        const ctx = document.getElementById('transactionsChart').getContext('2d');
-        
-        if (transactionsChart) {
-            transactionsChart.destroy();
-        }
-
-        const periodData = transactionsData.transactionsParMois;
-
-        transactionsChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: periodData.map(item => item.mois),
-                datasets: [{
-                    label: 'Montant des Transactions (FCFA)',
-                    data: periodData.map(item => item.montant),
-                    borderColor: chartColors.primary,
-                    backgroundColor: chartColors.primaryLight,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: `Évolution des Transactions par Mois`,
-                        font: {
-                            size: 16,
-                            weight: 'bold'
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return `${formatMoney(context.raw)} FCFA`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        ticks: {
-                            font: {
-                                size: 12,
-                                weight: 'bold'
-                            }
-                        }
-                    },
-                    y: {
-                        ticks: {
-                            callback: function(value) {
-                                return formatMoney(value);
-                            },
-                            font: {
-                                size: 12,
-                                weight: 'bold'
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Fonction pour créer le graphique circulaire pour la répartition des transactions
-    function createPieChart() {
-        const ctx = document.getElementById('transactionsPieChart').getContext('2d');
-        
-        if (pieChart) {
-            pieChart.destroy();
-        }
-
-        const pieData = transactionsData.repartitionTransactions;
-
-        pieChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: pieData.map(item => item.type),
-                datasets: [{
-                    data: pieData.map(item => item.montant),
-                    backgroundColor: chartColors.pieColors,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Répartition des Transactions',
-                        font: {
-                            size: 16,
-                            weight: 'bold'
-                        }
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function (context) {
-                                return `${context.label}: ${formatMoney(context.raw)} FCFA`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Fonction pour mettre à jour le graphique en fonction de la période sélectionnée
+   <script>
+   // Fonction de mise à jour du graphique selon la période
     function updateChart() {
         const selectedPeriod = document.getElementById('periodSelect').value;
-        period = selectedPeriod;
-        createChart();
+        
+        let newLabels, newData;
+
+        switch (selectedPeriod) {
+            case 'day':
+                newLabels = @json($dashboardData['transactionsParJour']->pluck('jour'));
+                newData = @json($dashboardData['transactionsParJour']->pluck('montant'));
+                break;
+            case 'week':
+                newLabels = @json($dashboardData['transactionsParSemaine']->pluck('semaine'));
+                newData = @json($dashboardData['transactionsParSemaine']->pluck('montant'));
+                break;
+            case 'month':
+                newLabels = @json($dashboardData['transactionsParMois']->pluck('mois'));
+                newData = @json($dashboardData['transactionsParMois']->pluck('montant'));
+                break;
+            case 'year':
+                newLabels = @json($dashboardData['transactionsParAnnee']->pluck('annee'));
+                newData = @json($dashboardData['transactionsParAnnee']->pluck('montant'));
+                break;
+        }
+
+        // Mise à jour des graphiques
+        transactionsChart.data.labels = newLabels;
+        transactionsChart.data.datasets[0].data = newData;
+        transactionsChart.update();
+
+        transactionsPieChart.data.labels = newLabels;
+        transactionsPieChart.data.datasets[0].data = newData;
+        transactionsPieChart.update();
     }
 
     // Initialiser les graphiques
-    document.addEventListener('DOMContentLoaded', function () {
-        createChart();
-        createPieChart();
+    const labels = @json($dashboardData['transactionsParMois']->pluck('mois'));
+    const data = @json($dashboardData['transactionsParMois']->pluck('montant'));
+
+    const ctxBar = document.getElementById('transactionsChart').getContext('2d');
+    const transactionsChart = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Transactions par Mois',
+                data: data,
+                backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
     });
-    </script>
+
+    const ctxPie = document.getElementById('transactionsPieChart').getContext('2d');
+    const transactionsPieChart = new Chart(ctxPie, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: ['#FF5733', '#33FF57', '#3357FF', '#FF33A1'],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+</script>
+
 </body>
 </html>
