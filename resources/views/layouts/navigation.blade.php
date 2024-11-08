@@ -68,55 +68,54 @@
 <body>
     <div class="flex h-screen">
         <!-- Sidebar Navigation -->
-        <nav x-data="{ open: false }" class="bg-white border-r border-gray-200 w-64 flex flex-col">
-            <div class="p-4">
-                <!-- Logo -->
-                <div class="flex justify-center mb-6">
-                    <a href="{{ route('users.index') }}">
-                        <x-application-logo class="h-9 w-auto" />
-                    </a>
-                </div>
+       <nav x-data="{ open: {{ request()->routeIs('dashboard.index') ? 'true' : 'false' }} }" class="bg-white border-r border-gray-200 w-64 flex flex-col">
+    <div class="p-4">
+        <!-- Logo -->
+        <div class="flex justify-center mb-6">
+            <a href="{{ route('users.index') }}">
+                <x-application-logo class="h-9 w-auto" />
+            </a>
+        </div>
 
-                <!-- User Profile -->
-                <div class="mb-6 text-center" x-data="{ open: false }">
-                    <button @click="open = !open" class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border rounded-md hover:bg-gray-100">
-                        {{ Auth::check() ? Auth::user()->nom_util . ' ' . Auth::user()->prenom_util : 'Invité' }}
+        <!-- User Profile -->
+        <div class="mb-6 text-center" x-data="{ open: false }">
+            <button @click="open = !open" class="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border rounded-md hover:bg-gray-100">
+                {{ Auth::check() ? Auth::user()->nom_util . ' ' . Auth::user()->prenom_util : 'Invité' }}
+            </button>
+
+            <div x-show="open" @click.away="open = false" class="mt-2 bg-white border rounded-md shadow-lg">
+                <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                    <i class="fas fa-user-edit mr-2"></i> Profil
+                </a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Se déconnecter
                     </button>
-
-                    <div x-show="open" @click.away="open = false" class="mt-2 bg-white border rounded-md shadow-lg">
-                        <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">
-                            <i class="fas fa-user-edit mr-2"></i> Profil
-                        </a>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Se déconnecter
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Navigation Links -->
-                <div class="flex flex-col space-y-2">
-                    @foreach([
-    ['route' => 'dashboard.index', 'icon' => 'fas fa-tachometer-alt', 'label' => 'Tableau de bord'],
-    ['route' => 'users.index', 'icon' => 'fas fa-users', 'label' => 'Utilisateurs'],
-    ['route' => 'type-transactions.index', 'icon' => 'fas fa-exchange-alt', 'label' => 'Types de Transactions'],
-    ['route' => 'produits.index', 'icon' => 'fas fa-box', 'label' => 'Produits'],
-    ['route' => 'grille-tarifaires.index', 'icon' => 'fas fa-table', 'label' => 'Grilles Tarifaires'],
-    ['route' => 'transactions.index', 'icon' => 'fas fa-money-bill-wave', 'label' => 'Transactions'],
-    ['route' => 'caisses.index', 'icon' => 'fas fa-cash-register', 'label' => 'Caisses']
-] as $item)
-    <x-nav-link :href="route($item['route'])" :active="request()->routeIs($item['route'])" class="nav-link flex items-center rounded-md hover:bg-gray-100">
-        <i class="{{ $item['icon'] }} mr-3"></i>
-        {{ __($item['label']) }}
-    </x-nav-link>
-@endforeach
-
-                </div>
-
+                </form>
             </div>
-        </nav>
+        </div>
+
+        <!-- Navigation Links -->
+        <div class="flex flex-col space-y-2">
+            @foreach([
+                ['route' => 'dashboard.index', 'icon' => 'fas fa-tachometer-alt', 'label' => 'Tableau de bord'],
+                ['route' => 'users.index', 'icon' => 'fas fa-users', 'label' => 'Utilisateurs'],
+                ['route' => 'type-transactions.index', 'icon' => 'fas fa-exchange-alt', 'label' => 'Types de Transactions'],
+                ['route' => 'produits.index', 'icon' => 'fas fa-box', 'label' => 'Produits'],
+                ['route' => 'grille-tarifaires.index', 'icon' => 'fas fa-table', 'label' => 'Grilles Tarifaires'],
+                ['route' => 'transactions.index', 'icon' => 'fas fa-money-bill-wave', 'label' => 'Transactions'],
+                ['route' => 'caisses.index', 'icon' => 'fas fa-cash-register', 'label' => 'Caisses']
+            ] as $item)
+                <x-nav-link :href="route($item['route'])" :active="request()->routeIs($item['route'])" class="nav-link flex items-center rounded-md hover:bg-gray-100">
+                    <i class="{{ $item['icon'] }} mr-3"></i>
+                    {{ __($item['label']) }}
+                </x-nav-link>
+            @endforeach
+        </div>
+    </div>
+</nav>
+
 
         <!-- Main Content Area -->
         <div class="flex-1 overflow-auto p-6 bg-gray-50">

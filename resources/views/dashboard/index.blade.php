@@ -118,8 +118,8 @@
         </div>
     </div>
 
-   <script>
-    // Passer les données du contrôleur à JavaScript via la vue Blade
+    <script>
+    // Données transmises depuis le contrôleur à JavaScript via la vue Blade
     const transactionsData = @json($dashboardData);
 
     let period = 'month'; // Période par défaut
@@ -132,10 +132,12 @@
         pieColors: ['#4299E1', '#48BB78', '#ED8936', '#ED64A6', '#9F7AEA', '#667EEA']
     };
 
+    // Fonction pour formater l'argent
     function formatMoney(value) {
         return value.toFixed(2).replace('.', ',');
     }
 
+    // Obtenir les labels de période en français
     function getPeriodLabel(period) {
         const labels = {
             day: 'Jour',
@@ -146,17 +148,20 @@
         return labels[period] || 'Mois';
     }
 
-    function createChart(periodData) {
+    // Création du graphique de lignes pour les transactions par mois
+    function createChart() {
         const ctx = document.getElementById('transactionsChart').getContext('2d');
         
         if (transactionsChart) {
             transactionsChart.destroy();
         }
 
+        const periodData = transactionsData.transactionsParMois;
+
         transactionsChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: periodData.map(item => item.periode),
+                labels: periodData.map(item => item.mois),
                 datasets: [{
                     label: 'Montant des Transactions (FCFA)',
                     data: periodData.map(item => item.montant),
@@ -174,19 +179,37 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: `Évolution des Transactions ${getPeriodLabel(period)}`,
+                        text: `Évolution des Transactions par Mois`,
                         font: {
                             size: 16,
                             weight: 'bold'
                         }
                     },
-                    legend: {
-                        position: 'bottom'
-                    },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                return `${context.dataset.label}: ${formatMoney(context.raw)} FCFA`;
+                            label: function (context) {
+                                return `${formatMoney(context.raw)} FCFA`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            callback: function(value) {
+                                return formatMoney(value);
+                            },
+                            font: {
+                                size: 12,
+                                weight: 'bold'
                             }
                         }
                     }
@@ -195,19 +218,22 @@
         });
     }
 
-    function createPieChart(transactionTypes) {
+    // Fonction pour créer le graphique circulaire pour la répartition des transactions
+    function createPieChart() {
         const ctx = document.getElementById('transactionsPieChart').getContext('2d');
         
         if (pieChart) {
             pieChart.destroy();
         }
 
+        const pieData = transactionsData.repartitionTransactions;
+
         pieChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: transactionTypes.map(type => type.name),
+                labels: pieData.map(item => item.type),
                 datasets: [{
-                    data: transactionTypes.map(type => type.amount),
+                    data: pieData.map(item => item.montant),
                     backgroundColor: chartColors.pieColors,
                     borderWidth: 1
                 }]
@@ -217,10 +243,17 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Répartition des Types de Transactions',
+                        text: 'Répartition des Transactions',
                         font: {
                             size: 16,
                             weight: 'bold'
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return `${context.label}: ${formatMoney(context.raw)} FCFA`;
+                            }
                         }
                     }
                 }
@@ -228,23 +261,18 @@
         });
     }
 
+    // Fonction pour mettre à jour le graphique en fonction de la période sélectionnée
     function updateChart() {
-        period = document.getElementById('periodSelect').value;
-
-        if (!transactionsData[period]) {
-            console.error(`Aucune donnée trouvée pour la période ${period}`);
-            return;
-        }
-
-        createChart(transactionsData[period].data);
-        createPieChart(transactionsData[period].types);
+        const selectedPeriod = document.getElementById('periodSelect').value;
+        period = selectedPeriod;
+        createChart();
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        updateChart();
+    // Initialiser les graphiques
+    document.addEventListener('DOMContentLoaded', function () {
+        createChart();
+        createPieChart();
     });
-</script>
-
-
+    </script>
 </body>
 </html>
