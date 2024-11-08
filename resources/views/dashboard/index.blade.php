@@ -4,14 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tableau de Bord</title>
-    <!-- Lien vers Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lien vers Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Lien vers FontAwesome pour les icônes -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        /* Animation pour les cartes */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
         .card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
@@ -19,103 +21,196 @@
             transform: translateY(-5px);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
+        canvas {
+            display: block;
+            width: 100% !important;
+            height: 300px;
+        }
     </style>
 </head>
 <body class="bg-gray-100 font-sans antialiased">
-
     <div class="max-w-7xl mx-auto py-12 px-6 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Tableau de Bord</h1>
 
-        <!-- Grid pour organiser les cartes -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-            <!-- Section Utilisateurs -->
-            <div class="card bg-white shadow-lg rounded-lg p-6 mb-6 hover:shadow-xl">
-                <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
-                    <i class="fas fa-users mr-3 text-blue-500"></i> Utilisateurs
-                </h2>
-                <p class="text-lg mt-2" id="total-users">Total : {{ $dashboardData['totalUsers']['total'] }}</p>
-                <p class="text-lg" id="user-evolution">Évolution : {{ $dashboardData['totalUsers']['evolution'] }}%</p>
-            </div>
-
-            <!-- Section Produits -->
-            <div class="card bg-white shadow-lg rounded-lg p-6 mb-6 hover:shadow-xl">
-                <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
-                    <i class="fas fa-box mr-3 text-green-500"></i> Produits
-                </h2>
-                <p class="text-lg mt-2" id="total-products">Total : {{ $dashboardData['totalProducts']['total'] }}</p>
-            </div>
-
-            <!-- Section Transactions -->
-            <div class="card bg-white shadow-lg rounded-lg p-6 mb-6 hover:shadow-xl">
-                <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
+        <!-- Cartes des statistiques -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Transactions -->
+            <div class="card bg-yellow-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
                     <i class="fas fa-exchange-alt mr-3 text-yellow-500"></i> Transactions
                 </h2>
-                <p class="text-lg mt-2" id="total-transactions">Montant total : {{ $dashboardData['totalTransactions']['montant'] }}</p>
-                <p class="text-lg" id="transaction-evolution">Évolution : {{ $dashboardData['totalTransactions']['evolution'] }}%</p>
+                <p class="text-2xl font-bold text-gray-900">
+                    {{ number_format($dashboardData['totalTransactions']['montant'], 2, ',', ' ') }} FCFA
+                </p>
+                <p class="mt-2 flex items-center {{ $dashboardData['totalTransactions']['evolution'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                    <i class="fas fa-{{ $dashboardData['totalTransactions']['evolution'] >= 0 ? 'arrow-up' : 'arrow-down' }} mr-2"></i>
+                    {{ number_format(abs($dashboardData['totalTransactions']['evolution']), 1) }}%
+                </p>
             </div>
 
-            <!-- Section Solde Caisse -->
-            <div class="card bg-white shadow-lg rounded-lg p-6 mb-6 hover:shadow-xl">
-                <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
-                    <i class="fas fa-cash-register mr-3 text-red-500"></i> Solde Caisse
+            <!-- Utilisateurs -->
+            <div class="card bg-blue-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
+                    <i class="fas fa-users mr-3 text-blue-500"></i> Utilisateurs
                 </h2>
-                <p class="text-lg mt-2" id="solde-caisse">Montant : {{ $dashboardData['soldeCaisse']['montant'] }}</p>
-                <p class="text-lg" id="caisse-evolution">Évolution : {{ $dashboardData['soldeCaisse']['evolution'] }}%</p>
+                <p class="text-2xl font-bold text-gray-900">{{ $dashboardData['totalUsers']['total'] }}</p>
             </div>
 
+            <!-- Produits -->
+            <div class="card bg-purple-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
+                    <i class="fas fa-box mr-3 text-purple-500"></i> Produits Actifs
+                </h2>
+                <p class="text-2xl font-bold text-gray-900">{{ $dashboardData['totalProducts']['total'] }}</p>
+            </div>
+
+            <!-- Solde Caisse -->
+            <div class="card bg-green-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
+                    <i class="fas fa-cash-register mr-3 text-green-500"></i> Solde Caisse
+                </h2>
+                <p class="text-2xl font-bold text-gray-900">
+                    {{ number_format($dashboardData['soldeCaisse']['montant'], 2, ',', ' ') }} FCFA
+                </p>
+            </div>
         </div>
 
-        <!-- Graphique des Transactions par Mois -->
-        <div class="card bg-white shadow-lg rounded-lg p-6 mb-6 hover:shadow-xl">
-            <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
-                <i class="fas fa-chart-line mr-3 text-blue-500"></i> Transactions par Mois
-            </h2>
-            <canvas id="transactionsChart" class="mt-4"></canvas>
+        <!-- Solde des Produits -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            @foreach ($dashboardData['produitsBalances'] as $produit)
+                <div class="card bg-teal-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">{{ $produit->nom_prod }}</h2>
+                    <p class="text-2xl font-bold text-gray-900">
+                        {{ number_format($produit->balance, 2, ',', ' ') }} FCFA
+                    </p>
+                </div>
+            @endforeach
         </div>
 
-        <!-- Section Soldes des Produits -->
-        <div class="card bg-white shadow-lg rounded-lg p-6 mb-6 hover:shadow-xl">
-            <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
-                <i class="fas fa-cogs mr-3 text-purple-500"></i> Soldes des Produits
-            </h2>
-            <ul class="mt-4 space-y-2" id="produits-balances">
-                @foreach ($dashboardData['produitsBalances'] as $produit)
-                    <li class="text-lg">{{ $produit['nom_prod'] }} : {{ $produit['balance'] }}</li>
-                @endforeach
-            </ul>
-        </div>
+        <!-- Graphiques -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Transactions par Période -->
+            <div class="card bg-white shadow-lg rounded-lg p-6 hover:shadow-xl">
+                <h2 class="text-2xl font-semibold text-gray-800 flex items-center mb-4">
+                    <i class="fas fa-chart-line mr-3 text-blue-500"></i> Transactions par Période
+                </h2>
+                <div class="mb-4">
+                    <select id="periodSelect" class="w-full p-2 border rounded" onchange="updateChart()">
+                        <option value="day">Par Jour</option>
+                        <option value="week">Par Semaine</option>
+                        <option value="month" selected>Par Mois</option>
+                        <option value="year">Par Année</option>
+                    </select>
+                </div>
+                <div class="relative" style="height: 300px;">
+                    <canvas id="transactionsChart"></canvas>
+                </div>
+            </div>
 
-        <!-- Transactions Récentes -->
-        <div class="card bg-white shadow-lg rounded-lg p-6 mb-6 hover:shadow-xl">
-            <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
-                <i class="fas fa-history mr-3 text-teal-500"></i> Transactions Récentes
-            </h2>
-            <ul class="mt-4 space-y-2" id="recent-transactions">
-                @foreach ($dashboardData['recentTransactions'] as $transaction)
-                    <li class="text-lg">{{ $transaction->created_at }} - {{ $transaction->produit->nom_prod }} - {{ $transaction->montant_trans }}</li>
-                @endforeach
-            </ul>
+            <!-- Répartition des Transactions -->
+            <div class="card bg-white shadow-lg rounded-lg p-6 hover:shadow-xl">
+                <h2 class="text-2xl font-semibold text-gray-800 flex items-center mb-4">
+                    <i class="fas fa-chart-pie mr-3 text-green-500"></i> Répartition des Transactions
+                </h2>
+                <div class="relative" style="height: 300px;">
+                    <canvas id="transactionsPieChart"></canvas>
+                </div>
+            </div>
         </div>
-        
     </div>
 
-    <!-- Script pour afficher le graphique des transactions par mois -->
-    <script>
-        var ctx = document.getElementById('transactionsChart').getContext('2d');
-        var transactionsData = @json($dashboardData['transactionsParMois']); 
+   <script>
+    // Passer les données du contrôleur à JavaScript via la vue Blade
+    const transactionsData = @json($dashboardData);
 
-        var transactionsChart = new Chart(ctx, {
+    let period = 'month'; // Période par défaut
+    let transactionsChart = null;
+    let pieChart = null;
+
+    const chartColors = {
+        primary: 'rgba(59, 130, 246, 1)',
+        primaryLight: 'rgba(59, 130, 246, 0.2)',
+        pieColors: ['#4299E1', '#48BB78', '#ED8936', '#ED64A6', '#9F7AEA', '#667EEA']
+    };
+
+    function formatMoney(value) {
+        return value.toFixed(2).replace('.', ',');
+    }
+
+    function getPeriodLabel(period) {
+        const labels = {
+            day: 'Jour',
+            week: 'Semaine',
+            month: 'Mois',
+            year: 'Année'
+        };
+        return labels[period] || 'Mois';
+    }
+
+    function createChart(periodData) {
+        const ctx = document.getElementById('transactionsChart').getContext('2d');
+        
+        if (transactionsChart) {
+            transactionsChart.destroy();
+        }
+
+        transactionsChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: transactionsData.map(transaction => transaction.mois),
+                labels: periodData.map(item => item.periode),
                 datasets: [{
-                    label: 'Montant des Transactions',
-                    data: transactionsData.map(transaction => transaction.montant),
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    label: 'Montant des Transactions (FCFA)',
+                    data: periodData.map(item => item.montant),
+                    borderColor: chartColors.primary,
+                    backgroundColor: chartColors.primaryLight,
                     fill: true,
-                    tension: 0.1
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: `Évolution des Transactions ${getPeriodLabel(period)}`,
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${formatMoney(context.raw)} FCFA`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createPieChart(transactionTypes) {
+        const ctx = document.getElementById('transactionsPieChart').getContext('2d');
+        
+        if (pieChart) {
+            pieChart.destroy();
+        }
+
+        pieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: transactionTypes.map(type => type.name),
+                datasets: [{
+                    data: transactionTypes.map(type => type.amount),
+                    backgroundColor: chartColors.pieColors,
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -123,11 +218,34 @@
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Transactions par Mois'
+                        text: 'Répartition des Types de Transactions',
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        }
                     }
                 }
             }
         });
-    </script>
+    }
+
+    function updateChart() {
+        period = document.getElementById('periodSelect').value;
+
+        if (!transactionsData[period]) {
+            console.error(`Aucune donnée trouvée pour la période ${period}`);
+            return;
+        }
+
+        createChart(transactionsData[period].data);
+        createPieChart(transactionsData[period].types);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateChart();
+    });
+</script>
+
+
 </body>
 </html>

@@ -73,6 +73,7 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
+        // Passer les données à la vue
         $dashboardData = [
             'totalUsers' => [
                 'total' => $totalUsers,
