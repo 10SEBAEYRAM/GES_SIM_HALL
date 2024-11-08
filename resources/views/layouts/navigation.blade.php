@@ -98,20 +98,21 @@
 
                 <!-- Navigation Links -->
                 <div class="flex flex-col space-y-2">
-                    @foreach ([
-                        ['route' => 'users.index', 'icon' => 'fas fa-users', 'label' => 'Utilisateurs'],
-                        ['route' => 'type-transactions.index', 'icon' => 'fas fa-exchange-alt', 'label' => 'Types de Transactions'],
-                        ['route' => 'produits.index', 'icon' => 'fas fa-box', 'label' => 'Produits'],
-                        ['route' => 'grille-tarifaires.index', 'icon' => 'fas fa-table', 'label' => 'Grilles Tarifaires'],
-                        ['route' => 'transactions.index', 'icon' => 'fas fa-money-bill-wave', 'label' => 'Transactions'],
-                        ['route' => 'caisses.index', 'icon' => 'fas fa-cash-register', 'label' => 'Caisses'],  
-                    ] as $item)
-                        <x-nav-link :href="route($item['route'])" :active="request()->routeIs($item['route'])"
-                            class="nav-link flex items-center rounded-md hover:bg-gray-100">
-                            <i class="{{ $item['icon'] }} mr-3"></i>
-                            {{ __($item['label']) }}
-                        </x-nav-link>
-                    @endforeach
+                    @foreach([
+    ['route' => 'dashboard.index', 'icon' => 'fas fa-tachometer-alt', 'label' => 'Tableau de bord'],
+    ['route' => 'users.index', 'icon' => 'fas fa-users', 'label' => 'Utilisateurs'],
+    ['route' => 'type-transactions.index', 'icon' => 'fas fa-exchange-alt', 'label' => 'Types de Transactions'],
+    ['route' => 'produits.index', 'icon' => 'fas fa-box', 'label' => 'Produits'],
+    ['route' => 'grille-tarifaires.index', 'icon' => 'fas fa-table', 'label' => 'Grilles Tarifaires'],
+    ['route' => 'transactions.index', 'icon' => 'fas fa-money-bill-wave', 'label' => 'Transactions'],
+    ['route' => 'caisses.index', 'icon' => 'fas fa-cash-register', 'label' => 'Caisses']
+] as $item)
+    <x-nav-link :href="route($item['route'])" :active="request()->routeIs($item['route'])" class="nav-link flex items-center rounded-md hover:bg-gray-100">
+        <i class="{{ $item['icon'] }} mr-3"></i>
+        {{ __($item['label']) }}
+    </x-nav-link>
+@endforeach
+
                 </div>
 
             </div>
