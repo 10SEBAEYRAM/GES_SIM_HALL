@@ -118,8 +118,8 @@
         </div>
     </div>
 
-   <script>
-   // Fonction de mise à jour du graphique selon la période
+  <script>
+    // Fonction de mise à jour du graphique selon la période
     function updateChart() {
         const selectedPeriod = document.getElementById('periodSelect').value;
         
@@ -168,14 +168,45 @@
                 data: data,
                 backgroundColor: 'rgba(54, 162, 235, 0.6)',
                 borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
+                borderWidth: 1,
+                borderRadius: 5, // Arrondir les barres pour un style plus moderne
+                hoverBackgroundColor: 'rgba(54, 162, 235, 0.8)'
             }]
         },
         options: {
             responsive: true,
+            animation: {
+                duration: 1500, // Animation plus lente pour un effet professionnel
+                easing: 'easeInOutBounce' // Easing de rebond pour un effet dynamique
+            },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#4a4a4a' // Couleur des valeurs sur l'axe y pour le style
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#4a4a4a' // Couleur des valeurs sur l'axe x pour le style
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#333', // Couleur des labels pour plus de contraste
+                        font: {
+                            size: 14
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Fond semi-transparent
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderWidth: 1,
+                    borderColor: '#333'
                 }
             }
         }
@@ -188,12 +219,43 @@
             labels: labels,
             datasets: [{
                 data: data,
-                backgroundColor: ['#FF5733', '#33FF57', '#3357FF', '#FF33A1'],
-                hoverOffset: 4
+                backgroundColor: [
+                    '#FF5733',
+                    '#33FF57',
+                    '#3357FF',
+                    '#FF33A1',
+                    '#FFC300',
+                    '#DAF7A6',
+                    '#581845'
+                ],
+                hoverOffset: 8 // Plus grand décalage lors du survol pour un effet professionnel
             }]
         },
         options: {
-            responsive: true
+            responsive: true,
+            animation: {
+                animateScale: true, // Animation de zoom pour les sections
+                animateRotate: true, // Animation de rotation pour un effet dynamique
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#333',
+                        font: {
+                            size: 14
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderWidth: 1,
+                    borderColor: '#333'
+                }
+            }
         }
     });
 </script>

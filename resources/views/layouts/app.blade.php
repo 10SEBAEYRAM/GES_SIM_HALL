@@ -1,4 +1,3 @@
-{{-- resources/views/layouts/app.blade.php --}}
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -13,27 +12,33 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
-    <!-- Styles -->
+    <!-- Styles et Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('scripts')
 </head>
-<body class="font-sans antialiased">
-    <div class="min-h-screen bg-gray-100 flex">
-        {{-- Inclure la barre de navigation --}}
-        @include('layouts.navigation')
+<body class="font-sans antialiased bg-gray-100">
+    <div class="min-h-screen flex">
+        
+        <!-- Sidebar avec largeur réduite -->
+        <aside class="w-56 bg-white shadow-lg p-6 fixed inset-y-0">
+            @include('layouts.navigation') <!-- Sidebar Navigation -->
+        </aside>
 
-        <div class="flex-1 overflow-auto p-6 bg-gray-50">
+        <!-- Zone de contenu principal avec plus de largeur -->
+        <div class="flex-1 ml-56 p-8 bg-gray-50 overflow-auto">
             <!-- En-tête de la page -->
             @isset($header)
-                <header class="bg-white shadow mb-6">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <header class="bg-white shadow mb-6 p-6 rounded-md">
+                    <div class="max-w-full mx-auto">
                         {{ $header }}
                     </div>
                 </header>
             @endisset
 
-            <!-- Contenu principal de la page -->
-            
+            <!-- Contenu de la page -->
+            <main>
+                @yield('content')
+            </main>
         </div>
     </div>
 </body>
