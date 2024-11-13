@@ -1,31 +1,35 @@
 <?php
 
-use App\Http\Controllers\ProduitController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\TypeTransactionController;
-use App\Http\Controllers\GrilleTarifaireController;
-use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\{
+    ProduitController, UserController, ProfileController, 
+    TypeTransactionController, GrilleTarifaireController, 
+    TransactionController, CaisseController, DashboardController
+};
 use Illuminate\Support\Facades\Route;
-use App\Models\User;
-use App\Http\Controllers\CaisseController;
-use App\Http\Controllers\DashboardController;
 
 // Page d'accueil redirige vers login
 Route::get('/', function () {
     return view('auth.login');
 })->name('home');
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
-
-// Route publique pour les types de transactions
-Route::get('/type-transactions', [TypeTransactionController::class, 'index'])
-    ->name('type-transactions.index');
-
-// Groupe de routes protégées par authentification
+// Routes protégées par authentification
 Route::middleware(['auth'])->group(function () {
+    // Gestion du tableau de bord
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+
     // Gestion des utilisateurs
     Route::resource('users', UserController::class);
+
+    // Gestion des transactions
+    Route::resource('transactions', TransactionController::class);
+    Route::patch('transactions/{id}/update-status', [TransactionController::class, 'updateStatus'])
+        ->name('transactions.updateStatus');
+        Route::get('transactions/search', [TransactionController::class, 'search'])->name('transactions.search');
+        Route::get('transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
+        Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+
+    Route::get('/transactions/get-commission', [TransactionController::class, 'getCommission'])
+        ->name('transactions.get-commission');
 
     // Gestion du profil
     Route::controller(ProfileController::class)->group(function () {
@@ -34,18 +38,13 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/profile', 'destroy')->name('profile.destroy');
     });
 
-    // Ressources principales
+    // Autres ressources
     Route::resources([
         'type-transactions' => TypeTransactionController::class,
         'produits' => ProduitController::class,
         'grille-tarifaires' => GrilleTarifaireController::class,
-        'transactions' => TransactionController::class,
-        'caisses' => CaisseController::class, // Pas besoin de redéfinir la route 'edit'
+        'caisses' => CaisseController::class,
     ]);
-
-    // Route spécifique pour le calcul de commission
-    Route::get('/transactions/get-commission', [TransactionController::class, 'getCommission'])
-        ->name('transactions.get-commission');
 });
 
 // Routes d'authentification

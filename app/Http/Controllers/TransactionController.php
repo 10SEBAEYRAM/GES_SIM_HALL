@@ -30,11 +30,14 @@ class TransactionController extends Controller
             DB::beginTransaction();
 
             $validated = $request->validate([
-                'type_transaction_id' => 'required|exists:type_transactions,id_type_transa',
-                'produit_id' => 'required|exists:produits,id_prod',
-                'montant_trans' => 'required|numeric|min:0',
-                'num_beneficiaire' => 'required|string|max:50',
-            ]);
+               'type_transaction_id' => 'required|exists:type_transactions,id_type_transa',
+            'produit_id' => 'required|exists:produits,id_prod',
+            'montant_trans' => 'required|numeric|min:0',
+            'num_beneficiaire' => 'required|string|max:255',
+            'motif' => 'required|array',
+            'user_id' => 'required|exists:users,id_util',
+        ]);
+            
 
             $produit = Produit::findOrFail($validated['produit_id']);
             $typeTransaction = TypeTransaction::findOrFail($validated['type_transaction_id']);
@@ -68,11 +71,12 @@ class TransactionController extends Controller
                 'montant_trans' => $validated['montant_trans'],
                 'commission_appliquee' => $commission,
                 'num_beneficiaire' => $validated['num_beneficiaire'],
+                'motif' => implode(',', $validated['motif']),
                 'statut' => 'COMPLETE',
                 'solde_avant' => $soldes['solde_avant'],
                 'solde_apres' => $soldes['solde_apres'],
                 'solde_caisse_avant' => 0, // À implémenter selon votre logique de caisse
-                'solde_caisse_apres' => 0  // À implémenter selon votre logique de caisse
+                'solde_caisse_apres' => 0  
             ]);
 
 
@@ -124,4 +128,32 @@ class TransactionController extends Controller
             ], 400);
         }
     }
+
+    // Exemple de logique dans TransactionController
+
+public function updateBalanceCaisse($transaction)
+{
+    // Récupérer le solde de la caisse avant la transaction
+    $solde_caisse_avant = $transaction->solde_caisse_avant;
+
+    // Convertir le solde avant en nombre
+    $solde_caisse_avant = (float) $solde_caisse_avant;
+
+    // Calcul du nouveau solde de la caisse après la transaction
+    if ($transaction->typeTransaction->nom_type_transa === 'Dépôt') {
+        // Ajouter le montant du dépôt
+        $new_balance = $solde_caisse_avant + $transaction->montant_trans;
+    } elseif ($transaction->typeTransaction->nom_type_transa === 'Retrait') {
+        // Soustraire le montant du retrait
+        $new_balance = $solde_caisse_avant - $transaction->montant_trans;
+    } else {
+        // Autres types de transaction
+        $new_balance = $solde_caisse_avant;
+    }
+
+    // Mettre à jour le solde de la caisse dans la base de données
+    $transaction->solde_caisse_apres = number_format($new_balance, 0, ',', ' '); // Formatage en chaîne
+    $transaction->save();
+}
+
 }

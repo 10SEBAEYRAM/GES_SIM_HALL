@@ -4,6 +4,7 @@
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white border border-gray-300 shadow-sm sm:rounded-lg p-6">
+            
             {{-- En-tête avec Titre et Bouton --}}
             <div class="flex justify-between items-center mb-6 border-b pb-4 border-gray-300">
                 <h2 class="text-2xl font-bold text-gray-800">Transactions</h2>
@@ -13,20 +14,30 @@
                 </a>
             </div>
 
-            {{-- Alertes --}}
-            @if(session('success'))
-                <div class="bg-green-100 border border-green-500 text-green-700 px-4 py-3 rounded-md shadow-md mb-4">
-                    {{ session('success') }}
+            {{-- Affichage des Balances des Produits --}}
+           {{-- Affichage des Balances des Produits --}}
+<div class="mb-6">
+    <h3 class="text-lg font-semibold text-gray-700 mb-4">Balances des Produits</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        @foreach($produits as $index => $produit)
+            <div class="p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between" 
+                 style="background-color: {{ ['#e0f7fa', '#ffebee', '#fff3e0', '#e8f5e9'][$index % 4] }}">
+                
+                <div>
+                    <h4 class="text-base font-semibold text-gray-800">{{ $produit->nom_prod }}</h4>
+                    <p class="text-sm text-gray-500">Balance Actuelle</p>
                 </div>
-            @endif
 
-            @if(session('error'))
-                <div class="bg-red-100 border border-red-500 text-red-700 px-4 py-3 rounded-md shadow-md mb-4">
-                    {{ session('error') }}
+                <div class="text-lg font-bold text-gray-900">
+                    {{ number_format($produit->balance, 0, ',', ' ') }} FCFA
                 </div>
-            @endif
+            </div>
+        @endforeach
+    </div>
+</div>
 
-            <!-- Onglets des produits -->
+
+            {{-- Onglets des produits --}}
             <div class="mb-4 border-b border-gray-300">
                 <ul class="flex flex-wrap -mb-px text-sm font-medium text-center" id="produitTabs" role="tablist">
                     <li class="mr-2" role="presentation">
@@ -83,6 +94,15 @@ document.addEventListener('DOMContentLoaded', function() {
     let tabButtons = document.querySelectorAll('[role="tab"]');
     let tabPanels = document.querySelectorAll('[role="tabpanel"]');
 
+    // Activer le premier onglet et panneau par défaut
+    if (tabButtons.length > 0) {
+        tabButtons[0].classList.add('border-b-2', 'border-blue-500', 'text-blue-600');
+        tabButtons[0].setAttribute('aria-selected', 'true');
+    }
+    if (tabPanels.length > 0) {
+        tabPanels[0].classList.remove('hidden');
+    }
+
     tabButtons.forEach(button => {
         button.addEventListener('click', function() {
             // Désactiver tous les onglets
@@ -108,6 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
 </script>
 @endpush
 @endsection

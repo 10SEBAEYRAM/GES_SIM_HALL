@@ -1,88 +1,129 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="py-16 bg-gray-50">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg p-8 border border-gray-300">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800">Détails de la Transaction</h2>
-                <a href="{{ route('transactions.index') }}" 
-                   class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition duration-300 transform hover:scale-105">
-                    Retour
-                </a>
+<div class="min-h-screen bg-gray-100 py-8 sm:py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+            <!-- En-tête -->
+            <div class="p-6 sm:p-8 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Détails de la Transaction</h2>
+                    <a href="{{ route('transactions.index') }}" 
+                       class="inline-flex items-center px-4 py-2 bg-indigo-600 text-sm font-semibold text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Retour à la liste
+                    </a>
+                </div>
             </div>
 
-            <!-- Tableau des détails de la transaction -->
-            <div class="overflow-x-auto bg-white shadow-2xl rounded-lg">
-                <table class="min-w-full table-auto border-collapse border border-gray-400">
-                    <thead>
-                        <tr class="bg-indigo-50 text-indigo-700 border-b border-gray-400">
-                            <th class="px-8 py-5 text-left font-semibold text-lg border-r border-gray-400">Catégorie</th>
-                            <th class="px-8 py-5 text-left font-semibold text-lg border-r border-gray-400">Informations</th>
-                            <th class="px-8 py-5 text-left font-semibold text-lg border-r border-gray-400">Catégorie</th>
-                            <th class="px-8 py-5 text-left font-semibold text-lg border-r border-gray-400">Informations</th>
-                            <th class="px-8 py-5 text-left font-semibold text-lg border-r border-gray-400">Catégorie</th>
-                            <th class="px-8 py-5 text-left font-semibold text-lg">Informations</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="transition duration-300 ease-in-out hover:bg-indigo-100 border-b border-gray-400">
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Date/Heure</td>
-                            <td class="px-8 py-4 font-medium border-r border-gray-400">{{ $transaction->created_at->format('d/m/Y H:i:s') }}</td>
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Produit</td>
-                            <td class="px-8 py-4 font-medium border-r border-gray-400">{{ $transaction->produit->nom_prod }}</td>
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Opérateur</td>
-                            <td class="px-8 py-4 font-medium">{{ $transaction->user->nom_util }} {{ $transaction->user->prenom_util }}</td>
-                        </tr>
-                        <tr class="transition duration-300 ease-in-out hover:bg-indigo-100 border-b border-gray-400">
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Type</td>
-                            <td class="px-8 py-4 font-medium border-r border-gray-400">{{ $transaction->typeTransaction->nom_type_transa }}</td>
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Commission</td>
-                            <td class="px-8 py-4 font-medium border-r border-gray-400">{{ number_format($transaction->commission_appliquee, 0, ',', ' ') }} FCFA</td>
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Montant</td>
-                            <td class="px-8 py-4 font-medium">{{ number_format($transaction->montant_trans, 0, ',', ' ') }} FCFA</td>
-                        </tr>
-                        <tr class="transition duration-300 ease-in-out hover:bg-indigo-100 border-b border-gray-400">
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Solde Avant</td>
-                            <td class="px-8 py-4 font-medium border-r border-gray-400">{{ number_format($transaction->solde_avant, 0, ',', ' ') }} FCFA</td>
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Solde Après</td>
-                            <td class="px-8 py-4 font-medium border-r border-gray-400">
-                                @if($transaction->typeTransaction->nom_type_transa === 'Dépôt')
-                                    {{ number_format($transaction->solde_avant + $transaction->montant_trans + $transaction->commission_appliquee, 0, ',', ' ') }} FCFA
-                                @elseif($transaction->typeTransaction->nom_type_transa === 'Retrait')
-                                    {{ number_format($transaction->solde_avant - $transaction->montant_trans + $transaction->commission_appliquee, 0, ',', ' ') }} FCFA
-                                @else
-                                    {{ number_format($transaction->solde_avant + $transaction->commission_appliquee, 0, ',', ' ') }} FCFA
-                                @endif
-                            </td>
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Bénéficiaire</td>
-                            <td class="px-8 py-4 font-medium">{{ $transaction->num_beneficiaire }}</td>
-                        </tr>
-                        <tr class="transition duration-300 ease-in-out hover:bg-indigo-100 border-b border-gray-400">
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Solde Caisse Avant</td>
-                            <td class="px-8 py-4 font-medium border-r border-gray-400">{{ number_format($transaction->solde_caisse_avant, 0, ',', ' ') }} FCFA</td>
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Solde Caisse Après</td>
-                            <td class="px-8 py-4 font-medium border-r border-gray-400">
-                                @if($transaction->typeTransaction->nom_type_transa === 'Dépôt')
-                                    {{ number_format($transaction->solde_caisse_avant + $transaction->montant_trans, 0, ',', ' ') }} FCFA
-                                @elseif($transaction->typeTransaction->nom_type_transa === 'Retrait')
-                                    {{ number_format($transaction->solde_caisse_avant - $transaction->montant_trans, 0, ',', ' ') }} FCFA
-                                @else
-                                    {{ number_format($transaction->solde_caisse_avant + $transaction->commission_appliquee, 0, ',', ' ') }} FCFA
-                                @endif
-                            </td>
-                            <td class="px-8 py-4 text-gray-600 border-r border-gray-400">Statut</td>
-                            <td class="px-8 py-4">
-                                <span class="px-4 py-2 inline-flex text-sm leading-5 font-semibold rounded-full
-                                    @if($transaction->statut === 'COMPLETE') bg-green-100 text-green-800
-                                    @elseif($transaction->statut === 'ANNULE') bg-red-100 text-red-800
-                                    @else bg-yellow-100 text-yellow-800 @endif">
-                                    {{ $transaction->statut }}
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Corps -->
+            <div class="px-4 sm:px-6 lg:px-8 py-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate__animated animate__fadeIn">
+                    
+                    <!-- Date et Opérateur -->
+                    <div class="bg-yellow-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Date/Heure</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->created_at->format('d/m/Y H:i:s') }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Opérateur</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->user->nom_util }} {{ $transaction->user->prenom_util }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Informations de transaction -->
+                    <div class="bg-blue-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Type de Transaction</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->typeTransaction->nom_type_transa }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Produit</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->produit->nom_prod }}</p>
+                        </div>
+                    </div>
+
+                    <!-- Montants -->
+                    <div class="bg-green-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Montant</h3>
+                            <p class="mt-2 text-lg font-bold text-gray-900">{{ number_format($transaction->montant_trans, 0, ',', ' ') }} FCFA</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Commission</h3>
+                            <p class="mt-2 text-base font-semibold text-indigo-600">{{ number_format($transaction->commission_appliquee, 0, ',', ' ') }} FCFA</p>
+                        </div>
+                    </div>
+
+                    <!-- Statut et Motif -->
+                    <div class="bg-purple-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Statut</h3>
+                            <span class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                                @if($transaction->statut === 'COMPLETE') bg-green-200 text-green-800
+                                @elseif($transaction->statut === 'ANNULE') bg-red-200 text-red-800
+                                @else bg-yellow-200 text-yellow-800 @endif">
+                                {{ $transaction->statut }}
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Motif</h3>
+                            <p class="mt-2 text-base text-gray-900">{{ $transaction->motif ?: 'Aucun motif spécifié' }}</p>
+                        </div>
+                    </div>
+
+                                            <!-- Solde Produit Avant et Après -->
+                        <div class="bg-red-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500">Solde Avant</h3>
+                                <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->solde_avant, 0, ',', ' ') }} FCFA</p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500">Solde Après</h3>
+                                <p class="mt-2 text-base font-semibold text-gray-900">
+                                    @if($transaction->typeTransaction->nom_type_transa === 'Dépôt')
+                                        {{ number_format($transaction->solde_avant - $transaction->montant_trans + $transaction->commission_appliquee, 0, ',', ' ') }}
+                                    @elseif($transaction->typeTransaction->nom_type_transa === 'Retrait')
+                                        {{ number_format($transaction->solde_avant + $transaction->montant_trans + $transaction->commission_appliquee, 0, ',', ' ') }}
+                                    @else
+                                        {{ number_format($transaction->solde_avant + $transaction->commission_appliquee, 0, ',', ' ') }}
+                                    @endif
+                                    FCFA
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Solde Caisse Avant et Après -->
+                        <div class="bg-indigo-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500">Solde Caisse Avant</h3>
+                                <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->solde_caisse_avant, 0, ',', ' ') }} FCFA</p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500">Solde Caisse Après</h3>
+                                <p class="mt-2 text-base font-semibold text-gray-900">
+                                    @if($transaction->typeTransaction->nom_type_transa === 'Dépôt')
+                                        {{ number_format($transaction->solde_caisse_avant + $transaction->montant_trans, 0, ',', ' ') }}
+                                    @elseif($transaction->typeTransaction->nom_type_transa === 'Retrait')
+                                        {{ number_format($transaction->solde_caisse_avant - $transaction->montant_trans, 0, ',', ' ') }}
+                                    @else
+                                        {{ number_format($transaction->solde_caisse_avant + $transaction->commission_appliquee, 0, ',', ' ') }}
+                                    @endif
+                                    FCFA
+                                </p>
+                            </div>
+                        </div>
+
+
+                    <!-- Bénéficiaire -->
+                    <div class="bg-teal-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                        <h3 class="text-sm font-medium text-gray-500">Bénéficiaire</h3>
+                        <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->num_beneficiaire }}</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

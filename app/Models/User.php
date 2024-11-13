@@ -12,21 +12,9 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    protected $primaryKey = 'id_util';  // Définir la clé primaire si ce n'est pas 'id'
+    protected $table = 'users';         // Table associée
 
-    protected $primaryKey = 'id_util';
-
-    /**
-     * Définition de la table associée à ce modèle.
-     *
-     * @var string
-     */
-    protected $table = 'users'; 
-
-    /**
-     * Les attributs qui peuvent être assignés en masse.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'nom_util',
         'prenom_util',
@@ -34,66 +22,64 @@ class User extends Authenticatable
         'num_util',
         'adress_util',
         'password',
-        'type_users_id'
+        'type_users_id',   // Clé étrangère vers TypeUser
     ];
 
-    /**
-     * Les attributs qui doivent être cachés pour les tableaux.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Relation avec le modèle TypeUser.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
-     */
-    public function typeUser()
-    {
-        return $this->belongsTo(TypeUser::class, 'type_users_id');
-    }
-
-    /**
-     * Relation avec le modèle Transaction.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany
-     */
-    public function transactions()
-    {
-        return $this->hasMany(Transaction::class, 'user_id');
-    }
-
-    /**
-     * Attribut personnalisé pour obtenir le nom complet.
-     *
-     * @return string
-     */
-    public function getNomCompletAttribute()
-    {
-        return "{$this->nom_util} {$this->prenom_util}";
-    }
-
-    /**
-     * Les attributs qui doivent être castés.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
     /**
+     * Relation avec le modèle TypeUser.
+     */
+    public function typeUser()
+    {
+        return $this->belongsTo(TypeUser::class, 'type_users_id', 'id_type_users');  // Clé étrangère et clé primaire explicites
+    }
+
+    /**
+     * Relation avec le modèle Transaction.
+     */
+    public function transactions()
+    {
+        return $this->hasMany(Transaction::class, 'user_id', 'id_util');  // Clé étrangère et clé primaire explicitement définies
+    }
+
+    /**
+     * Attribut personnalisé pour obtenir le nom complet de l'utilisateur.
+     */
+    public function getNomCompletAttribute()
+    {
+        return "{$this->nom_util} {$this->prenom_util}";  // Retourne le nom complet
+    }
+
+    /**
      * Retourne le nom de l'identifiant utilisé pour l'authentification.
-     *
-     * @return string
      */
     public function getAuthIdentifierName()
     {
-        return 'email_util';
+        return 'email_util';  // Utilise l'email pour l'authentification
+    }
+
+    /**
+     * Retourne le mot de passe pour l'utilisateur.
+     */
+    public function getAuthPassword()
+    {
+        return $this->password;  // Retourne le mot de passe haché de l'utilisateur
+    }
+
+    /**
+     * Retourne l'identifiant pour l'utilisateur.
+     */
+    public function getAuthIdentifier()
+    {
+        return $this->{$this->getAuthIdentifierName()};  // Utilise l'email comme identifiant pour l'utilisateur
     }
 }
