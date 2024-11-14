@@ -123,6 +123,7 @@
                         <h3 class="text-sm font-medium text-gray-500">Bénéficiaire</h3>
                         <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->num_beneficiaire }}</p>
                     </div>
+                    
                 </div>
             </div>
         </div>
