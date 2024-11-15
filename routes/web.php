@@ -20,16 +20,21 @@ Route::middleware(['auth'])->group(function () {
     // Gestion des utilisateurs
     Route::resource('users', UserController::class);
 
-    // Gestion des transactions
+    // Gestion des transactions avec routes supplémentaires
     Route::resource('transactions', TransactionController::class);
     Route::patch('transactions/{id}/update-status', [TransactionController::class, 'updateStatus'])
         ->name('transactions.updateStatus');
-        Route::get('transactions/search', [TransactionController::class, 'search'])->name('transactions.search');
-        Route::get('transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
-        Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
-
+    Route::get('transactions/search', [TransactionController::class, 'search'])->name('transactions.search');
+    Route::get('transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
     Route::get('/transactions/get-commission', [TransactionController::class, 'getCommission'])
         ->name('transactions.get-commission');
+
+    // Gestion des produits
+    Route::resource('produits', ProduitController::class)->except(['update']);
+    Route::put('/produits/{id_prod}', [ProduitController::class, 'update'])->name('produits.update');
+
+    // Gestion de la grille tarifaire
+    Route::resource('grille-tarifaires', GrilleTarifaireController::class);
 
     // Gestion du profil
     Route::controller(ProfileController::class)->group(function () {
@@ -39,12 +44,8 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Autres ressources
-    Route::resources([
-        'type-transactions' => TypeTransactionController::class,
-        'produits' => ProduitController::class,
-        'grille-tarifaires' => GrilleTarifaireController::class,
-        'caisses' => CaisseController::class,
-    ]);
+    Route::resource('type-transactions', TypeTransactionController::class);
+    Route::resource('caisses', CaisseController::class);
 });
 
 // Routes d'authentification

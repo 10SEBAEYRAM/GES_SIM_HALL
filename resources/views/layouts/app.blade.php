@@ -14,11 +14,9 @@
 
     <!-- Styles et Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @stack('scripts')
 </head>
 <body class="font-sans antialiased bg-gray-100">
     <div class="min-h-screen flex">
-        
         <!-- Sidebar avec largeur réduite -->
         <aside class="w-56 bg-white shadow-lg p-6 fixed inset-y-0">
             @include('layouts.navigation') <!-- Sidebar Navigation -->
@@ -41,5 +39,8 @@
             </main>
         </div>
     </div>
+
+    <!-- Déplacé @stack('scripts') ici à la fin du body -->
+    @stack('scripts')
 </body>
 </html>

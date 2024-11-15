@@ -17,11 +17,11 @@
             @endif
 
             <form action="{{ route('grille-tarifaires.store') }}" method="POST">
-                @csrf
+          @csrf
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Produit</label>
-                    <select name="produit_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                    <label class="block text-sm font-medium text-gray-700" for="produit_id">Produit</label>
+                    <select name="produit_id" id="produit_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                         <option value="">Sélectionnez un produit</option>
                         @foreach($produits as $produit)
                             <option value="{{ $produit->id_prod }}" {{ old('produit_id') == $produit->id_prod ? 'selected' : '' }}>
@@ -32,33 +32,29 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Montant Minimum</label>
-                    <input type="number" name="montant_min" value="{{ old('montant_min') }}" 
-                           step="1" min="0"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                    <label class="block text-sm font-medium text-gray-700" for="montant_min">Montant Minimum</label>
+                    <input type="number" id="montant_min" name="montant_min" value="{{ old('montant_min') }}" step="1" min="0"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Montant Maximum</label>
-                    <input type="number" name="montant_max" value="{{ old('montant_max') }}" 
-                           step="1" min="0"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                    <label class="block text-sm font-medium text-gray-700" for="montant_max">Montant Maximum</label>
+                    <input type="number" id="montant_max" name="montant_max" value="{{ old('montant_max') }}" step="1" min="0"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700">Commission</label>
-                    <input type="number" name="commission_grille_tarifaire" value="{{ old('commission_grille_tarifaire') }}" 
-                           step="1" min="0"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                    <label class="block text-sm font-medium text-gray-700" for="commission_grille_tarifaire">Commission</label>
+                    <input type="number" id="commission_grille_tarifaire" name="commission_grille_tarifaire" value="{{ old('commission_grille_tarifaire') }}"
+                        step="1" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                 </div>
 
                 <div class="flex justify-end gap-4">
-                    <a href="{{ route('grille-tarifaires.index') }}" 
-                       class="bg-gray-500 text-white px-4 py-2 rounded">Annuler</a>
-                    <button type="submit" 
-                            class="bg-blue-500 text-white px-4 py-2 rounded">Créer</button>
+                    <a href="{{ route('grille-tarifaires.index') }}" class="bg-gray-500 text-white px-4 py-2 rounded">Annuler</a>
+                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Créer</button>
                 </div>
             </form>
+
         </div>
     </div>
 </div>

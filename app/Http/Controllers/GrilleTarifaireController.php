@@ -23,14 +23,22 @@ class GrilleTarifaireController extends Controller
 
     public function store(Request $request)
     {
+        \Log::info('Données reçues :', $request->all()); // Vérifie que les données arrivent
+    
         try {
+            // Valider les données
             $validated = $request->validate([
                 'produit_id' => 'required|exists:produits,id_prod',
                 'montant_min' => 'required|numeric|min:0',
                 'montant_max' => 'required|numeric|gt:montant_min',
-                'commission_grille_tarifaire' => 'required|numeric|min:0'
+                'commission_grille_tarifaire' => 'required|numeric|min:0',
             ]);
-
+    
+            // Vérifier que le montant_max est bien supérieur au montant_min
+            if ($validated['montant_max'] <= $validated['montant_min']) {
+                return back()->withInput()->with('error', 'Le montant maximum doit être supérieur au montant minimum.');
+            }
+    
             // Vérifier si une grille tarifaire existe déjà pour cette plage
             $exists = GrilleTarifaire::where('produit_id', $validated['produit_id'])
                 ->where(function($query) use ($validated) {
@@ -38,25 +46,27 @@ class GrilleTarifaireController extends Controller
                         ->orWhereBetween('montant_max', [$validated['montant_min'], $validated['montant_max']]);
                 })
                 ->exists();
-
+    
             if ($exists) {
                 return back()
                     ->withInput()
                     ->with('error', 'Une grille tarifaire existe déjà pour cette plage de montants.');
             }
-
+    
+            // Créer la grille tarifaire
             GrilleTarifaire::create($validated);
-
+    
             return redirect()
                 ->route('grille-tarifaires.index')
                 ->with('success', 'Grille tarifaire créée avec succès.');
         } catch (\Exception $e) {
+            \Log::error('Erreur lors de la création de la grille tarifaire : ' . $e->getMessage());
             return back()
                 ->withInput()
                 ->with('error', 'Une erreur est survenue lors de la création de la grille tarifaire.');
         }
     }
-
+    
     public function edit($id)
     {
         $grilleTarifaire = GrilleTarifaire::findOrFail($id);

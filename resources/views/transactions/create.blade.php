@@ -97,8 +97,7 @@
                                    name="motif[]" 
                                    value="transfert"
                                    class="motif-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                   {{ in_array('transfert', old('motif', [])) ? 'checked' : '' }}
-                                   onclick="toggleOtherMotifs(this)">
+                                   {{ in_array('transfert', old('motif', [])) ? 'checked' : '' }}>
                             <span class="ml-2">Transfert</span>
                         </label>
                         <label class="inline-flex items-center">
@@ -106,8 +105,7 @@
                                    name="motif[]" 
                                    value="paiement_ceet"
                                    class="motif-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                   {{ in_array('paiement_ceet', old('motif', [])) ? 'checked' : '' }}
-                                   onclick="toggleOtherMotifs(this)">
+                                   {{ in_array('paiement_ceet', old('motif', [])) ? 'checked' : '' }}>
                             <span class="ml-2">Paiement CEET</span>
                         </label>
                         <label class="inline-flex items-center">
@@ -115,25 +113,29 @@
                                    name="motif[]" 
                                    value="paiement_canal"
                                    class="motif-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                   {{ in_array('paiement_canal', old('motif', [])) ? 'checked' : '' }}
-                                   onclick="toggleOtherMotifs(this)">
+                                   {{ in_array('paiement_canal', old('motif', [])) ? 'checked' : '' }}>
                             <span class="ml-2">Paiement Canal+</span>
                         </label>
                     </div>
                 </div>
 
                 <!-- Frais de service -->
-                <div class="mb-4" id="fraisServiceContainer" style="display: block;">
-                    <label for="frais_service" class="block text-sm font-medium text-gray-700">Frais de service</label>
-                    <input type="number" name="frais_service" id="frais_service" value="{{ old('frais_service') }}" 
-                        step="0.01" min="0" 
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" 
-                        disabled>
-                </div>
-
-                <!-- Message d'information (si applicable) -->
-                <div id="fraisServiceMessage" style="display:none;" class="text-sm text-red-600 mt-2">
-                    Les frais de service ne sont pas applicables pour un transfert.
+                <div class="space-y-2" id="fraisServiceContainer">
+                    <label for="frais_service" 
+                           id="fraisServiceLabel"
+                           class="block text-sm font-medium text-gray-700">
+                        Frais de service
+                    </label>
+                    <input type="number" 
+                           name="frais_service" 
+                           id="frais_service" 
+                           value="{{ old('frais_service') }}" 
+                           step="0.01" 
+                           min="0" 
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <div id="fraisServiceMessage" class="text-sm text-red-600 mt-2" style="display:none;">
+                        Les frais de service ne sont pas applicables pour un transfert.
+                    </div>
                 </div>
 
                 <!-- Boutons -->
@@ -157,53 +159,63 @@
 document.addEventListener('DOMContentLoaded', function() {
     const fraisServiceContainer = document.getElementById('fraisServiceContainer');
     const fraisServiceInput = document.getElementById('frais_service');
+    const fraisServiceLabel = document.getElementById('fraisServiceLabel');
     const motifCheckboxes = document.querySelectorAll('.motif-checkbox');
-    const fraisServiceMessage = document.getElementById('fraisServiceMessage'); // Message informatif
+    const fraisServiceMessage = document.getElementById('fraisServiceMessage');
 
-    // Fonction pour gérer la sélection des motifs
-    function toggleOtherMotifs(selectedCheckbox) {
-        // Si un motif est sélectionné, désactiver les autres
+    function handleMotifChange(selectedCheckbox) {
+        // Désactiver les autres checkboxes
         motifCheckboxes.forEach(checkbox => {
-            if (checkbox !== selectedCheckbox) {
-                checkbox.disabled = selectedCheckbox.checked;
+            if (checkbox !== selectedCheckbox && selectedCheckbox.checked) {
+                checkbox.checked = false;
+                checkbox.disabled = true;
+            } else {
+                checkbox.disabled = false;
             }
         });
-        
-        // Mettre à jour l'affichage des frais de service en fonction du motif sélectionné
-        toggleFraisService();
+
+        // Mettre à jour l'état des frais de service
+        updateFraisServiceState();
     }
 
-    // Fonction pour activer/désactiver le champ des frais de service
-    function toggleFraisService() {
+    function updateFraisServiceState() {
         const transfertChecked = document.querySelector('input[value="transfert"]').checked;
         const ceetChecked = document.querySelector('input[value="paiement_ceet"]').checked;
         const canalChecked = document.querySelector('input[value="paiement_canal"]').checked;
 
-        // Si 'Transfert' est coché, cacher et désactiver les frais de service
-        if (transfertChecked) {
-            fraisServiceInput.disabled = true;  // Désactiver le champ
-            fraisServiceContainer.style.display = 'none';  // Cacher le champ
-            fraisServiceMessage.style.display = 'block';  // Afficher message
-        } else if (ceetChecked || canalChecked) {
-            fraisServiceInput.disabled = false;  // Activer le champ
-            fraisServiceContainer.style.display = 'block';  // Afficher le champ
-            fraisServiceMessage.style.display = 'none'; // Cacher message
+        if (ceetChecked || canalChecked) {
+            // Activer pour CEET ou Canal+
+            fraisServiceContainer.style.display = 'block';
+            fraisServiceInput.disabled = false;
+            fraisServiceInput.classList.remove('bg-gray-100');
+            fraisServiceLabel.classList.remove('text-gray-400');
+            fraisServiceMessage.style.display = 'none';
+        } else if (transfertChecked) {
+            // Désactiver pour transfert
+            fraisServiceContainer.style.display = 'block';
+            fraisServiceInput.disabled = true;
+            fraisServiceInput.classList.add('bg-gray-100');
+            fraisServiceLabel.classList.add('text-gray-400');
+            fraisServiceMessage.style.display = 'block';
         } else {
-            fraisServiceInput.disabled = true;  // Désactiver le champ
-            fraisServiceContainer.style.display = 'none';  // Cacher le champ
-            fraisServiceMessage.style.display = 'none'; // Cacher message
+            // État par défaut
+            fraisServiceContainer.style.display = 'block';
+            fraisServiceInput.disabled = true;
+            fraisServiceInput.classList.add('bg-gray-100');
+            fraisServiceLabel.classList.add('text-gray-400');
+            fraisServiceMessage.style.display = 'none';
         }
     }
 
-    // Ajouter les écouteurs d'événements sur les cases à cocher
+    // Ajouter les écouteurs d'événements
     motifCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            toggleOtherMotifs(this);
+            handleMotifChange(this);
         });
     });
 
-    // Vérifier l'état initial au chargement de la page
-    toggleFraisService();
+    // Initialiser l'état
+    updateFraisServiceState();
 });
 </script>
 @endpush
