@@ -118,22 +118,7 @@
 
 
         <!-- Main Content Area -->
-        <div class="flex-1 overflow-auto p-6 bg-gray-50">
-            @yield('content')
-
-            {{-- Alertes --}}
-            @if(session()->has('success'))
-                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session()->has('error'))
-                <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
-                    {{ session('error') }}
-                </div>
-            @endif
-        </div>
+       
     </div>
 </body>
 </html>

@@ -73,6 +73,10 @@
                             <h3 class="text-sm font-medium text-gray-500">Motif</h3>
                             <p class="mt-2 text-base text-gray-900">{{ $transaction->motif ?: 'Aucun motif spécifié' }}</p>
                         </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">frais service</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->frais_service, 0, ',', ' ') }} FCFA</p>
+                        </div>
                     </div>
 
                                             <!-- Solde Produit Avant et Après -->

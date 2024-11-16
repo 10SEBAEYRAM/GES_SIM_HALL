@@ -24,6 +24,7 @@ class Transaction extends Model
         'user_id',
         'montant_trans',
         'commission_appliquee',
+        'frais_service',    
         'num_beneficiaire',
         'statut',
         'solde_avant',

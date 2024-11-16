@@ -26,6 +26,7 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
+        
         try {
             DB::beginTransaction();
 
@@ -34,11 +35,12 @@ class TransactionController extends Controller
             'produit_id' => 'required|exists:produits,id_prod',
             'montant_trans' => 'required|numeric|min:0',
             'num_beneficiaire' => 'required|string|max:255',
+            'frais_service' => 'required|numeric|min:0',
             'motif' => 'required|array',
             'user_id' => 'required|exists:users,id_util',
         ]);
             
-
+       
             $produit = Produit::findOrFail($validated['produit_id']);
             $typeTransaction = TypeTransaction::findOrFail($validated['type_transaction_id']);
 
@@ -70,6 +72,7 @@ class TransactionController extends Controller
                 'user_id' => $user,
                 'montant_trans' => $validated['montant_trans'],
                 'commission_appliquee' => $commission,
+                'frais_service' => $validated['frais_service'],
                 'num_beneficiaire' => $validated['num_beneficiaire'],
                 'motif' => implode(',', $validated['motif']),
                 'statut' => 'COMPLETE',
