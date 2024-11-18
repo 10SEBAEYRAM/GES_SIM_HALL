@@ -36,9 +36,9 @@
                 @endif
             </div>
 
-            {{-- Affichage des Balances des Produits --}}
+           
            {{-- Affichage des Balances des Produits --}}
-<div class="mb-6">
+           <div class="mb-6">
     <h3 class="text-lg font-semibold text-gray-700 mb-4">Balances des Produits</h3>
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         @foreach($produits as $index => $produit)
@@ -57,6 +57,27 @@
         @endforeach
     </div>
 </div>
+
+<!-- Affichage du solde de la caisse -->
+<div class="mt-6">
+    <h3 class="text-lg font-semibold text-gray-700 mb-4">Solde des Caisses</h3>
+
+    @foreach($caisses as $caisse)
+        <div class="p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between" 
+             style="background-color: #f1f5f9">
+            <div>
+                <h4 class="text-base font-semibold text-gray-800">{{ $caisse->nom_caisse }}</h4>
+                <p class="text-sm text-gray-500">Solde actuel de la caisse</p>
+            </div>
+
+            <div class="text-lg font-bold text-gray-900">
+                {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} FCFA
+            </div>
+        </div>
+    @endforeach
+</div>
+
+
 
 
             {{-- Onglets des produits --}}

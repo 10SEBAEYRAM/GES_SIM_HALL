@@ -26,6 +26,8 @@ Route::middleware(['auth'])->group(function () {
         ->name('transactions.updateStatus');
     Route::get('transactions/search', [TransactionController::class, 'search'])->name('transactions.search');
     Route::get('transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
+    Route::get('transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
+
     Route::get('/transactions/get-commission', [TransactionController::class, 'getCommission'])
         ->name('transactions.get-commission');
 

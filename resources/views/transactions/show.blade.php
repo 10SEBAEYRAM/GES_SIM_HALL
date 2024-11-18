@@ -21,9 +21,8 @@
             <!-- Corps -->
             <div class="px-4 sm:px-6 lg:px-8 py-6">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate__animated animate__fadeIn">
-                    
                     <!-- Date et Opérateur -->
-                    <div class="bg-yellow-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                    <div class="bg-yellow-100 rounded-xl p-6 space-y-4">
                         <div>
                             <h3 class="text-sm font-medium text-gray-500">Date/Heure</h3>
                             <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->created_at->format('d/m/Y H:i:s') }}</p>
@@ -35,7 +34,7 @@
                     </div>
 
                     <!-- Informations de transaction -->
-                    <div class="bg-blue-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                    <div class="bg-blue-100 rounded-xl p-6 space-y-4">
                         <div>
                             <h3 class="text-sm font-medium text-gray-500">Type de Transaction</h3>
                             <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->typeTransaction->nom_type_transa }}</p>
@@ -47,7 +46,7 @@
                     </div>
 
                     <!-- Montants -->
-                    <div class="bg-green-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                    <div class="bg-green-100 rounded-xl p-6 space-y-4">
                         <div>
                             <h3 class="text-sm font-medium text-gray-500">Montant</h3>
                             <p class="mt-2 text-lg font-bold text-gray-900">{{ number_format($transaction->montant_trans, 0, ',', ' ') }} FCFA</p>
@@ -59,7 +58,7 @@
                     </div>
 
                     <!-- Statut et Motif -->
-                    <div class="bg-purple-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                    <div class="bg-purple-100 rounded-xl p-6 space-y-4">
                         <div>
                             <h3 class="text-sm font-medium text-gray-500">Statut</h3>
                             <span class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
@@ -73,61 +72,45 @@
                             <h3 class="text-sm font-medium text-gray-500">Motif</h3>
                             <p class="mt-2 text-base text-gray-900">{{ $transaction->motif ?: 'Aucun motif spécifié' }}</p>
                         </div>
+                        @if(in_array(strtolower($transaction->motif), ['paiement ceet', 'paiement canal+']))
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-500">Frais Service</h3>
+                                <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->frais_service, 0, ',', ' ') }} FCFA</p>
+                            </div>
+                        @endif
+
+
+                    </div>
+
+                    <!-- Solde Produit -->
+                    <div class="bg-red-100 rounded-xl p-6 space-y-4">
                         <div>
-                            <h3 class="text-sm font-medium text-gray-500">frais service</h3>
-                            <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->frais_service, 0, ',', ' ') }} FCFA</p>
+                            <h3 class="text-sm font-medium text-gray-500">Solde Avant</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->solde_avant, 0, ',', ' ') }} FCFA</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Solde Après</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->solde_apres, 0, ',', ' ') }} FCFA</p>
                         </div>
                     </div>
 
-                                            <!-- Solde Produit Avant et Après -->
-                        <div class="bg-red-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
-                            <div>
-                                <h3 class="text-sm font-medium text-gray-500">Solde Avant</h3>
-                                <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->solde_avant, 0, ',', ' ') }} FCFA</p>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-medium text-gray-500">Solde Après</h3>
-                                <p class="mt-2 text-base font-semibold text-gray-900">
-                                    @if($transaction->typeTransaction->nom_type_transa === 'Dépôt')
-                                        {{ number_format($transaction->solde_avant - $transaction->montant_trans + $transaction->commission_appliquee, 0, ',', ' ') }}
-                                    @elseif($transaction->typeTransaction->nom_type_transa === 'Retrait')
-                                        {{ number_format($transaction->solde_avant + $transaction->montant_trans + $transaction->commission_appliquee, 0, ',', ' ') }}
-                                    @else
-                                        {{ number_format($transaction->solde_avant + $transaction->commission_appliquee, 0, ',', ' ') }}
-                                    @endif
-                                    FCFA
-                                </p>
-                            </div>
+                    <!-- Solde Caisse -->
+                    <div class="bg-indigo-100 rounded-xl p-6 space-y-4">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Solde Caisse Avant</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->solde_caisse_avant, 0, ',', ' ') }} FCFA</p>
                         </div>
-
-                        <!-- Solde Caisse Avant et Après -->
-                        <div class="bg-indigo-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
-                            <div>
-                                <h3 class="text-sm font-medium text-gray-500">Solde Caisse Avant</h3>
-                                <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->solde_caisse_avant, 0, ',', ' ') }} FCFA</p>
-                            </div>
-                            <div>
-                                <h3 class="text-sm font-medium text-gray-500">Solde Caisse Après</h3>
-                                <p class="mt-2 text-base font-semibold text-gray-900">
-                                    @if($transaction->typeTransaction->nom_type_transa === 'Dépôt')
-                                        {{ number_format($transaction->solde_caisse_avant + $transaction->montant_trans, 0, ',', ' ') }}
-                                    @elseif($transaction->typeTransaction->nom_type_transa === 'Retrait')
-                                        {{ number_format($transaction->solde_caisse_avant - $transaction->montant_trans, 0, ',', ' ') }}
-                                    @else
-                                        {{ number_format($transaction->solde_caisse_avant + $transaction->commission_appliquee, 0, ',', ' ') }}
-                                    @endif
-                                    FCFA
-                                </p>
-                            </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Solde Caisse Après</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->solde_caisse_apres, 0, ',', ' ') }} FCFA</p>
                         </div>
-
+                    </div>
 
                     <!-- Bénéficiaire -->
-                    <div class="bg-teal-100 rounded-xl p-6 space-y-4 transition duration-300 transform hover:scale-105 hover:shadow-xl">
+                    <div class="bg-teal-100 rounded-xl p-6 space-y-4">
                         <h3 class="text-sm font-medium text-gray-500">Bénéficiaire</h3>
                         <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->num_beneficiaire }}</p>
                     </div>
-                    
                 </div>
             </div>
         </div>

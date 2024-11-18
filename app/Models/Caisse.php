@@ -10,13 +10,10 @@ class Caisse extends Model
     use HasFactory;
 
     // Si votre clé primaire n'est pas 'id'
-    protected $primaryKey = 'id_caisse';
-
-    // Si la clé primaire n'est pas auto-incrémentée, ajoutez ceci (si nécessaire)
-    public $incrementing = false;
-
-    // Si votre clé primaire n'est pas de type entier, par exemple si c'est une chaîne
-    protected $keyType = 'string';
+    protected $table = 'caisses'; // Associe ce modèle à la table "caisses"
+    protected $primaryKey = 'id_caisse'; // Spécifie que la clé primaire est "id_caisse"
+    public $incrementing = true; // Indique que la clé primaire est auto-incrémentée
+    protected $keyType = 'int'; // Type de la clé primaire
 
     protected $fillable = [
         'balance_caisse',

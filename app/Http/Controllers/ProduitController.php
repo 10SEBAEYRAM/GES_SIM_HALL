@@ -40,10 +40,10 @@ class ProduitController extends Controller
             $validated = $request->validate([
                 'nom_prod' => 'required|string|max:50|unique:produits',
                 'balance' => 'required|numeric|min:0',
-                'actif' => 'boolean',
+                'actif' => 'nullable|boolean',
             ]);
 
-            $validated['actif'] = (bool)$request->input('actif', false);
+            $validated['actif'] = $request->has('actif') ? filter_var($request->input('actif'), FILTER_VALIDATE_BOOLEAN) : false;
 
             Produit::create($validated);
 
@@ -53,7 +53,7 @@ class ProduitController extends Controller
         } catch (\Exception $e) {
             return back()
                 ->withInput()
-                ->with('error', 'Une erreur est survenue lors de la création du produit.');
+                ->with('error', 'Une erreur est survenue : ' . $e->getMessage());
         }
     }
 
@@ -84,10 +84,10 @@ class ProduitController extends Controller
             $validated = $request->validate([
                 'nom_prod' => 'required|string|max:50|unique:produits,nom_prod,' . $id . ',id_prod',
                 'balance' => 'required|numeric|min:0',
-                'actif' => 'boolean',
+                'actif' => 'nullable|boolean',
             ]);
 
-            $validated['actif'] = (bool) $request->input('actif', false);
+            $validated['actif'] = $request->has('actif') ? filter_var($request->input('actif'), FILTER_VALIDATE_BOOLEAN) : false;
 
             $produit->update($validated);
 
@@ -119,7 +119,7 @@ class ProduitController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->route('produits.index')
-                ->with('error', 'Une erreur est survenue lors de la suppression du produit.');
+                ->with('error', 'Une erreur est survenue lors de la suppression du produit : ' . $e->getMessage());
         }
     }
 }

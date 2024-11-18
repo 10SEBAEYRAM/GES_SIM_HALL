@@ -7,100 +7,126 @@ use App\Models\Produit;
 use App\Models\TypeTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Caisse;
+use Illuminate\Support\Facades\Log;
+
+
+
 
 class TransactionController extends Controller
 {
+
+   
     public function index()
     {
         $transactions = Transaction::with(['produit', 'typeTransaction', 'user'])->get();
         $produits = Produit::where('actif', true)->get();
-        return view('transactions.index', compact('transactions', 'produits'));
+        $caisses = Caisse::all(); 
+        return view('transactions.index', compact('transactions', 'produits', 'caisses'));
     }
 
     public function create()
     {
-        $produits = Produit::where('actif', true)->get();
-        $typeTransactions = TypeTransaction::all();
-        return view('transactions.create', compact('produits', 'typeTransactions'));
+        $caisses = Caisse::all(); 
+        $produits = Produit::where('actif', true)->get(); 
+        $typeTransactions = TypeTransaction::all(); 
+    
+        // Passe les données à la vue
+        return view('transactions.create', compact('caisses', 'produits', 'typeTransactions'));
     }
-
-    public function store(Request $request)
+    
+    public function store(Request $request) 
     {
-        
         try {
             DB::beginTransaction();
-
-            $validated = $request->validate([
-               'type_transaction_id' => 'required|exists:type_transactions,id_type_transa',
-            'produit_id' => 'required|exists:produits,id_prod',
-            'montant_trans' => 'required|numeric|min:0',
-            'num_beneficiaire' => 'required|string|max:255',
-            'frais_service' => 'required|numeric|min:0',
-            'motif' => 'required|array',
-            'user_id' => 'required|exists:users,id_util',
-        ]);
             
-       
+            // Validation des données
+            $validated = $request->validate([
+                'type_transaction_id' => 'required|exists:type_transactions,id_type_transa',
+                'produit_id' => 'required|exists:produits,id_prod',
+                'montant_trans' => 'required|numeric|min:0',
+                'num_beneficiaire' => 'required|string|max:255',
+                'frais_service' => 'required|numeric',
+                'motif' => 'required|array',
+                'user_id' => 'required|exists:users,id_util',
+                'id_caisse' => 'required|exists:caisses,id_caisse', // Modifié ici
+            ]);
+            
+            // Récupérer la caisse, produit et type de transaction
+            $caisse = Caisse::findOrFail($validated['id_caisse']);
+            
             $produit = Produit::findOrFail($validated['produit_id']);
+           
             $typeTransaction = TypeTransaction::findOrFail($validated['type_transaction_id']);
-
-            // Calcul de la commission
-            $commission = $produit->getCommissionForAmount($validated['montant_trans']);
-
+            
             // Calcul des soldes
-            $soldes = Transaction::calculerSoldes(
-                $validated['produit_id'], 
-                $validated['montant_trans'],
-                $typeTransaction->nom_type_transa
-            );
+            $commission = $produit->getCommissionForAmount($validated['montant_trans']);
+           
+            $solde_caisse_avant = $caisse->balance_caisse;
+           
+            $solde_produit_avant = $produit->balance;
+            
+          // Vérification de la transaction (Dépôt ou Retrait)
+          $solde_produit_apres = $typeTransaction->isDépôt()
+          ? ($solde_produit_avant - $validated['montant_trans'] + $commission) 
+          : ($solde_produit_avant + $validated['montant_trans'] + $commission); 
+      
+      dd($solde_produit_apres); // Affiche le solde produit après
+      
+// Calcul du solde caisse après
+$solde_caisse_apres = $typeTransaction->isDépôt()
+? ($solde_caisse_avant + $validated['montant_trans'] + ($validated['frais_service'] ?? 0)) // Dépôt: solde caisse + montant + frais de service
+: ($solde_caisse_avant - $validated['montant_trans']); // Retrait: solde caisse - montant - frais de service
 
 
-            // Vérification du solde suffisant pour les retraits
-            if ($typeTransaction->nom_type_transa === 'Retrait' && $soldes['solde_apres'] < 0) {
+
+            // Vérification du solde
+            if ($solde_caisse_apres < 0) {
                 return back()
                     ->withInput()
-                    ->with('error', 'Solde insuffisant pour effectuer cette transaction.');
+                    ->with('error', 'Solde insuffisant dans la caisse pour effectuer cette transaction.');
             }
-
-            // utilisateur connecté
-            $user = auth()->user()->id_util;
-
-
+            
+            // Enregistrement de la transaction
             $transaction = Transaction::create([
                 'type_transaction_id' => $validated['type_transaction_id'],
                 'produit_id' => $validated['produit_id'],
-                'user_id' => $user,
+                'user_id' => auth()->user()->id_util,
                 'montant_trans' => $validated['montant_trans'],
                 'commission_appliquee' => $commission,
                 'frais_service' => $validated['frais_service'],
                 'num_beneficiaire' => $validated['num_beneficiaire'],
                 'motif' => implode(',', $validated['motif']),
                 'statut' => 'COMPLETE',
-                'solde_avant' => $soldes['solde_avant'],
-                'solde_apres' => $soldes['solde_apres'],
-                'solde_caisse_avant' => 0, // À implémenter selon votre logique de caisse
-                'solde_caisse_apres' => 0  
+                'solde_avant' => $solde_produit_avant,
+                'solde_apres' => $solde_produit_apres,
+                'solde_caisse_avant' => $solde_caisse_avant,
+                'solde_caisse_apres' => $solde_caisse_apres,
+                'id_caisse' => $validated['id_caisse'], 
             ]);
-
-
-            // Mise à jour du solde du produit
-            $produit->updateBalance(
-                $validated['montant_trans'],
-                $typeTransaction->nom_type_transa
-            );
-
+            
+            // Mise à jour des soldes
+            $produit->update(['balance' => $solde_produit_apres]);
+            $caisse->update(['balance_caisse' => $solde_caisse_apres]);
+            
+            
             DB::commit();
-
+            
             return redirect()
                 ->route('transactions.index')
                 ->with('success', 'Transaction effectuée avec succès.');
+                
         } catch (\Exception $e) {
             DB::rollBack();
+            Log::error('Erreur lors de la création de la transaction : ' . $e->getMessage());
             return back()
                 ->withInput()
                 ->with('error', 'Une erreur est survenue lors de la création de la transaction.');
         }
     }
+    
+
+    
 
     public function show($id)
     {
@@ -132,31 +158,30 @@ class TransactionController extends Controller
         }
     }
 
-    // Exemple de logique dans TransactionController
+ 
 
 public function updateBalanceCaisse($transaction)
 {
-    // Récupérer le solde de la caisse avant la transaction
-    $solde_caisse_avant = $transaction->solde_caisse_avant;
+  
+    $solde_caisse_avant = $transaction->balance_caisse;
 
-    // Convertir le solde avant en nombre
     $solde_caisse_avant = (float) $solde_caisse_avant;
 
-    // Calcul du nouveau solde de la caisse après la transaction
     if ($transaction->typeTransaction->nom_type_transa === 'Dépôt') {
-        // Ajouter le montant du dépôt
+       
         $new_balance = $solde_caisse_avant + $transaction->montant_trans;
     } elseif ($transaction->typeTransaction->nom_type_transa === 'Retrait') {
-        // Soustraire le montant du retrait
+       
         $new_balance = $solde_caisse_avant - $transaction->montant_trans;
     } else {
-        // Autres types de transaction
+        
         $new_balance = $solde_caisse_avant;
     }
 
-    // Mettre à jour le solde de la caisse dans la base de données
-    $transaction->solde_caisse_apres = number_format($new_balance, 0, ',', ' '); // Formatage en chaîne
+   
+    $transaction->solde_caisse_apres = number_format($new_balance, 0, ',', ' '); 
     $transaction->save();
 }
+
 
 }

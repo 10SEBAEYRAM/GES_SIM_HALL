@@ -32,7 +32,7 @@ class Transaction extends Model
         'solde_caisse_avant',
         'solde_caisse_apres',
         'motif',
-        'id_caisse' // Assurez-vous que le champ caisse est inclus si nécessaire
+        'id_caisse' 
     ];
 
     protected $casts = [
@@ -134,9 +134,9 @@ class Transaction extends Model
         $type = $this->typeTransaction->nom_type_transa ?? '';
         
         if ($type === 'Dépôt') {
-            return $this->solde_avant - $this->montant_trans + $this->commission_appliquee;
-        } elseif ($type === 'Retrait') {
             return $this->solde_avant + $this->montant_trans + $this->commission_appliquee;
+        } elseif ($type === 'Retrait') {
+            return $this->solde_avant - $this->montant_trans - $this->commission_appliquee;
         }
         return $this->solde_avant + $this->commission_appliquee;
     }
@@ -146,9 +146,13 @@ class Transaction extends Model
         // Récupérer le solde de la caisse depuis la table `caisses`
         $caisse = Caisse::where('id_caisse', $this->id_caisse)->first();
 
+        if (!$caisse) {
+            return 0; // Si aucune caisse n'est trouvée, retournez 0
+        }
+
         // Utiliser la balance de la caisse avant la transaction
-        $solde_caisse_avant = $caisse ? $caisse->balance_caisse : 0;
-        
+        $solde_caisse_avant = $caisse->balance_caisse;
+
         $type = $this->typeTransaction->nom_type_transa ?? '';
 
         if ($type === 'Dépôt') {
@@ -157,6 +161,27 @@ class Transaction extends Model
             return $solde_caisse_avant - $this->montant_trans;
         }
         return $solde_caisse_avant + $this->commission_appliquee;
+    }
+
+    // Cette méthode met à jour le solde du produit après la transaction
+    public function updateSoldeProduit()
+    {
+        $produit = $this->produit; // On utilise la relation pour récupérer le produit
+        if ($produit) {
+            $produit->balance = $this->getSoldeApresCalcule();
+            $produit->save();
+        }
+    }
+
+    // Cette méthode met à jour le solde de la caisse après la transaction
+    public function updateSoldeCaisse()
+    {
+        $caisse = Caisse::where('id_caisse', $this->id_caisse)->first();
+
+        if ($caisse) {
+            $caisse->balance_caisse = $this->getSoldeCaisseApresCalcule();
+            $caisse->save();
+        }
     }
 
     // Vérifie si la transaction est complète
@@ -169,16 +194,5 @@ class Transaction extends Model
     public function isCancelled()
     {
         return $this->statut === self::STATUT_ANNULE;
-    }
-
-    // Met à jour le solde de la caisse après une transaction
-    public function updateSoldeCaisse()
-    {
-        $caisse = Caisse::where('id_caisse', $this->id_caisse)->first();
-
-        if ($caisse) {
-            $new_balance = $this->getSoldeCaisseApresCalcule();
-            $caisse->update(['balance_caisse' => $new_balance]);
-        }
     }
 }
