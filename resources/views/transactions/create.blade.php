@@ -39,21 +39,16 @@
                 </div>
 
                 <!-- Caisse -->
-                <!-- Caisse -->
-<div class="mb-4">
-    <label for="id_caisse" class="block text-sm font-medium text-gray-700">Sélectionner une Caisse</label>
-    <select id="id_caisse" 
-            name="id_caisse" 
-            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            required>
-        <option value="">-- Sélectionnez une caisse --</option>
-        @foreach($caisses as $caisse)
-            <option value="{{ $caisse->id_caisse }}" {{ old('id_caisse') == $caisse->id_caisse ? 'selected' : '' }}>
-                {{ $caisse->nom_caisse }} - {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} FCFA
-            </option>
-        @endforeach
-    </select>
-</div>
+                <div class="mb-4">
+                <label for="caisse_id" class="block text-sm font-medium text-gray-700">Sélectionner une Caisse</label>
+                <select id="caisse_id" name="caisse_id" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    @foreach($caisses as $caisse)
+                        <option value="{{ $caisse->id }}" {{ old('id_caisse') == $caisse->id ? 'selected' : '' }}>
+                            {{ $caisse->nom_caisse }} - {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} FCFA
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
 
 

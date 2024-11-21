@@ -47,12 +47,13 @@ class TransactionController extends Controller
                 'montant_trans' => 'required|numeric|min:0',
                 'num_beneficiaire' => 'required|string|max:255',
                 'frais_service' => 'required|numeric',
-                'motif' => 'required|array',
+                 'motif' => 'required|string|in:transfert,paiement_ceet,paiement_canal',
                 'user_id' => 'required|exists:users,id_util',
-                'id_caisse' => 'required|exists:caisses,id_caisse', // Modifié ici
+                'id_caisse' => 'required|exists:caisses,id_caisse',
             ]);
             
             // Récupérer la caisse, produit et type de transaction
+            
             $caisse = Caisse::findOrFail($validated['id_caisse']);
             
             $produit = Produit::findOrFail($validated['produit_id']);
@@ -75,9 +76,8 @@ class TransactionController extends Controller
       
 // Calcul du solde caisse après
 $solde_caisse_apres = $typeTransaction->isDépôt()
-? ($solde_caisse_avant + $validated['montant_trans'] + ($validated['frais_service'] ?? 0)) // Dépôt: solde caisse + montant + frais de service
-: ($solde_caisse_avant - $validated['montant_trans']); // Retrait: solde caisse - montant - frais de service
-
+? ($solde_caisse_avant + $validated['montant_trans'] + ($validated['frais_service'] ?? 0)) 
+: ($solde_caisse_avant - $validated['montant_trans']); 
 
 
             // Vérification du solde
@@ -90,7 +90,7 @@ $solde_caisse_apres = $typeTransaction->isDépôt()
             // Enregistrement de la transaction
             $transaction = Transaction::create([
                 'type_transaction_id' => $validated['type_transaction_id'],
-                'produit_id' => $validated['produit_id'],
+                'produit_id' => $validated['id_prod'],
                 'user_id' => auth()->user()->id_util,
                 'montant_trans' => $validated['montant_trans'],
                 'commission_appliquee' => $commission,
@@ -139,7 +139,7 @@ $solde_caisse_apres = $typeTransaction->isDépôt()
         try {
             $request->validate([
                 'produit_id' => 'required|exists:produits,id_prod',
-                'montant' => 'required|numeric|min:0',
+                'montant_trans' => 'required|numeric|min:0',
             ]);
 
             $produit = Produit::findOrFail($request->produit_id);
