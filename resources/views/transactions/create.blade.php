@@ -1,5 +1,4 @@
 @extends('layouts.app')
-
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -39,16 +38,21 @@
                 </div>
 
                 <!-- Caisse -->
-                <div class="mb-4">
-                <label for="caisse_id" class="block text-sm font-medium text-gray-700">Sélectionner une Caisse</label>
-                <select id="caisse_id" name="caisse_id" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                    @foreach($caisses as $caisse)
-                        <option value="{{ $caisse->id }}" {{ old('id_caisse') == $caisse->id ? 'selected' : '' }}>
-                            {{ $caisse->nom_caisse }} - {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} FCFA
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+                <!-- Caisse -->
+<div class="mb-4">
+    <label for="id_caisse" class="block text-sm font-medium text-gray-700">Sélectionner une Caisse</label>
+    <select id="id_caisse" 
+            name="id_caisse" 
+            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            required>
+        <option value="">-- Sélectionnez une caisse --</option>
+        @foreach($caisses as $caisse)
+            <option value="{{ $caisse->id_caisse }}" {{ old('id_caisse') == $caisse->id_caisse ? 'selected' : '' }}>
+                {{ $caisse->nom_caisse }} - {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} FCFA
+            </option>
+        @endforeach
+    </select>
+</div>
 
 
 
@@ -63,7 +67,7 @@
                         @foreach($produits as $produit)
                             <option value="{{ $produit->id_prod }}" 
                                     data-balance="{{ $produit->balance }}"
-                                    {{ old('produit_id') == $produit->id_prod ? 'selected' : '' }}>
+                                    {{ old('id_prod') == $produit->id_prod ? 'selected' : '' }}>
                                 {{ $produit->nom_prod }} (Solde: {{ number_format($produit->balance, 0, ',', ' ') }} FCFA)
                             </option>
                         @endforeach
@@ -103,35 +107,37 @@
                 </div>
 
                 <!-- Motifs -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">Motif de la Transaction</label>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" 
-                                   name="motif[]" 
-                                   value="transfert"
-                                   class="motif-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                   {{ in_array('transfert', old('motif', [])) ? 'checked' : '' }}>
-                            <span class="ml-2">Transfert</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" 
-                                   name="motif[]" 
-                                   value="paiement_ceet"
-                                   class="motif-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                   {{ in_array('paiement_ceet', old('motif', [])) ? 'checked' : '' }}>
-                            <span class="ml-2">Paiement CEET</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" 
-                                   name="motif[]" 
-                                   value="paiement_canal"
-                                   class="motif-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                                   {{ in_array('paiement_canal', old('motif', [])) ? 'checked' : '' }}>
-                            <span class="ml-2">Paiement Canal+</span>
-                        </label>
-                    </div>
-                </div>
+                <!-- Motifs -->
+<div class="space-y-2">
+    <label class="block text-sm font-medium text-gray-700">Motif de la Transaction</label>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <label class="inline-flex items-center">
+            <input type="radio" 
+                   name="motif" 
+                   value="transfert"
+                   class="motif-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                   {{ old('motif') == 'transfert' ? 'checked' : '' }}>
+            <span class="ml-2">Transfert</span>
+        </label>
+        <label class="inline-flex items-center">
+            <input type="radio" 
+                   name="motif" 
+                   value="paiement_ceet"
+                   class="motif-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                   {{ old('motif') == 'paiement_ceet' ? 'checked' : '' }}>
+            <span class="ml-2">Paiement CEET</span>
+        </label>
+        <label class="inline-flex items-center">
+            <input type="radio" 
+                   name="motif" 
+                   value="paiement_canal"
+                   class="motif-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                   {{ old('motif') == 'paiement_canal' ? 'checked' : '' }}>
+            <span class="ml-2">Paiement Canal+</span>
+        </label>
+    </div>
+</div>
+
 
                 <!-- Frais de service -->
                 <div class="space-y-2" id="fraisServiceContainer">

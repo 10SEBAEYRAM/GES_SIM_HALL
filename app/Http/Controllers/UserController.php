@@ -6,8 +6,9 @@ use App\Models\User;
 use App\Models\TypeUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
-class UserController extends Controller 
+class UserController extends Controller
 {
     /**
      * Affiche la liste des utilisateurs
@@ -34,17 +35,17 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $validated = $request->validate([
+            'nom_util' => 'required|string|max:50',
+            'prenom_util' => 'required|string|max:50',
+            'email_util' => 'required|string|email|max:50|unique:users,email_util',
+            'num_util' => 'required|string|max:50',
+            'adress_util' => 'nullable|string|max:255',
+            'password' => 'required|string|min:4',
+            'type_users_id' => 'required|exists:type_users,id_type_users',
+        ]);
+
         try {
-            $validated = $request->validate([
-                'nom_util' => 'required|string|max:50',
-                'prenom_util' => 'required|string|max:50',
-                'email_util' => 'required|string|email|max:50|unique:users,email_util',
-                'num_util' => 'required|string|max:50',
-                'adress_util' => 'nullable|string|max:255',
-                'password' => 'required|string|min:4',
-                'type_users_id' => 'required|exists:type_users,id_type_users',
-            ]);
-           
             $user = User::create([
                 'nom_util' => $validated['nom_util'],
                 'prenom_util' => $validated['prenom_util'],
@@ -59,6 +60,7 @@ class UserController extends Controller
                 ->route('users.index')
                 ->with('success', 'L\'utilisateur a été ajouté avec succès.');
         } catch (\Exception $e) {
+            report($e);
             return back()
                 ->withInput()
                 ->with('error', 'Une erreur est survenue lors de la création de l\'utilisateur.');
@@ -81,7 +83,7 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::where('id_util', $id)->firstOrFail();
-        
+
         $validated = $request->validate([
             'nom_util' => 'required|string|max:50',
             'prenom_util' => 'required|string|max:50',
@@ -98,11 +100,18 @@ class UserController extends Controller
             unset($validated['password']);
         }
 
-        $user->update($validated);
+        try {
+            $user->update($validated);
 
-        return redirect()
-            ->route('users.index')
-            ->with('success', 'L\'utilisateur a été modifié avec succès.');
+            return redirect()
+                ->route('users.index')
+                ->with('success', 'L\'utilisateur a été modifié avec succès.');
+        } catch (\Exception $e) {
+            report($e);
+            return back()
+                ->withInput()
+                ->with('error', 'Une erreur est survenue lors de la mise à jour de l\'utilisateur.');
+        }
     }
 
     /**
@@ -118,6 +127,7 @@ class UserController extends Controller
                 ->route('users.index')
                 ->with('success', 'Utilisateur supprimé avec succès.');
         } catch (\Exception $e) {
+            report($e);
             return redirect()
                 ->route('users.index')
                 ->with('error', 'Une erreur est survenue lors de la suppression de l\'utilisateur.');

@@ -1,9 +1,14 @@
 <?php
 
 use App\Http\Controllers\{
-    ProduitController, UserController, ProfileController, 
-    TypeTransactionController, GrilleTarifaireController, 
-    TransactionController, CaisseController, DashboardController
+    ProduitController,
+    UserController,
+    ProfileController,
+    TypeTransactionController,
+    GrilleTarifaireController,
+    TransactionController,
+    CaisseController,
+    DashboardController
 };
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +26,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('users', UserController::class);
 
     // Gestion des transactions avec routes supplémentaires
+    Route::resource('produits', ProduitController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+    Route::get('/produits/data', [ProduitController::class, 'data'])->name('produits.data');
+
     Route::resource('transactions', TransactionController::class);
     Route::patch('transactions/{id}/update-status', [TransactionController::class, 'updateStatus'])
         ->name('transactions.updateStatus');
@@ -33,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Gestion des produits
     Route::resource('produits', ProduitController::class)->except(['update']);
+    // Modification du produit avec une route spécifique pour la méthode `update`
     Route::put('/produits/{id_prod}', [ProduitController::class, 'update'])->name('produits.update');
 
     // Gestion de la grille tarifaire
@@ -48,7 +57,9 @@ Route::middleware(['auth'])->group(function () {
     // Autres ressources
     Route::resource('type-transactions', TypeTransactionController::class);
     Route::resource('caisses', CaisseController::class);
+    Route::delete('/caisses/{id}/ajax-destroy', [CaisseController::class, 'ajaxDestroy'])->name('caisses.ajax.destroy');
+    Route::get('/caisses/data', [CaisseController::class, 'data'])->name('caisses.data');
 });
 
 // Routes d'authentification
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
