@@ -1,96 +1,139 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden shadow-lg sm:rounded-lg p-6 border border-gray-300">
-            <div class="flex justify-between items-center mb-6 border-b border-gray-300 pb-4">
-                <h2 class="text-2xl font-bold">Produits</h2>
-                <a href="{{ route('produits.create') }}"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md border border-blue-700 transition duration-300 ease-in-out">
-                    Nouveau Produit
-                </a>
-            </div>
+<div class="container mx-auto px-4 py-8">
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        {{-- Header --}}
+        <div class="flex justify-between items-center p-6 border-b border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800">Liste des produits</h2>
+            <a href="{{ route('produits.create') }}" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                Nouveau produit
+            </a>
+        </div>
 
-            {{-- Message de succès --}}
-            @if(session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-md mb-4 shadow-md border border-green-400">
-                {{ session('success') }}
-            </div>
-            @endif
+        {{-- Global Search --}}
+        <div class="p-6">
+            <input
+                type="text"
+                id="global-search"
+                class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Recherche global...">
+        </div>
 
-            {{-- Message d'erreur --}}
-            @if(session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-md mb-4 shadow-md border border-red-400">
-                {{ session('error') }}
-            </div>
-            @endif
-
-            {{-- Tableau des produits --}}
-            <div class="border border-gray-300 rounded-md shadow-sm overflow-hidden mt-4">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">
-                                Nom
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">
-                                Balance
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">
-                                Statut
-                            </th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($produits as $produit)
-                        <tr class="hover:bg-gray-50 transition duration-200">
-                            <td class="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                                {{ $produit->nom_prod }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                                {{ number_format($produit->balance, 2, ',', ' ') }} FCFA
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap border-b border-gray-300">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        {{ $produit->actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                    {{ $produit->actif ? 'Actif' : 'Inactif' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-right text-sm font-medium border-b border-gray-300">
-                                <a href="{{ route('produits.edit', $produit->id_prod) }}"
-                                    class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md transition duration-200 border border-blue-700 mr-3">
-                                    Modifier
-                                </a>
-
-                                <form action="{{ route('produits.destroy', $produit->id_prod) }}"
-                                    method="POST"
-                                    class="inline-block">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="bg-red-600 text-white hover:bg-red-700 px-4 py-2 rounded-md transition duration-200 border border-red-700"
-                                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')">
-                                        Supprimer
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- Pagination --}}
-            <div class="mt-4 border-t border-gray-300 pt-4 ">
-                {{ $produits->links() }}
-            </div>
+        {{-- Products Table --}}
+        <div class="overflow-x-auto">
+            <table id="produits-table" class="w-full table-auto text-sm">
+                <thead class="bg-gray-50 text-xs text-gray-700 uppercase">
+                    <tr>
+                        <th class="px-6 py-3 text-left">Nom</th>
+                        <th class="px-6 py-3 text-left">Balance</th>
+                        <th class="px-6 py-3 text-left">Status</th>
+                        <th class="px-6 py-3 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
     </div>
 </div>
-
-
 @endsection
+
+@push('styles')
+{{-- Styles pour DataTables --}}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+@endpush
+
+@push('scripts')
+{{-- Scripts nécessaires --}}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Initialisation de DataTable
+        const table = $('#produits-table').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '{{ route("produits.datatable") }}',
+                type: 'GET',
+                success: function(data) {
+                    console.log('Data loaded:', data);
+                },
+                error: function(xhr, error, thrown) {
+                    console.error('DataTables error:', xhr.responseText);
+                    alert('Erreur de chargement des données');
+                }
+            },
+            columns: [{
+                    data: 'nom_prod',
+                    name: 'nom_prod',
+                    render: function(data) {
+                        return data || 'N/A';
+                    }
+                },
+                {
+                    data: 'balance',
+                    name: 'balance'
+                },
+                {
+                    data: 'actif',
+                    name: 'actif',
+                    render: function(data) {
+                        return data ?
+                            '<span class="badge bg-success">Actif</span>' :
+                            '<span class="badge bg-danger">Inactif</span>';
+                    }
+                },
+                {
+                    data: 'action',
+                    name: 'action',
+                    render: function(data, type, row) {
+                        return `
+                    <div class="flex justify-end space-x-2">
+                        <a href="/produits/${data}/edit" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-xs">
+                            Modifier
+                        </a>
+                        <form action="/produits/${data}" method="POST" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-xs" 
+                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')">
+                               Supprimer
+                            </button>
+                        </form>
+                    </div>
+                        `;
+                    }
+                }
+            ],
+            language: {
+                processing: "Chargement...",
+                search: "Recherche:",
+                lengthMenu: "Afficher _MENU_ entrée",
+                info: "Montrer _START_ to _END_ of _TOTAL_ entrée",
+                infoEmpty: "Affichage de 0 à 0 de 0 entrées",
+                infoFiltered: "(filtré à partir de _MAX_ nombre total d'entrées)",
+                emptyTable: "Pas de données disponibles",
+                paginate: {
+                    first: "Premier",
+                    previous: "Précédent",
+                    next: "Suivant",
+                    last: "Dernier"
+                }
+            },
+            search: true,
+            ordering: true,
+            pageLength: 10,
+            lengthMenu: [
+                [10, 25, 50, -1],
+                [10, 25, 50, "All"]
+            ]
+        });
+
+        // Recherche globale
+        $('#global-search').on('keyup', function() {
+            table.search($(this).val()).draw();
+        });
+    });
+</script>
+@endpush

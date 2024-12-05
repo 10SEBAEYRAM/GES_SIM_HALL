@@ -1,6 +1,7 @@
 import DataTable from 'datatables.net-dt';
 
 // Autres importations
+import $ from 'jquery';
 import './bootstrap';
 import Chart from 'chart.js/auto';
 import toastr from 'toastr';

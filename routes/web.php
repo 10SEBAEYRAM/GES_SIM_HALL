@@ -27,7 +27,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Gestion des transactions avec routes supplémentaires
     Route::resource('produits', ProduitController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-    Route::get('/produits/data', [ProduitController::class, 'data'])->name('produits.data');
+    Route::get('/produits/datatable', [ProduitController::class, 'getDatatable'])->name('produits.datatable'); // Correct route for datatable
 
     Route::resource('transactions', TransactionController::class);
     Route::patch('transactions/{id}/update-status', [TransactionController::class, 'updateStatus'])
@@ -38,11 +38,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/transactions/get-commission', [TransactionController::class, 'getCommission'])
         ->name('transactions.get-commission');
-
-    // Gestion des produits
-    Route::resource('produits', ProduitController::class)->except(['update']);
-    // Modification du produit avec une route spécifique pour la méthode `update`
-    Route::put('/produits/{id_prod}', [ProduitController::class, 'update'])->name('produits.update');
 
     // Gestion de la grille tarifaire
     Route::resource('grille-tarifaires', GrilleTarifaireController::class);

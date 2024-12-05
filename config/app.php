@@ -53,6 +53,13 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    // Dans config/app.php, assurez-vous d'avoir
+
+    // ...
+    Yajra\DataTables\DataTablesServiceProvider::class,
+
+
+    // Dans config/datatables.php (si le fichier existe)
 
     /*
     |--------------------------------------------------------------------------

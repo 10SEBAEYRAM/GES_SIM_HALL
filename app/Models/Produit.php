@@ -12,7 +12,7 @@ class Produit extends Model
     protected $table = 'produits';  // Assurez-vous que c'est le bon nom de table
 
     protected $primaryKey = 'id_prod';
-    
+
     protected $fillable = [
         'nom_prod',
         'balance',
@@ -46,5 +46,4 @@ class Produit extends Model
         $this->balance = $this->transactions->sum('montant_trans'); // Par exemple, la somme de toutes les transactions liées au produit
         $this->save();
     }
-   
 }

@@ -5,62 +5,127 @@ namespace App\Http\Controllers;
 use App\Models\Produit;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use Illuminate\Support\Facades\Log;
 
 class ProduitController extends Controller
 {
     /**
-     * Affiche une liste des produits avec pagination.
+     * Affiche la page d'index des produits.
      *
      * @return \Illuminate\View\View
      */
-    public function data(Request $request)
-    {
-        // Vérification de la requête Ajax
-        if ($request->ajax()) {
-            // Récupération de tous les produits avec une requête
-            $produits = Produit::query();
-    
-            // Utilisation de DataTables
-            return DataTables::of($produits)
-                // Formatage de la colonne balance
-                ->addColumn('balance', function ($produit) {
-                    return number_format($produit->balance, 2, ',', ' ') . ' FCFA';
-                })
-                
-                // Colonne de statut avec du HTML conditionnel
-                ->addColumn('status', function ($produit) {
-                    return $produit->actif
-                        ? '<span class="badge bg-success">Actif</span>'
-                        : '<span class="badge bg-danger">Inactif</span>';
-                })
-                
-                // Colonne d'actions avec boutons Modifier et Supprimer
-                ->addColumn('action', function ($produit) {
-                    return view('produits.actions', compact('produit'))->render();
-                })
-                
-                // Autoriser le rendu de HTML brut
-                ->rawColumns(['status', 'action'])
-                
-                // Générer la réponse DataTables
-                ->make(true);
-        }
-    
-        // Optionnel : gérer le cas où ce n'est pas une requête Ajax
-        return response()->json(['error' => 'Requête non autorisée'], 403);
-    }
-
-
-
-    
     public function index()
     {
-        $produits = Produit::paginate(10);
-        return view('produits.index', compact('produits'));
+        return view('produits.index');
     }
 
     /**
-     * Affiche le formulaire de création d'un nouveau produit.
+     * Récupère les données pour DataTables avec filtrage avancé.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show($id)
+    {
+        $produit = Produit::findOrFail($id);
+        return view('produits.show', compact('produit'));
+    }
+
+    public function getProduits(Request $request)
+    {
+        if ($request->ajax()) {
+            $produits = Produit::all();  // Ou un autre filtre selon vos besoins
+            dd($produits);
+            return DataTables::of($produits)
+                ->make(true);
+        }
+    }
+    public function getProduitsData()
+    {
+        $produits = Produit::select('id_prod', 'nom_prod', 'balance', 'actif')
+            ->get(); // Vous pouvez ajuster cette requête selon vos besoins
+
+        return datatables()->of($produits)
+            ->addColumn('action', function ($row) {
+                return view('produits.actions', compact('row'))->render(); // Assurez-vous que l'action est bien configurée
+            })
+            ->make(true);
+    }
+
+    public function getDatatable(Request $request)
+    {
+        try {
+
+            $query = Produit::query();
+
+            return DataTables::of($query)
+                ->addColumn('balance', function ($produit) {
+                    return number_format($produit->balance, 2, ',', ' ') . ' FCFA';
+                })
+                ->addColumn('status', function ($produit) {
+                    return $produit->actif;
+                })
+                ->addColumn('action', function ($produit) {
+                    return $produit->id_prod;
+                })
+                ->addColumn('nom_prod', function ($produit) {
+                    return $produit->nom_prod;
+                })
+
+                ->filter(function ($query) use ($request) {
+                    if ($request->has('search')) {
+                        $searchValue = $request->input('search')['value'];
+                        $query->where(function ($q) use ($searchValue) {
+                            $q->where('nom_prod', 'like', "%{$searchValue}%")
+                                ->orWhere('balance', 'like', "%{$searchValue}%");
+                        });
+                    }
+                    return $query;
+                })
+                ->make(true);
+        } catch (\Exception $e) {
+            Log::error('Erreur DataTables : ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Une erreur est survenue lors du chargement des données',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+    /**
+     * Applique les filtres par colonnes.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @param  \Illuminate\Http\Request  $request
+     * @return void
+     */
+    private function applyColumnFilters($query, $request)
+    {
+        if ($request->has('columns')) {
+            foreach ($request->input('columns') as $column) {
+                if ($column['searchable'] == 'true' && !empty($column['search']['value'])) {
+                    $columnName = $column['data'];
+                    $searchValue = $column['search']['value'];
+
+                    switch ($columnName) {
+                        case 'nom_prod':
+                            $query->where('nom_prod', 'like', "%{$searchValue}%");
+                            break;
+                        case 'balance':
+                            $query->where('balance', 'like', "%{$searchValue}%");
+                            break;
+                        case 'actif':
+                            $query->where('actif', $searchValue);
+                            break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+    
      *
      * @return \Illuminate\View\View
      */
@@ -70,28 +135,24 @@ class ProduitController extends Controller
     }
 
     /**
-     * Enregistre un nouveau produit dans la base de données.
+   
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(Request $request)
     {
+        $validated = $this->validateProduit($request);
+
         try {
-            $validated = $request->validate([
-                'nom_prod' => 'required|string|max:50|unique:produits',
-                'balance' => 'required|numeric|min:0',
-                'actif' => 'nullable|boolean',
-            ]);
-
-            $validated['actif'] = $request->has('actif') ? filter_var($request->input('actif'), FILTER_VALIDATE_BOOLEAN) : false;
-
             Produit::create($validated);
 
             return redirect()
                 ->route('produits.index')
                 ->with('success', 'Produit créé avec succès.');
         } catch (\Exception $e) {
+            Log::error('Erreur de création de produit : ' . $e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Une erreur est survenue : ' . $e->getMessage());
@@ -99,7 +160,7 @@ class ProduitController extends Controller
     }
 
     /**
-     * Affiche le formulaire d'édition pour un produit spécifique.
+   
      *
      * @param  string  $id
      * @return \Illuminate\View\View
@@ -119,31 +180,47 @@ class ProduitController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        $produit = Produit::findOrFail($id);
+        $validated = $this->validateProduit($request, $id);
+
         try {
-            $produit = Produit::findOrFail($id);
-
-            $validated = $request->validate([
-                'nom_prod' => 'required|string|max:50|unique:produits,nom_prod,' . $id . ',id_prod',
-                'balance' => 'required|numeric|min:0',
-                'actif' => 'nullable|boolean',
-            ]);
-
-            $validated['actif'] = $request->has('actif') ? filter_var($request->input('actif'), FILTER_VALIDATE_BOOLEAN) : false;
-
             $produit->update($validated);
 
             return redirect()
                 ->route('produits.index')
                 ->with('success', 'Produit mis à jour avec succès.');
         } catch (\Exception $e) {
+            Log::error('Erreur de mise à jour de produit : ' . $e->getMessage());
+
             return back()
                 ->withInput()
                 ->with('error', 'Erreur : ' . $e->getMessage());
         }
     }
 
+    /**
+     * Valide les données du produit.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string|null  $id
+     * @return array
+     */
+    private function validateProduit(Request $request, $id = null)
+    {
+        $uniqueRule = $id
+            ? 'unique:produits,nom_prod,' . $id . ',id_prod'
+            : 'unique:produits';
 
-
+        return $request->validate([
+            'nom_prod' => ['required', 'string', 'max:50', $uniqueRule],
+            'balance' => 'required|numeric|min:0',
+            'actif' => 'nullable|boolean',
+        ], [
+            'nom_prod.unique' => 'Ce nom de produit existe déjà.',
+            'balance.numeric' => 'La balance doit être un nombre.',
+            'balance.min' => 'La balance ne peut pas être négative.',
+        ]);
+    }
 
     /**
      * Supprime un produit spécifique de la base de données.
@@ -161,9 +238,11 @@ class ProduitController extends Controller
                 ->route('produits.index')
                 ->with('success', 'Produit supprimé avec succès.');
         } catch (\Exception $e) {
+            Log::error('Erreur de suppression de produit : ' . $e->getMessage());
+
             return redirect()
                 ->route('produits.index')
-                ->with('error', 'Une erreur est survenue lors de la suppression du produit : ' . $e->getMessage());
+                ->with('error', 'Une erreur est survenue lors de la suppression du produit.');
         }
     }
 }
