@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Produit extends Model
 {
-    use HasFactory, SoftDeletes;
-    protected $table = 'produits';  // Assurez-vous que c'est le bon nom de table
+    use SoftDeletes;
 
+    protected $table = 'produits';
     protected $primaryKey = 'id_prod';
+    protected $dates = ['deleted_at'];
 
     protected $fillable = [
         'nom_prod',
@@ -20,9 +21,33 @@ class Produit extends Model
     ];
 
     protected $casts = [
-        'balance' => 'decimal:2',
-        'actif' => 'boolean'
+        'actif' => 'boolean',
+        'balance' => 'float'
     ];
+
+    // Validation statique
+    public static function rules($id = null)
+    {
+        $uniqueRule = $id
+            ? 'unique:produits,nom_prod,' . $id . ',id_prod'
+            : 'unique:produits,nom_prod';
+
+        return [
+            'nom_prod' => ['required', 'string', 'max:50', $uniqueRule],
+            'balance' => 'required|numeric|min:0',
+            'actif' => 'nullable|boolean',
+        ];
+    }
+
+    // Messages d'erreur personnalisés
+    public static function validationMessages()
+    {
+        return [
+            'nom_prod.unique' => 'Ce nom de produit existe déjà.',
+            'balance.numeric' => 'La balance doit être un nombre.',
+            'balance.min' => 'La balance ne peut pas être négative.',
+        ];
+    }
 
     public function grilleTarifaires()
     {
@@ -43,7 +68,7 @@ class Produit extends Model
     }
     public function updateBalance()
     {
-        $this->balance = $this->transactions->sum('montant_trans'); // Par exemple, la somme de toutes les transactions liées au produit
+        $this->balance = $this->transactions->sum('montant_trans');
         $this->save();
     }
 }

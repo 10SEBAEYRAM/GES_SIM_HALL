@@ -4,142 +4,82 @@ namespace App\Http\Controllers;
 
 use App\Models\Produit;
 use Illuminate\Http\Request;
-use Yajra\DataTables\Facades\DataTables;
+use Yajra\DataTables\DataTables;
 use Illuminate\Support\Facades\Log;
 
 class ProduitController extends Controller
 {
-    /**
-     * Affiche la page d'index des produits.
-     *
-     * @return \Illuminate\View\View
-     */
+    // Affiche la page des produits
     public function index()
     {
         return view('produits.index');
     }
 
-    /**
-     * Récupère les données pour DataTables avec filtrage avancé.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
+    // Affiche les détails d'un produit
     public function show($id)
     {
         $produit = Produit::findOrFail($id);
         return view('produits.show', compact('produit'));
     }
 
-    public function getProduits(Request $request)
-    {
-        if ($request->ajax()) {
-            $produits = Produit::all();  // Ou un autre filtre selon vos besoins
-            dd($produits);
-            return DataTables::of($produits)
-                ->make(true);
-        }
-    }
-    public function getProduitsData()
-    {
-        $produits = Produit::select('id_prod', 'nom_prod', 'balance', 'actif')
-            ->get(); // Vous pouvez ajuster cette requête selon vos besoins
-
-        return datatables()->of($produits)
-            ->addColumn('action', function ($row) {
-                return view('produits.actions', compact('row'))->render(); // Assurez-vous que l'action est bien configurée
-            })
-            ->make(true);
-    }
-
+    // Retourne les données des produits pour DataTables (méthode principale)
     public function getDatatable(Request $request)
     {
         try {
+            // DB::connection()->getPdo(); // Test de connexion
 
-            $query = Produit::query();
+            $query = Produit::select([
+                'id_prod',
+                'nom_prod',
+                'balance',
+                'actif'
+            ])->orderBy('created_at', 'desc');
 
             return DataTables::of($query)
-                ->addColumn('balance', function ($produit) {
-                    return number_format($produit->balance, 2, ',', ' ') . ' FCFA';
-                })
-                ->addColumn('status', function ($produit) {
-                    return $produit->actif;
-                })
-                ->addColumn('action', function ($produit) {
-                    return $produit->id_prod;
-                })
                 ->addColumn('nom_prod', function ($produit) {
                     return $produit->nom_prod;
                 })
-
+                ->addColumn('balance_formatted', function ($produit) {
+                    return number_format($produit->balance, 2, ',', ' ') . ' FCFA';
+                })
+                ->addColumn('status_badge', function ($produit) {
+                    return $produit->actif
+                        ? '<span class="badge badge-success">Actif</span>'
+                        : '<span class="badge badge-danger">Inactif</span>';
+                })
+                ->addColumn('actions', function ($produit) {
+                    return view('produits.actions', compact('produit'))->render();
+                })
+                ->rawColumns(['status_badge', 'actions'])
                 ->filter(function ($query) use ($request) {
                     if ($request->has('search')) {
-                        $searchValue = $request->input('search')['value'];
-                        $query->where(function ($q) use ($searchValue) {
-                            $q->where('nom_prod', 'like', "%{$searchValue}%")
-                                ->orWhere('balance', 'like', "%{$searchValue}%");
+                        $query->where(function ($q) use ($request) {
+                            $q->where('nom_prod', 'LIKE', "%{$request->search}%")
+                                ->orWhere('balance', 'LIKE', "%{$request->search}%");
                         });
                     }
-                    return $query;
                 })
                 ->make(true);
         } catch (\Exception $e) {
-            Log::error('Erreur DataTables : ' . $e->getMessage());
+            Log::error('Erreur DataTables Produits: ' . $e->getMessage());
+
             return response()->json([
-                'error' => 'Une erreur est survenue lors du chargement des données',
-                'details' => $e->getMessage()
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'error' => 'Impossible de charger les données: ' . $e->getMessage()
             ], 500);
         }
     }
 
 
-    /**
-     * Applique les filtres par colonnes.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @param  \Illuminate\Http\Request  $request
-     * @return void
-     */
-    private function applyColumnFilters($query, $request)
-    {
-        if ($request->has('columns')) {
-            foreach ($request->input('columns') as $column) {
-                if ($column['searchable'] == 'true' && !empty($column['search']['value'])) {
-                    $columnName = $column['data'];
-                    $searchValue = $column['search']['value'];
-
-                    switch ($columnName) {
-                        case 'nom_prod':
-                            $query->where('nom_prod', 'like', "%{$searchValue}%");
-                            break;
-                        case 'balance':
-                            $query->where('balance', 'like', "%{$searchValue}%");
-                            break;
-                        case 'actif':
-                            $query->where('actif', $searchValue);
-                            break;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-    
-     *
-     * @return \Illuminate\View\View
-     */
+    // Retourne la vue pour créer un nouveau produit
     public function create()
     {
         return view('produits.create');
     }
 
-    /**
-   
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
-     */
+    // Enregistre un nouveau produit
     public function store(Request $request)
     {
         $validated = $this->validateProduit($request);
@@ -159,26 +99,15 @@ class ProduitController extends Controller
         }
     }
 
-    /**
-   
-     *
-     * @param  string  $id
-     * @return \Illuminate\View\View
-     */
-    public function edit(string $id)
+    // Retourne la vue pour modifier un produit existant
+    public function edit($id)
     {
         $produit = Produit::findOrFail($id);
         return view('produits.edit', compact('produit'));
     }
 
-    /**
-     * Met à jour un produit existant dans la base de données.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  string  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function update(Request $request, string $id)
+    // Met à jour un produit existant
+    public function update(Request $request, $id)
     {
         $produit = Produit::findOrFail($id);
         $validated = $this->validateProduit($request, $id);
@@ -198,37 +127,8 @@ class ProduitController extends Controller
         }
     }
 
-    /**
-     * Valide les données du produit.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  string|null  $id
-     * @return array
-     */
-    private function validateProduit(Request $request, $id = null)
-    {
-        $uniqueRule = $id
-            ? 'unique:produits,nom_prod,' . $id . ',id_prod'
-            : 'unique:produits';
-
-        return $request->validate([
-            'nom_prod' => ['required', 'string', 'max:50', $uniqueRule],
-            'balance' => 'required|numeric|min:0',
-            'actif' => 'nullable|boolean',
-        ], [
-            'nom_prod.unique' => 'Ce nom de produit existe déjà.',
-            'balance.numeric' => 'La balance doit être un nombre.',
-            'balance.min' => 'La balance ne peut pas être négative.',
-        ]);
-    }
-
-    /**
-     * Supprime un produit spécifique de la base de données.
-     *
-     * @param  string  $id
-     * @return \Illuminate\Http\RedirectResponse
-     */
-    public function destroy(string $id)
+    // Supprime un produit
+    public function destroy($id)
     {
         try {
             $produit = Produit::findOrFail($id);
@@ -244,5 +144,23 @@ class ProduitController extends Controller
                 ->route('produits.index')
                 ->with('error', 'Une erreur est survenue lors de la suppression du produit.');
         }
+    }
+
+    // Valide les données du produit
+    private function validateProduit(Request $request, $id = null)
+    {
+        $uniqueRule = $id
+            ? 'unique:produits,nom_prod,' . $id . ',id_prod'
+            : 'unique:produits';
+
+        return $request->validate([
+            'nom_prod' => ['required', 'string', 'max:50', $uniqueRule],
+            'balance' => 'required|numeric|min:0',
+            'actif' => 'nullable|boolean',
+        ], [
+            'nom_prod.unique' => 'Ce nom de produit existe déjà.',
+            'balance.numeric' => 'La balance doit être un nombre.',
+            'balance.min' => 'La balance ne peut pas être négative.',
+        ]);
     }
 }

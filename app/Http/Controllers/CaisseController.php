@@ -6,20 +6,12 @@ use Yajra\DataTables\Facades\DataTables;
 use App\Models\Caisse;
 use Illuminate\Http\Request;
 
-
-
-namespace App\Http\Controllers;
-
-use Yajra\DataTables\DataTables;
-use App\Models\Caisse;
-use Illuminate\Http\Request;
-
 class CaisseController extends Controller
 {
-    // Afficher toutes les caisses avec DataTables (via AJAX)
+
     public function index(Request $request)
     {
-        // Si requête AJAX, utiliser DataTables
+
         if ($request->ajax()) {
             $query = Caisse::query();
 
@@ -59,11 +51,11 @@ class CaisseController extends Controller
                 ->editColumn('updated_at', function ($caisse) {
                     return $caisse->updated_at->format('d/m/Y H:i');
                 })
-                ->rawColumns(['actions']) // Permet le HTML dans la colonne actions
+                ->rawColumns(['actions'])
                 ->make(true);
         }
 
-        // Pour la vue initiale
+
         $caisses = Caisse::paginate(10);
         $total_balance = Caisse::sum('balance_caisse');
 
@@ -71,25 +63,12 @@ class CaisseController extends Controller
     }
 
 
-    public function data()
-    {
-        $caisses = Caisse::query();
-        return DataTables::of($caisses)
-            ->addColumn('actions', function ($caisse) {
-                return view('caisses.partials.actions', compact('caisse'))->render();
-            })
-            ->rawColumns(['actions'])
-            ->make(true);
-    }
-
-
-    // Afficher le formulaire de création d'une caisse
     public function create()
     {
         return view('caisses.create');
     }
 
-    // Enregistrer une nouvelle caisse
+
     public function store(Request $request)
     {
         $request->validate([
@@ -97,37 +76,33 @@ class CaisseController extends Controller
             'balance_caisse' => 'required|numeric',
         ]);
 
-        Caisse::create($request->all()); // Crée une nouvelle caisse
+        Caisse::create($request->all());
         return redirect()->route('caisses.index')->with('success', 'Caisse créée avec succès');
     }
 
-    // Afficher le formulaire d'édition d'une caisse
-    public function edit($id_caisse)
+
+    public function edit($id)
     {
-        $caisse = Caisse::findOrFail($id_caisse); // Trouver la caisse par son ID
+        $caisse = Caisse::findOrFail($id);
         return view('caisses.edit', compact('caisse'));
     }
 
-    // Mettre à jour une caisse existante
-    public function update(Request $request, $id_caisse)
-    {
-        $caisse = Caisse::findOrFail($id_caisse); // Trouver la caisse par son ID
 
-        // Validation des données
+    public function update(Request $request, $id)
+    {
+        $caisse = Caisse::findOrFail($id);
+
         $validated = $request->validate([
             'nom_caisse' => 'required|string|max:255',
             'balance_caisse' => 'required|numeric',
         ]);
 
-        // Mettre à jour les données de la caisse
         $caisse->update($validated);
 
-        // Rediriger avec un message de succès
         return redirect()->route('caisses.index')->with('success', 'Caisse mise à jour avec succès.');
     }
-
-    // Supprimer une caisse
-    public function ajaxDestroy($id)
+    // Supprimer une caisse via AJAX
+    public function Destroy($id)
     {
         $caisse = Caisse::findOrFail($id);
 

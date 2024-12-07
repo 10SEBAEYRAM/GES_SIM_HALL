@@ -8,10 +8,33 @@ use Illuminate\Http\Request;
 
 class GrilleTarifaireController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $grilleTarifaires = GrilleTarifaire::with('produit')->get();
+        $query = GrilleTarifaire::with('produit');
+
+        // Product filter
+        if ($request->filled('produit_filter')) {
+            $query->where('produit_id', $request->produit_filter);
+        }
+
+        // Minimum amount filter
+        if ($request->filled('montant_min_filter')) {
+            $query->where('montant_min', '>=', $request->montant_min_filter);
+        }
+
+        // Maximum amount filter
+        if ($request->filled('montant_max_filter')) {
+            $query->where('montant_max', '<=', $request->montant_max_filter);
+        }
+
+        // Commission filter
+        if ($request->filled('commission_filter')) {
+            $query->where('commission_grille_tarifaire', '<=', $request->commission_filter);
+        }
+
+        $grilleTarifaires = $query->paginate(10);
         $produits = Produit::where('actif', true)->get();
+
         return view('grille_tarifaires.index', compact('grilleTarifaires', 'produits'));
     }
 
@@ -24,7 +47,7 @@ class GrilleTarifaireController extends Controller
     public function store(Request $request)
     {
         \Log::info('Données reçues :', $request->all()); // Vérifie que les données arrivent
-    
+
         try {
             // Valider les données
             $validated = $request->validate([
@@ -33,29 +56,29 @@ class GrilleTarifaireController extends Controller
                 'montant_max' => 'required|numeric|gt:montant_min',
                 'commission_grille_tarifaire' => 'required|numeric|min:0',
             ]);
-    
+
             // Vérifier que le montant_max est bien supérieur au montant_min
             if ($validated['montant_max'] <= $validated['montant_min']) {
                 return back()->withInput()->with('error', 'Le montant maximum doit être supérieur au montant minimum.');
             }
-    
+
             // Vérifier si une grille tarifaire existe déjà pour cette plage
             $exists = GrilleTarifaire::where('produit_id', $validated['produit_id'])
-                ->where(function($query) use ($validated) {
+                ->where(function ($query) use ($validated) {
                     $query->whereBetween('montant_min', [$validated['montant_min'], $validated['montant_max']])
                         ->orWhereBetween('montant_max', [$validated['montant_min'], $validated['montant_max']]);
                 })
                 ->exists();
-    
+
             if ($exists) {
                 return back()
                     ->withInput()
                     ->with('error', 'Une grille tarifaire existe déjà pour cette plage de montants.');
             }
-    
+
             // Créer la grille tarifaire
             GrilleTarifaire::create($validated);
-    
+
             return redirect()
                 ->route('grille-tarifaires.index')
                 ->with('success', 'Grille tarifaire créée avec succès.');
@@ -66,7 +89,7 @@ class GrilleTarifaireController extends Controller
                 ->with('error', 'Une erreur est survenue lors de la création de la grille tarifaire.');
         }
     }
-    
+
     public function edit($id)
     {
         $grilleTarifaire = GrilleTarifaire::findOrFail($id);
@@ -89,7 +112,7 @@ class GrilleTarifaireController extends Controller
             // Vérifier si une autre grille tarifaire existe déjà pour cette plage
             $exists = GrilleTarifaire::where('produit_id', $validated['produit_id'])
                 ->where('id_grille_tarifaire', '!=', $id)
-                ->where(function($query) use ($validated) {
+                ->where(function ($query) use ($validated) {
                     $query->whereBetween('montant_min', [$validated['montant_min'], $validated['montant_max']])
                         ->orWhereBetween('montant_max', [$validated['montant_min'], $validated['montant_max']]);
                 })
@@ -128,4 +151,4 @@ class GrilleTarifaireController extends Controller
                 ->with('error', 'Une erreur est survenue lors de la suppression de la grille tarifaire.');
         }
     }
-} 
+}

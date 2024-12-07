@@ -25,17 +25,19 @@ Route::middleware(['auth'])->group(function () {
     // Gestion des utilisateurs
     Route::resource('users', UserController::class);
 
-    // Gestion des transactions avec routes supplémentaires
-    Route::resource('produits', ProduitController::class)->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
-    Route::get('/produits/datatable', [ProduitController::class, 'getDatatable'])->name('produits.datatable'); // Correct route for datatable
+    // Gestion des produits
+    Route::middleware(['auth'])->group(function () {
+        // Routes existantes...
+        Route::resource('produits', ProduitController::class)->except(['show']);
+        Route::get('/produits/datatable', [ProduitController::class, 'getDatatable'])->name('produits.data');
+    });
 
+    // Gestion des transactions
     Route::resource('transactions', TransactionController::class);
     Route::patch('transactions/{id}/update-status', [TransactionController::class, 'updateStatus'])
         ->name('transactions.updateStatus');
     Route::get('transactions/search', [TransactionController::class, 'search'])->name('transactions.search');
     Route::get('transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
-    Route::get('transactions/create', [TransactionController::class, 'create'])->name('transactions.create');
-
     Route::get('/transactions/get-commission', [TransactionController::class, 'getCommission'])
         ->name('transactions.get-commission');
 
@@ -49,11 +51,25 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/profile', 'destroy')->name('profile.destroy');
     });
 
-    // Autres ressources
+    // Gestion des caisses
+    Route::middleware(['auth'])->group(function () {
+        // Afficher la liste des caisses
+        Route::get('/caisses', [CaisseController::class, 'index'])->name('caisses.index');
+
+        // Créer une nouvelle caisse
+        Route::get('/caisses/create', [CaisseController::class, 'create'])->name('caisses.create');
+        Route::post('/caisses', [CaisseController::class, 'store'])->name('caisses.store');
+
+        // Modifier une caisse existante
+        Route::get('/caisses/{id}/edit', [CaisseController::class, 'edit'])->name('caisses.edit');
+        Route::put('/caisses/{id}', [CaisseController::class, 'update'])->name('caisses.update');
+
+        // Supprimer une caisse
+        Route::delete('/caisses/destroy', [CaisseController::class, 'destroy'])->name('caisses.destroy');
+    });
+
+    // Gestion des types de transactions
     Route::resource('type-transactions', TypeTransactionController::class);
-    Route::resource('caisses', CaisseController::class);
-    Route::delete('/caisses/{id}/ajax-destroy', [CaisseController::class, 'ajaxDestroy'])->name('caisses.ajax.destroy');
-    Route::get('/caisses/data', [CaisseController::class, 'data'])->name('caisses.data');
 });
 
 // Routes d'authentification
