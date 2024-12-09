@@ -33,13 +33,22 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Gestion des transactions
+
     Route::resource('transactions', TransactionController::class);
+
+    // Routes personnalisées pour les transactions
     Route::patch('transactions/{id}/update-status', [TransactionController::class, 'updateStatus'])
         ->name('transactions.updateStatus');
-    Route::get('transactions/search', [TransactionController::class, 'search'])->name('transactions.search');
-    Route::get('transactions/export', [TransactionController::class, 'export'])->name('transactions.export');
+
+    Route::get('transactions/search', [TransactionController::class, 'search'])
+        ->name('transactions.search');
+
+    Route::get('transactions/export', [TransactionController::class, 'export'])
+        ->name('transactions.export');
+
     Route::get('/transactions/get-commission', [TransactionController::class, 'getCommission'])
         ->name('transactions.get-commission');
+
 
     // Gestion de la grille tarifaire
     Route::resource('grille-tarifaires', GrilleTarifaireController::class);

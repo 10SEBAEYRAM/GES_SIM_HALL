@@ -24,7 +24,7 @@ class Transaction extends Model
         'user_id',
         'montant_trans',
         'commission_appliquee',
-        'frais_service',    
+        'frais_service',
         'num_beneficiaire',
         'statut',
         'solde_avant',
@@ -32,7 +32,7 @@ class Transaction extends Model
         'solde_caisse_avant',
         'solde_caisse_apres',
         'motif',
-        'id_caisse' 
+        'id_caisse'
     ];
 
     protected $casts = [
@@ -80,7 +80,6 @@ class Transaction extends Model
         return $this->typeTransaction && $this->typeTransaction->nom_type_transa === 'Dépôt';
     }
 
-   
     public static function calculerSoldes($produit_id, $montant, $type_transaction)
     {
         $produit = Produit::where('id_prod', $produit_id)->firstOrFail();
@@ -120,10 +119,7 @@ class Transaction extends Model
 
     public function getMotifAttribute($value)
     {
-        if (empty($value)) {
-            return '';
-        }
-        return $value;
+        return empty($value) ? '' : $value;
     }
 
     // Format le montant en FCFA
@@ -136,13 +132,13 @@ class Transaction extends Model
     public function getSoldeApresCalcule()
     {
         $type = $this->typeTransaction->nom_type_transa ?? '';
-        
+
         if ($type === 'Dépôt') {
-            return $this->solde_produit_avant + $this->montant_trans + $this->commission_appliquee;
+            return $this->solde_avant + $this->montant_trans + $this->commission_appliquee;
         } elseif ($type === 'Retrait') {
-            return $this->solde_produit_avant - $this->montant_trans + $this->commission_appliquee;
+            return $this->solde_avant - $this->montant_trans + $this->commission_appliquee;
         }
-        return $this->solde_produit_avant + $this->commission_appliquee;
+        return $this->solde_avant + $this->commission_appliquee;
     }
 
     // Calcul du solde après pour la caisse
@@ -151,7 +147,7 @@ class Transaction extends Model
         $caisse = Caisse::where('id_caisse', $this->id_caisse)->first();
 
         if (!$caisse) {
-            return 0; 
+            return 0;
         }
 
         $solde_caisse_avant = $caisse->balance_caisse;
@@ -159,17 +155,17 @@ class Transaction extends Model
         $type = $this->typeTransaction->nom_type_transa ?? '';
 
         if ($type === 'Dépôt') {
-            return $solde_caisse_avant + $this->montant_trans;
+            return $solde_caisse_avant + $this->montant_trans + $this->frais_service;
         } elseif ($type === 'Retrait') {
-            return $solde_caisse_avant - $this->montant_trans;
+            return $solde_caisse_avant - $this->montant_trans - $this->frais_service;
         }
-        return $solde_caisse_avant + $this->commission_appliquee;
+        return $solde_caisse_avant;
     }
 
     // Mise à jour du solde produit après transaction
     public function updateSoldeProduit()
     {
-        $produit = $this->produit; 
+        $produit = $this->produit;
         if ($produit) {
             $produit->balance = $this->getSoldeApresCalcule();
             $produit->save();

@@ -19,11 +19,30 @@ class TransactionController extends Controller
 
     public function index()
     {
+        // Récupérer les transactions avec leurs relations
         $transactions = Transaction::with(['produit', 'typeTransaction', 'user'])->get();
+
+        // Récupérer les produits actifs et les caisses
         $produits = Produit::where('actif', true)->get();
         $caisses = Caisse::all();
-        return view('transactions.index', compact('transactions', 'produits', 'caisses'));
+
+        // Récupérer les dates des transactions avec les totaux
+        $transactionsDates = Transaction::selectRaw('DATE(created_at) as date, SUM(montant_trans) as total')
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
+
+        // Préparer les données pour le graphique
+        $data = [
+            'labels' => $transactionsDates->pluck('date'),   // Les dates
+            'totals' => $transactionsDates->pluck('total'), // Les totaux
+        ];
+
+        // Retourner la vue avec toutes les données nécessaires
+        return view('transactions.index', compact('transactions', 'produits', 'caisses', 'data'));
     }
+
+
 
     public function create()
     {
@@ -158,28 +177,62 @@ class TransactionController extends Controller
         }
     }
 
+    public function destroy($id)
+    {
+        try {
+            $transaction = Transaction::findOrFail($id);
+
+            // Récupérer le produit et la caisse
+            $produit = $transaction->produit;
+            $caisse = Caisse::find($transaction->id_caisse);
+
+            // Mise à jour de la balance du produit
+            $this->updateProduitBalance($produit, $transaction);
+
+            // Mise à jour de la balance de la caisse
+            $this->updateCaisseBalance($caisse, $transaction);
+
+            // Supprimer la transaction
+            $transaction->delete();
+
+            return redirect()->route('transactions.index')->with('success', 'Transaction supprimée avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->route('transactions.index')->with('error', 'Une erreur est survenue : ' . $e->getMessage());
+        }
+    }
 
 
-    public function updateBalanceCaisse($transaction)
+
+    public function edit($id)
     {
 
-        $solde_caisse_avant = $transaction->balance_caisse;
+        $transaction = Transaction::findOrFail($id);
 
-        $solde_caisse_avant = (float) $solde_caisse_avant;
 
-        if ($transaction->typeTransaction->nom_type_transa === 'Dépôt') {
+        return view('transactions.edit', compact('transaction'));
+    }
 
-            $new_balance = $solde_caisse_avant + $transaction->montant_trans;
-        } elseif ($transaction->typeTransaction->nom_type_transa === 'Retrait') {
-
-            $new_balance = $solde_caisse_avant - $transaction->montant_trans;
-        } else {
-
-            $new_balance = $solde_caisse_avant;
+    private function updateProduitBalance($produit, $transaction)
+    {
+        if ($transaction->typeTransaction->nom_type_transa == 'Dépôt') {
+            $produit->balance += $transaction->montant_trans;
+            $produit->balance -= $transaction->commission_appliquee;
+        } elseif ($transaction->typeTransaction->nom_type_transa == 'Retrait') {
+            $produit->balance -= $transaction->montant_trans;
+            $produit->balance -= $transaction->commission_appliquee;
         }
+        $produit->save();
+    }
 
-
-        $transaction->solde_caisse_apres = number_format($new_balance, 0, ',', ' ');
-        $transaction->save();
+    private function updateCaisseBalance($caisse, $transaction)
+    {
+        if ($transaction->typeTransaction->nom_type_transa == 'Dépôt') {
+            $caisse->balance_caisse -= $transaction->montant_trans;
+            $caisse->balance_caisse -= $transaction->frais_service;
+        } elseif ($transaction->typeTransaction->nom_type_transa == 'Retrait') {
+            $caisse->balance_caisse -= $transaction->montant_trans;
+            $caisse->balance_caisse -= $transaction->frais_de_service;
+        }
+        $caisse->save();
     }
 }
