@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class TypeTransaction extends Model
 {
     use HasFactory;
+    protected $table = 'type_transactions'; // Nom de la table correspondante
 
     // Définition de la clé primaire si elle n'est pas 'id'
     protected $primaryKey = 'id_type_transa';

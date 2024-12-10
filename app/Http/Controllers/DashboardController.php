@@ -2,95 +2,178 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Produit;
 use App\Models\Transaction;
 use App\Models\Caisse;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use DB;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
+        // Récupérer la plage de dates sélectionnée ou par défaut (aujourd'hui)
         $dateRange = $request->input('date_range', 'today');
 
-        // Définir la plage de dates en fonction du filtre
+        // Définir les plages de dates actuelles et précédentes
+        [$startDate, $endDate] = $this->getDateRange($dateRange);
+        [$previousStartDate, $previousEndDate] = $this->getPreviousDateRange($dateRange);
+
+        // Récupérer les données du tableau de bord
+        $dashboardData = $this->getDashboardData($startDate, $endDate, $previousStartDate, $previousEndDate);
+
+        // Ajouter les caisses au tableau des données
+        $dashboardData['caisses'] = Caisse::all();
+
+        // Transactions groupées par type
+        $transactionsByType = Transaction::select('type_transaction_id', DB::raw('SUM(montant_trans) as total'))
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->groupBy('type_transaction_id')
+            ->get();
+
+
+        // Gérer les données vides
+        if ($transactionsByType->isEmpty()) {
+            $transactionsByType = collect(); // Crée une collection vide
+        }
+
+        // Conversion en tableau et récupération des clés
+        $transactionsArray = $transactionsByType->toArray();
+        $keys = array_keys($transactionsArray);
+
+        // Passer les données à la vue
+        return view('dashboard.index', compact('dashboardData', 'transactionsByType', 'keys'));
+    }
+
+    public function getChartData(Request $request)
+    {
+        $dateFilter = $request->input('dateFilter', 'month');
+        $transactionType = $request->input('transactionType', '');
+        $productFilter = $request->input('productFilter', '');
+
+        // Calcul des dates selon le filtre
+        $dates = $this->getFilteredDates($dateFilter);
+
+        // Requête pour récupérer les données de transactions filtrées
+        $query = Transaction::selectRaw('DATE(created_at) as date, SUM(montant_trans) as total')
+            ->groupBy('date')
+            ->whereBetween('created_at', [$dates['startDate'], $dates['endDate']]);
+
+        // Ajouter les filtres supplémentaires si sélectionnés
+        if ($transactionType) {
+            $query->where('type_transaction_id', $transactionType);
+        }
+
+        if ($productFilter) {
+            $query->where('produit_id', $productFilter);
+        }
+
+        $transactions = $query->get();
+
+        // Préparer les données pour le graphique
+        $labels = $transactions->pluck('date');
+        $totals = $transactions->pluck('total');
+
+        return response()->json([
+            'labels' => $labels,
+            'totals' => $totals
+        ]);
+    }
+
+    private function getFilteredDates($dateFilter)
+    {
+        $today = Carbon::today();
+
+        switch ($dateFilter) {
+            case 'month':
+                return [
+                    'startDate' => $today->startOfMonth(),
+                    'endDate' => $today->endOfMonth(),
+                ];
+            case 'week':
+                return [
+                    'startDate' => $today->startOfWeek(),
+                    'endDate' => $today->endOfWeek(),
+                ];
+            case 'day':
+                return [
+                    'startDate' => $today->startOfDay(),
+                    'endDate' => $today->endOfDay(),
+                ];
+            case 'year':
+                return [
+                    'startDate' => $today->startOfYear(),
+                    'endDate' => $today->endOfYear(),
+                ];
+            default:
+                return [
+                    'startDate' => $today->startOfMonth(),
+                    'endDate' => $today->endOfMonth(),
+                ];
+        }
+    }
+
+    private function getDateRange($dateRange)
+    {
         $startDate = match ($dateRange) {
             'today' => Carbon::today(),
             'week' => Carbon::now()->startOfWeek(),
             'month' => Carbon::now()->startOfMonth(),
             'year' => Carbon::now()->startOfYear(),
-            default => Carbon::today()
+            default => Carbon::today(),
         };
 
-        // Calcul de la période précédente
-        $previousStartDate = (clone $startDate)->modify(match ($dateRange) {
-            'today' => '-1 day',
-            'week' => '-1 week',
-            'month' => '-1 month',
-            'year' => '-1 year',
-        });
+        return [$startDate, Carbon::now()];
+    }
 
-        // Calcul des évolutions
+    private function getPreviousDateRange($dateRange)
+    {
+        $previousStartDate = match ($dateRange) {
+            'today' => Carbon::yesterday(),
+            'week' => Carbon::now()->subWeek()->startOfWeek(),
+            'month' => Carbon::now()->subMonth()->startOfMonth(),
+            'year' => Carbon::now()->subYear()->startOfYear(),
+            default => Carbon::yesterday(),
+        };
+
+        $previousEndDate = match ($dateRange) {
+            'today' => $previousStartDate,
+            'week' => $previousStartDate->copy()->endOfWeek(),
+            'month' => $previousStartDate->copy()->endOfMonth(),
+            'year' => $previousStartDate->copy()->endOfYear(),
+            default => $previousStartDate,
+        };
+
+        return [$previousStartDate, $previousEndDate];
+    }
+
+    private function getDashboardData($startDate, $endDate, $previousStartDate, $previousEndDate)
+    {
+        // Compte total des utilisateurs
+        $totalUsers = User::count();
         $currentUsers = User::where('created_at', '>=', $startDate)->count();
         $previousUsers = User::whereBetween('created_at', [$previousStartDate, $startDate])->count();
-        $totalUsers = User::count();
 
+        // Compte des produits actifs
         $activeProducts = Produit::where('actif', true)->count();
 
         // Transactions
-        $currentTransactions = Transaction::where('created_at', '>=', $startDate)->sum('montant_trans');
+        $currentTransactions = Transaction::whereBetween('created_at', [$startDate, $endDate])->sum('montant_trans');
         $previousTransactions = Transaction::whereBetween('created_at', [$previousStartDate, $startDate])->sum('montant_trans');
 
-        // Solde caisse
+        // Solde des caisses
         $soldeCaisse = Caisse::sum('balance_caisse');
-        $previousSoldeCaisse = Caisse::where('created_at', '>=', $previousStartDate)
-            ->where('created_at', '<', $startDate)
-            ->sum('balance_caisse');
+        $previousSoldeCaisse = Caisse::whereBetween('created_at', [$previousStartDate, $startDate])->sum('balance_caisse');
 
-        // Transactions par mois
-        // Transactions par mois
-$transactionsParMois = Transaction::selectRaw('
-DATE_FORMAT(created_at, "%Y-%m") as mois,
-SUM(montant_trans) as montant
-')
-->groupBy('mois')
-->orderBy('mois', 'asc') // Ajout de la direction "asc" ou "desc"
-->get();
+        // Transactions par période (mois, jour, semaine, année)
+        $transactionsParMois = $this->getTransactionsByPeriod('month');
+        $transactionsParJour = $this->getTransactionsByPeriod('day');
+        $transactionsParSemaine = $this->getTransactionsByPeriod('week');
+        $transactionsParAnnee = $this->getTransactionsByPeriod('year');
 
-// Transactions par jour
-$transactionsParJour = Transaction::selectRaw('
-DATE(created_at) as jour,
-SUM(montant_trans) as montant
-')
-->groupBy('jour')
-->orderBy('jour', 'asc') // Direction spécifiée
-->get();
-
-// Transactions par semaine
-$transactionsParSemaine = Transaction::selectRaw('
-YEAR(created_at) as annee,
-WEEK(created_at) as semaine,
-SUM(montant_trans) as montant
-')
-->groupBy('annee', 'semaine')
-->orderBy('annee', 'asc') // Ajout de la direction
-->orderBy('semaine', 'asc') // Ajout de la direction
-->get();
-
-// Transactions par année
-$transactionsParAnnee = Transaction::selectRaw('
-YEAR(created_at) as annee,
-SUM(montant_trans) as montant
-')
-->groupBy('annee')
-->orderBy('annee', 'asc') // Direction spécifiée
-->get();
-
-
-        // Soldes des produits
+        // Solde des produits actifs
         $produitsBalances = Produit::where('actif', true)
             ->select('nom_prod', 'balance')
             ->get();
@@ -101,16 +184,19 @@ SUM(montant_trans) as montant
             ->take(10)
             ->get();
 
-        // Calcul de l'évolution
-        $dashboardData = [
+        // Ajouter les produits aux données
+        $produits = Produit::all(); // Récupérer tous les produits pour l'affichage
+
+        return [
             'totalUsers' => [
                 'total' => $totalUsers,
                 'evolution' => $this->calculateEvolution($currentUsers, $previousUsers)
             ],
             'totalProducts' => [
                 'total' => $activeProducts,
-                'evolution' => 0 // Si nécessaire, ajouter un calcul pour ce champ
+                'evolution' => 0
             ],
+            'produits' => $produits, // Ajouter ici la clé 'produits'
             'totalTransactions' => [
                 'montant' => $currentTransactions,
                 'evolution' => $this->calculateEvolution($currentTransactions, $previousTransactions)
@@ -126,56 +212,26 @@ SUM(montant_trans) as montant
             'produitsBalances' => $produitsBalances,
             'recentTransactions' => $recentTransactions
         ];
-
-        return view('dashboard.index', compact('dashboardData'));
     }
+
 
     private function calculateEvolution($current, $previous)
     {
         return $previous > 0 ? (($current - $previous) / $previous) * 100 : 0;
     }
 
-    public function getTransactionsByPeriod($period)
+    private function getTransactionsByPeriod($period)
     {
-        $data = [];
-        
-        switch ($period) {
-            case 'day':
-                $data['labels'] = $this->getTransactionsByDayLabels();
-                $data['data'] = $this->getTransactionsByDayData();
-                break;
-            case 'week':
-                $data['labels'] = $this->getTransactionsByWeekLabels();
-                $data['data'] = $this->getTransactionsByWeekData();
-                break;
-            case 'month':
-                $data['labels'] = $this->getTransactionsByMonthLabels();
-                $data['data'] = $this->getTransactionsByMonthData();
-                break;
-            case 'year':
-                $data['labels'] = $this->getTransactionsByYearLabels();
-                $data['data'] = $this->getTransactionsByYearData();
-                break;
-        }
+        $grouping = match ($period) {
+            'day' => 'DATE(created_at)',
+            'week' => 'YEAR(created_at), WEEK(created_at)',
+            'month' => 'YEAR(created_at), MONTH(created_at)',
+            'year' => 'YEAR(created_at)',
+        };
 
-        return response()->json($data);
-    }
-
-    public function getTransactionsByMonthLabels()
-    {
-        return DB::table('transactions')
-            ->select(DB::raw('MONTH(created_at) as month'))
-            ->groupBy(DB::raw('MONTH(created_at)'))
+        return Transaction::selectRaw("$grouping as period, SUM(montant_trans) as montant")
+            ->groupByRaw($grouping)
+            ->orderByRaw($grouping)
             ->get();
     }
-
-    public function getTransactionsByMonthData()
-    {
-        return DB::table('transactions')
-            ->select(DB::raw('SUM(montant_trans) as montant'))
-            ->groupBy(DB::raw('MONTH(created_at)'))
-            ->get();
-    }
-
-    // Ajoutez des méthodes similaires pour semaine, jour et année si nécessaire
 }

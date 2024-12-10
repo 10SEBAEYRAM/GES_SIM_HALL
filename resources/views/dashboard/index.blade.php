@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,13 +14,16 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+
         .card {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
+
         canvas {
             display: block;
             width: 100% !important;
@@ -27,238 +31,137 @@
         }
     </style>
 </head>
+
 <body class="bg-gray-100 font-sans antialiased">
     <div class="max-w-7xl mx-auto py-12 px-6 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Tableau de Bord</h1>
 
-        <!-- Cartes des statistiques -->
+        <!-- Section des statistiques principales -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Transactions -->
+            <!-- Transactions par type -->
+            @forelse ($transactionsByType as $transaction)
             <div class="card bg-yellow-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
                 <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fas fa-exchange-alt mr-3 text-yellow-500"></i> Transactions
+                    <i class="fas fa-exchange-alt mr-3 text-yellow-500"></i> Transaction Type {{ $transaction->type_transaction_id }}
                 </h2>
                 <p class="text-2xl font-bold text-gray-900">
-                    {{ number_format($dashboardData['totalTransactions']['montant'], 2, ',', ' ') }} FCFA
-                </p>
-                <p class="mt-2 flex items-center {{ $dashboardData['totalTransactions']['evolution'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                    <i class="fas fa-{{ $dashboardData['totalTransactions']['evolution'] >= 0 ? 'arrow-up' : 'arrow-down' }} mr-2"></i>
-                    {{ number_format(abs($dashboardData['totalTransactions']['evolution']), 1) }}%
+                    {{ number_format($transaction->total, 2, ',', ' ') }} FCFA
                 </p>
             </div>
-
-            <!-- Utilisateurs -->
-            <div class="card bg-blue-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
-                <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fas fa-users mr-3 text-blue-500"></i> Utilisateurs
-                </h2>
-                <p class="text-2xl font-bold text-gray-900">{{ $dashboardData['totalUsers']['total'] }}</p>
+            @empty
+            <div class="col-span-full text-center">
+                <p class="text-gray-600 text-lg">Aucune donnée de transaction disponible pour cette période.</p>
             </div>
-
-            <!-- Produits -->
-            <div class="card bg-purple-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
-                <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fas fa-box mr-3 text-purple-500"></i> Produits Actifs
-                </h2>
-                <p class="text-2xl font-bold text-gray-900">{{ $dashboardData['totalProducts']['total'] }}</p>
-            </div>
-
-            <!-- Solde Caisse -->
-            <div class="card bg-green-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
-                <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fas fa-cash-register mr-3 text-green-500"></i> Solde Caisse
-                </h2>
-                <p class="text-2xl font-bold text-gray-900">
-                    {{ number_format($dashboardData['soldeCaisse']['montant'], 2, ',', ' ') }} FCFA
-                </p>
-            </div>
+            @endforelse
         </div>
 
-        <!-- Solde des Produits -->
+
+        <!-- Section des caisses -->
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Détail des Caisses et Soldes</h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            @foreach ($dashboardData['produitsBalances'] as $produit)
-                <div class="card bg-teal-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
-                    <h2 class="text-xl font-semibold text-gray-800 mb-4">{{ $produit->nom_prod }}</h2>
-                    <p class="text-2xl font-bold text-gray-900">
-                        {{ number_format($produit->balance, 2, ',', ' ') }} FCFA
-                    </p>
-                </div>
-            @endforeach
+            @forelse ($dashboardData['caisses'] as $caisse)
+            <div class="card bg-green-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    {{ $caisse->nom_caisse }}
+                </h2>
+                <p class="text-2xl font-bold text-gray-900">
+                    {{ number_format($caisse->balance_caisse, 2, ',', ' ') }} FCFA
+                </p>
+            </div>
+            @empty
+            <div class="col-span-full text-center">
+                <p class="text-gray-600 text-lg">Aucune caisse disponible.</p>
+            </div>
+            @endforelse
+        </div>
+
+        <!-- Section des produits -->
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Produits et Soldes</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            @forelse ($dashboardData['produits'] as $produit)
+            <div class="card bg-blue-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    {{ $produit->nom_prod }}
+                </h2>
+                <p class="text-2xl font-bold text-gray-900">
+                    {{ number_format($produit->balance, 2, ',', ' ') }} FCFA
+                </p>
+            </div>
+            @empty
+            <div class="col-span-full text-center">
+                <p class="text-gray-600 text-lg">Aucun produit disponible.</p>
+            </div>
+            @endforelse
         </div>
 
         <!-- Graphiques -->
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Graphiques</h2>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Transactions par Période -->
+            <!-- Transactions par Type -->
             <div class="card bg-white shadow-lg rounded-lg p-6 hover:shadow-xl">
                 <h2 class="text-2xl font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fas fa-chart-line mr-3 text-blue-500"></i> Transactions par Période
+                    <i class="fas fa-chart-bar mr-3 text-blue-500"></i> Transactions par Type
                 </h2>
-                <div class="mb-4">
-                    <select id="periodSelect" class="w-full p-2 border rounded" onchange="updateChart()">
-                        <option value="day">Par Jour</option>
-                        <option value="week">Par Semaine</option>
-                        <option value="month" selected>Par Mois</option>
-                        <option value="year">Par Année</option>
-                    </select>
-                </div>
-                <div class="relative" style="height: 300px;">
-                    <canvas id="transactionsChart"></canvas>
+                <div class="relative">
+                    <canvas id="typeTransactionsChart"></canvas>
                 </div>
             </div>
-
             <!-- Répartition des Transactions -->
             <div class="card bg-white shadow-lg rounded-lg p-6 hover:shadow-xl">
                 <h2 class="text-2xl font-semibold text-gray-800 flex items-center mb-4">
                     <i class="fas fa-chart-pie mr-3 text-green-500"></i> Répartition des Transactions
                 </h2>
-                <div class="relative" style="height: 300px;">
+                <div class="relative">
                     <canvas id="transactionsPieChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-  <script>
-    // Fonction de mise à jour du graphique selon la période
-    function updateChart() {
-        const selectedPeriod = document.getElementById('periodSelect').value;
-        
-        let newLabels, newData;
+    <script>
+        const types = @json(isset($dashboardData['transactionsByType']) ? array_keys($dashboardData['transactionsByType']) : []);
+        const amounts = @json(isset($dashboardData['transactionsByType']) ? array_map(fn($t) => $t['montant'], $dashboardData['transactionsByType']) : []);
 
-        switch (selectedPeriod) {
-            case 'day':
-                newLabels = @json($dashboardData['transactionsParJour']->pluck('jour'));
-                newData = @json($dashboardData['transactionsParJour']->pluck('montant'));
-                break;
-            case 'week':
-                newLabels = @json($dashboardData['transactionsParSemaine']->pluck('semaine'));
-                newData = @json($dashboardData['transactionsParSemaine']->pluck('montant'));
-                break;
-            case 'month':
-                newLabels = @json($dashboardData['transactionsParMois']->pluck('mois'));
-                newData = @json($dashboardData['transactionsParMois']->pluck('montant'));
-                break;
-            case 'year':
-                newLabels = @json($dashboardData['transactionsParAnnee']->pluck('annee'));
-                newData = @json($dashboardData['transactionsParAnnee']->pluck('montant'));
-                break;
-        }
-
-        // Mise à jour des graphiques
-        transactionsChart.data.labels = newLabels;
-        transactionsChart.data.datasets[0].data = newData;
-        transactionsChart.update();
-
-        transactionsPieChart.data.labels = newLabels;
-        transactionsPieChart.data.datasets[0].data = newData;
-        transactionsPieChart.update();
-    }
-
-    // Initialiser les graphiques
-    const labels = @json($dashboardData['transactionsParMois']->pluck('mois'));
-    const data = @json($dashboardData['transactionsParMois']->pluck('montant'));
-
-    const ctxBar = document.getElementById('transactionsChart').getContext('2d');
-    const transactionsChart = new Chart(ctxBar, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Transactions par Mois',
-                data: data,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1,
-                borderRadius: 5, // Arrondir les barres pour un style plus moderne
-                hoverBackgroundColor: 'rgba(54, 162, 235, 0.8)'
-            }]
-        },
-        options: {
-            responsive: true,
-            animation: {
-                duration: 1500, // Animation plus lente pour un effet professionnel
-                easing: 'easeInOutBounce' // Easing de rebond pour un effet dynamique
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        color: '#4a4a4a' // Couleur des valeurs sur l'axe y pour le style
-                    }
-                },
-                x: {
-                    ticks: {
-                        color: '#4a4a4a' // Couleur des valeurs sur l'axe x pour le style
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#333', // Couleur des labels pour plus de contraste
-                        font: {
-                            size: 14
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)', // Fond semi-transparent
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
+        // Graphique des transactions par type
+        const ctxType = document.getElementById('typeTransactionsChart').getContext('2d');
+        new Chart(ctxType, {
+            type: 'bar',
+            data: {
+                labels: types,
+                datasets: [{
+                    label: 'Montant par Type',
+                    data: amounts,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
                     borderWidth: 1,
-                    borderColor: '#333'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
                 }
             }
-        }
-    });
+        });
 
-    const ctxPie = document.getElementById('transactionsPieChart').getContext('2d');
-    const transactionsPieChart = new Chart(ctxPie, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: [
-                    '#FF5733',
-                    '#33FF57',
-                    '#3357FF',
-                    '#FF33A1',
-                    '#FFC300',
-                    '#DAF7A6',
-                    '#581845'
-                ],
-                hoverOffset: 8 // Plus grand décalage lors du survol pour un effet professionnel
-            }]
-        },
-        options: {
-            responsive: true,
-            animation: {
-                animateScale: true, // Animation de zoom pour les sections
-                animateRotate: true, // Animation de rotation pour un effet dynamique
-                duration: 2000,
-                easing: 'easeInOutQuart'
+        // Graphique circulaire
+        const ctxPie = document.getElementById('transactionsPieChart').getContext('2d');
+        new Chart(ctxPie, {
+            type: 'pie',
+            data: {
+                labels: types,
+                datasets: [{
+                    data: amounts,
+                    backgroundColor: ['#FF5733', '#33FF57', '#3357FF', '#FFC300', '#DAF7A6'],
+                }]
             },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#333',
-                        font: {
-                            size: 14
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    borderWidth: 1,
-                    borderColor: '#333'
-                }
+            options: {
+                responsive: true
             }
-        }
-    });
-</script>
-
+        });
+    </script>
 </body>
+
 </html>
