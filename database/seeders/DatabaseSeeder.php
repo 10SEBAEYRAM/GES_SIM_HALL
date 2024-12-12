@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             TypeUserSeeder::class,
+            RolePermissionSeeder::class,
             TypeTransactionSeeder::class,
             ProduitSeeder::class,
         ]);
@@ -26,7 +27,7 @@ class DatabaseSeeder extends Seeder
             'email_util' => 'koffieyramseba@gmail.com',
             'num_util' => '96540056',
             'adress_util' => 'Agbalepedogan',
-            'type_users_id' => 1,    
+            'type_users_id' => 1,
             'password' => Hash::make('password'),
         ]);
     }

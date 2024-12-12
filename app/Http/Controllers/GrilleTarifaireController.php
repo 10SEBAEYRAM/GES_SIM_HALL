@@ -46,7 +46,7 @@ class GrilleTarifaireController extends Controller
 
     public function store(Request $request)
     {
-        \Log::info('Données reçues :', $request->all()); // Vérifie que les données arrivent
+        \Log::info('Données reçues :', $request->all());
 
         try {
             // Valider les données
@@ -92,6 +92,10 @@ class GrilleTarifaireController extends Controller
 
     public function edit($id)
     {
+        if (!auth()->user()->can('edit-grille_tarifaires')) {
+            return redirect()->route('grille-tarifaires.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier cette grille tarifaire.');
+        }
         $grilleTarifaire = GrilleTarifaire::findOrFail($id);
         $produits = Produit::where('actif', true)->get();
         return view('grille_tarifaires.edit', compact('grilleTarifaire', 'produits'));
@@ -99,6 +103,10 @@ class GrilleTarifaireController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->can('create-grille_tarifaires')) {
+            return redirect()->route('grille-tarifaires.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à créer une grille tarifaire.');
+        }
         try {
             $grilleTarifaire = GrilleTarifaire::findOrFail($id);
 
@@ -138,6 +146,11 @@ class GrilleTarifaireController extends Controller
 
     public function destroy($id)
     {
+        if (!auth()->user()->can('delete-grille_tarifaires')) {
+            return redirect()->route('grille_tarifaires.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à supprimer une grille tarifaire.');
+        }
+
         try {
             $grilleTarifaire = GrilleTarifaire::findOrFail($id);
             $grilleTarifaire->delete();

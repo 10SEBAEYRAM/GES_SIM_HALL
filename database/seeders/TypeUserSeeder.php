@@ -12,7 +12,8 @@ class TypeUserSeeder extends Seeder
         $types = [
             ['nom_type_users' => 'Administrateur'],
             ['nom_type_users' => 'Caissier'],
-            ['nom_type_users' => 'Opérateur']       ];
+            ['nom_type_users' => 'Opérateur']
+        ];
 
         foreach ($types as $type) {
             TypeUser::create($type);

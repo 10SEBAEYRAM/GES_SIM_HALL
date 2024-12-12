@@ -6,11 +6,14 @@
         <div class="bg-gradient-to-br from-blue-50 via-white to-gray-50 overflow-hidden shadow-lg sm:rounded-lg p-6 border border-gray-300">
             <div class="flex justify-between items-center mb-6 border-b border-gray-300 pb-4">
                 <h2 class="text-3xl font-bold text-gray-700">Grilles Tarifaires</h2>
-                <a href="{{ route('grille-tarifaires.create') }}"
-                    class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg shadow-md transform transition duration-300 hover:scale-105 border border-blue-700">
+                <a href="{{ route('grille_tarifaires.create') }}"
+                    class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg shadow-md transform transition duration-300 hover:scale-105 border border-blue-700"
+                    onclick="return handleUnauthorized('{{ auth()->user()->can('create-grille_tarifaires') }}', 'créer une nouvelle grille')">
                     Nouvelle Grille
                 </a>
             </div>
+
+
 
             {{-- Messages de feedback --}}
             @if(session('success'))
@@ -18,6 +21,8 @@
                 {{ session('success') }}
             </div>
             @endif
+
+
 
             @if(session('error'))
             <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-md mb-4 shadow-md border border-red-400">
@@ -70,20 +75,23 @@
                         <td class="px-6 py-4 text-right text-sm font-medium">
                             <div class="flex gap-3 justify-end">
                                 <a href="{{ route('grille-tarifaires.edit', $grille->id_grille_tarifaire) }}"
-                                    class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-blue-700">
+                                    class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-blue-700"
+                                    onclick="return handleUnauthorized('{{ auth()->user()->can('edit-grille_tarifaires') }}', 'modifier cette grille')">
                                     Modifier
                                 </a>
-                                <form action="{{ route('grille-tarifaires.destroy', $grille->id_grille_tarifaire) }}" method="POST" class="inline-block">
+
+                                <form action="{{ route('grille-tarifaires.destroy', $grille->id_grille_tarifaire) }}" method="POST" class="inline-block"
+                                    onsubmit="return handleUnauthorized('{{ auth()->user()->can('delete-grille_tarifaires') }}', 'supprimer cette grille')">
                                     @csrf
                                     @method('DELETE')
                                     <button
                                         type="submit"
-                                        class="bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-red-700"
-                                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette grille ?')">
+                                        class="bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-red-700">
                                         Supprimer
                                     </button>
                                 </form>
                             </div>
+
                         </td>
                     </tr>
                     @endforeach
@@ -202,6 +210,14 @@
             table.column(3).search(this.value).draw();
         });
     });
+
+    function handleUnauthorized(hasPermission, action) {
+        if (hasPermission === 'false') {
+            alert(`Vous n'êtes pas autorisé à ${action}.`);
+            return false; // Empêche l'exécution de l'action (redirection ou soumission du formulaire)
+        }
+        return true; // Autorise l'action
+    }
 </script>
 @endpush
 

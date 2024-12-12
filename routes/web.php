@@ -17,6 +17,17 @@ Route::get('/', function () {
     return view('auth.login');
 })->name('home');
 
+Route::middleware(['role:admin'])->group(function () {
+    Route::resource('users', UserController::class);
+    Route::resource('products', ProduitController::class);
+    Route::resource('transactions', TransactionController::class);
+    Route::get('manage-caisse', [CaisseController::class, 'index']);
+    Route::get('manage-tarifaire', [GrilleTarifaireController::class, 'index']);
+});
+
+Route::middleware(['role:operator'])->group(function () {
+    Route::resource('transactions', TransactionController::class)->only(['create', 'edit', 'store']);
+});
 // Routes protégées par authentification
 Route::middleware(['auth'])->group(function () {
     // Gestion du tableau de bord
@@ -52,6 +63,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Gestion de la grille tarifaire
     Route::resource('grille-tarifaires', GrilleTarifaireController::class);
+    Route::resource('grille_tarifaires', GrilleTarifaireController::class);
+
 
     // Gestion du profil
     Route::controller(ProfileController::class)->group(function () {

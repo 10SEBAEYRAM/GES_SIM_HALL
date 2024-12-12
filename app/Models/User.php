@@ -7,10 +7,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\TypeUser;
 use App\Models\Transaction;
+use Spatie\Permission\Traits\HasRoles;
+
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     protected $primaryKey = 'id_util';  // Définir la clé primaire si ce n'est pas 'id'
     protected $table = 'users';         // Table associée

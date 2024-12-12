@@ -8,6 +8,7 @@
         "php": "^8.2",
         "laravel/framework": "^11.9",
         "laravel/tinker": "^2.9",
+        "spatie/laravel-permission": "^6.10",
         "yajra/laravel-datatables-buttons": "^11.2",
         "yajra/laravel-datatables-html": "^11.6",
         "yajra/laravel-datatables-oracle": "^11.1"

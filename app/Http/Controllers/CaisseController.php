@@ -71,6 +71,11 @@ class CaisseController extends Controller
 
     public function store(Request $request)
     {
+        if (!auth()->user()->can('create-caisses')) {
+            return redirect()->route('caisses.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à créer une caisse.');
+        }
+
         $request->validate([
             'nom_caisse' => 'required|string|max:255',
             'balance_caisse' => 'required|numeric',
@@ -83,6 +88,10 @@ class CaisseController extends Controller
 
     public function edit($id)
     {
+        if (!auth()->user()->can('edit-caisses')) {
+            return redirect()->route('caisses.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier une caisse.');
+        }
         $caisse = Caisse::findOrFail($id);
         return view('caisses.edit', compact('caisse'));
     }
@@ -90,6 +99,11 @@ class CaisseController extends Controller
 
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->can('edit-caisses')) {
+            return redirect()->route('caisses.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier une caisse.');
+        }
+
         $caisse = Caisse::findOrFail($id);
 
         $validated = $request->validate([
@@ -104,6 +118,11 @@ class CaisseController extends Controller
     // Supprimer une caisse via AJAX
     public function Destroy($id)
     {
+        if (!auth()->user()->can('delete-caisses')) {
+            return redirect()->route('caisses.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à supprimer une caisse.');
+        }
+
         $caisse = Caisse::findOrFail($id);
 
         try {
