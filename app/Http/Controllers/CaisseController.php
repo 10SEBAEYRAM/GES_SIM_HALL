@@ -33,7 +33,7 @@ class CaisseController extends Controller
             }
 
             return DataTables::of($query)
-                // Colonnes personnalisées
+
                 ->addColumn('actions', function ($caisse) {
                     return '
                     <div class="flex space-x-2">
@@ -65,16 +65,17 @@ class CaisseController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('create-caisses')) {
+            return redirect()->route('caisses.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à créer une caisse.');
+        }
         return view('caisses.create');
     }
 
 
     public function store(Request $request)
     {
-        if (!auth()->user()->can('create-caisses')) {
-            return redirect()->route('caisses.index')
-                ->with('error', 'Vous n\'êtes pas autorisé à créer une caisse.');
-        }
+
 
         $request->validate([
             'nom_caisse' => 'required|string|max:255',
@@ -115,9 +116,10 @@ class CaisseController extends Controller
 
         return redirect()->route('caisses.index')->with('success', 'Caisse mise à jour avec succès.');
     }
-    // Supprimer une caisse via AJAX
+
     public function Destroy($id)
     {
+
         if (!auth()->user()->can('delete-caisses')) {
             return redirect()->route('caisses.index')
                 ->with('error', 'Vous n\'êtes pas autorisé à supprimer une caisse.');
@@ -126,16 +128,16 @@ class CaisseController extends Controller
         $caisse = Caisse::findOrFail($id);
 
         try {
+
             $caisse->delete();
-            return response()->json([
-                'success' => true,
-                'message' => 'Caisse supprimée avec succès'
-            ]);
+
+
+            return redirect()->route('caisses.index')
+                ->with('success', 'Caisse supprimée avec succès');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de la suppression'
-            ], 500);
+
+            return redirect()->route('caisses.index')
+                ->with('error', 'Erreur lors de la suppression');
         }
     }
 }

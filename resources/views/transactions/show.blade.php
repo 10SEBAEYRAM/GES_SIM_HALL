@@ -8,10 +8,10 @@
             <div class="p-6 sm:p-8 border-b border-gray-200">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h2 class="text-2xl sm:text-3xl font-bold text-gray-900">Détails de la Transaction</h2>
-                    <a href="{{ route('transactions.index') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-indigo-600 text-sm font-semibold text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200">
+                    <a href="{{ route('transactions.index') }}"
+                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-sm font-semibold text-white rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
                         Retour à la liste
                     </a>
@@ -41,7 +41,7 @@
                         </div>
                         <div>
                             <h3 class="text-sm font-medium text-gray-500">Produit</h3>
-                            <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->produit->nom_prod }}</p>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ $transaction->produit->nom_prod ?? ''  }}</p>
                         </div>
                     </div>
 
@@ -73,10 +73,10 @@
                             <p class="mt-2 text-base text-gray-900">{{ $transaction->motif ?: 'Aucun motif spécifié' }}</p>
                         </div>
                         @if(in_array(strtolower($transaction->motif), ['paiement ceet', 'paiement canal+']))
-                            <div>
-                                <h3 class="text-sm font-medium text-gray-500">Frais Service</h3>
-                                <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->frais_service, 0, ',', ' ') }} FCFA</p>
-                            </div>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-500">Frais Service</h3>
+                            <p class="mt-2 text-base font-semibold text-gray-900">{{ number_format($transaction->frais_service, 0, ',', ' ') }} FCFA</p>
+                        </div>
                         @endif
 
 

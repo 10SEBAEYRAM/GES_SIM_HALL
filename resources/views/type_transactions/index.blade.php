@@ -8,7 +8,9 @@
             <div class="flex justify-between items-center mb-6 border-b pb-4 border-gray-300">
                 <h2 class="text-2xl font-bold text-gray-800">Types de Transactions</h2>
                 <a href="{{ route('type-transactions.create') }}"
-                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300 ease-in-out font-semibold border border-blue-600">
+                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300 ease-in-out font-semibold border border-blue-600"
+                    onclick="return handleUnauthorized('{{ auth()->user()->can('create-type-transactions') }}', 'créer une nouvelle grille')">
+
                     Nouveau Type
                 </a>
             </div>
@@ -57,6 +59,7 @@
                                         class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded transition duration-200 font-semibold border border-blue-600">
                                         Modifier
                                     </a>
+
 
                                     <form action="{{ route('type-transactions.destroy', $type->id_type_transa) }}"
                                         method="POST"

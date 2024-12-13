@@ -15,7 +15,11 @@ class TypeTransactionController extends Controller
 
     public function create()
     {
-        return view('type_transactions.create');
+        if (!auth()->user()->can('create-type_transactions')) {
+            return redirect()->route('type-transaction.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à créer un type de transaction.');
+        }
+        return view('type_transactions.index');
     }
 
     public function store(Request $request)
@@ -39,8 +43,13 @@ class TypeTransactionController extends Controller
 
     public function edit($id)
     {
+        if (!auth()->user()->can('edit-type_transactions')) {
+            return redirect()->route('type-transaction.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier un type transaction.');
+        }
+
         $typeTransaction = TypeTransaction::findOrFail($id);
-        return view('type_transactions.edit', compact('typeTransaction'));
+        return view('type-transactions.edit', compact('typeTransaction'));
     }
 
     public function update(Request $request, $id)
@@ -66,6 +75,10 @@ class TypeTransactionController extends Controller
 
     public function destroy($id)
     {
+        if (!auth()->user()->can('delete-types_transactions')) {
+            return redirect()->route('types-transaction.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à supprimer un type de transaction.');
+        }
         try {
             $typeTransaction = TypeTransaction::findOrFail($id);
             $typeTransaction->delete();

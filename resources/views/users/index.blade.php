@@ -6,10 +6,26 @@
     <div class="flex justify-between items-center mb-6 border-b pb-4 border-gray-300">
         <h1 class="text-2xl font-bold text-gray-800">Liste des Utilisateurs</h1>
         <a href="{{ route('users.create') }}"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md transition duration-300 ease-in-out border border-blue-600 font-semibold">
+            class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg shadow-md transform transition duration-300 hover:scale-105 border border-blue-700"
+            onclick="return handleUnauthorized('{{ auth()->user()->can('create-users') }}', 'créer une nouvelle grille')">
+
             Nouvel Utilisateur
         </a>
     </div>
+    {{-- Messages de feedback --}}
+    @if(session('success'))
+    <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-md mb-4 shadow-md border border-green-400">
+        {{ session('success') }}
+    </div>
+    @endif
+
+
+
+    @if(session('error'))
+    <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-md mb-4 shadow-md border border-red-400">
+        {{ session('error') }}
+    </div>
+    @endif
 
     {{-- Table des utilisateurs --}}
     <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-300">
@@ -47,7 +63,9 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div class="flex space-x-3">
                             <a href="{{ route('users.edit', $user->id_util) }}"
-                                class="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-md transition duration-300">
+                                class="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-md transition duration-300"
+                                onclick="return handleUnauthorized('{{ auth()->user()->can('edit-users') }}', 'créer une nouvelle grille')">
+
                                 Modifier
                             </a>
                             <form action="{{ route('users.destroy', $user->id_util) }}" method="POST">

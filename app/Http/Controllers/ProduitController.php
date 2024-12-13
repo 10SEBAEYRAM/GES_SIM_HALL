@@ -66,6 +66,11 @@ class ProduitController extends Controller
      */
     public function create()
     {
+        if (!auth()->user()->can('create-produits')) {
+            return redirect()->route('produits.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à supprimer le produit.');
+        }
+
         return view('produits.create');
     }
 
@@ -106,6 +111,11 @@ class ProduitController extends Controller
      */
     public function edit(string $id)
     {
+        if (!auth()->user()->can('edit-produits')) {
+            return redirect()->route('produits.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier un produit.');
+        }
+
         $produit = Produit::findOrFail($id);
         return view('produits.edit', compact('produit'));
     }
@@ -153,6 +163,11 @@ class ProduitController extends Controller
      */
     public function destroy(string $id)
     {
+        if (!auth()->user()->can('delete-produits')) {
+            return redirect()->route('produits.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à supprimer le produit.');
+        }
+
         try {
             $produit = Produit::findOrFail($id);
             $produit->delete();

@@ -11,17 +11,6 @@
 @endsection
 
 @section('content')
-@if(session('success'))
-<div class="alert alert-success">
-    {{ session('success') }}
-</div>
-@endif
-
-@if(session('error'))
-<div class="alert alert-danger">
-    {{ session('error') }}
-</div>
-@endif
 
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -95,13 +84,13 @@
                         <td class="px-6 py-4 whitespace-nowrap">{{ $caisse->created_at->format('d-m-Y') }}</td>
                         <td class="px-6 py-4 text-right text-sm font-medium">
                             <div class="flex gap-3 justify-end">
-                                <!-- Lien vers la page d'édition de la caisse -->
+
                                 <a href="{{ route('caisses.edit', $caisse->id_caisse) }}"
                                     class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-blue-700">
                                     Modifier
                                 </a>
 
-                                <!-- Formulaire pour la suppression de la caisse -->
+
                                 <form action="{{ route('caisses.destroy', $caisse->id_caisse) }}" method="POST" class="inline-block">
                                     @csrf
                                     @method('DELETE')
@@ -198,6 +187,7 @@
         $('#date_start, #date_end, #min_balance, #max_balance').on('input change', function() {
             table.draw();
         });
+
     });
 </script>
 @endpush

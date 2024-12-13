@@ -17,7 +17,7 @@ class UserController extends Controller
     {
         $users = User::paginate(10);
         $typeUsers = TypeUser::all();
-        $totalUsers = User::count(); // Récupérer le nombre total d'utilisateurs
+        $totalUsers = User::count(); =
         return view('users.index', compact('users', 'typeUsers', 'totalUsers'));
     }
 
@@ -26,6 +26,10 @@ class UserController extends Controller
      */
     public function create()
     {
+        if (!auth()->user()->can('create-users')) {
+            return redirect()->route('users.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à créer un utilisateur.');
+        }
         $typeUsers = TypeUser::all();
         return view('users.create', compact('typeUsers'));
     }
@@ -35,6 +39,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+
         $validated = $request->validate([
             'nom_util' => 'required|string|max:50',
             'prenom_util' => 'required|string|max:50',
@@ -46,6 +51,7 @@ class UserController extends Controller
         ]);
 
         try {
+
             $user = User::create([
                 'nom_util' => $validated['nom_util'],
                 'prenom_util' => $validated['prenom_util'],
@@ -56,6 +62,9 @@ class UserController extends Controller
                 'type_users_id' => $validated['type_users_id'],
             ]);
 
+            $user->assignRole('Administrateur', get_class($user));
+
+
             return redirect()
                 ->route('users.index')
                 ->with('success', 'L\'utilisateur a été ajouté avec succès.');
@@ -63,7 +72,7 @@ class UserController extends Controller
             report($e);
             return back()
                 ->withInput()
-                ->with('error', 'Une erreur est survenue lors de la création de l\'utilisateur.');
+                ->with('error', 'Une erreur est survenue lors de la création de l\'utilisateur : ' . $e->getMessage());
         }
     }
 
@@ -72,6 +81,10 @@ class UserController extends Controller
      */
     public function edit($id)
     {
+        if (!auth()->user()->can('create-users')) {
+            return redirect()->route('users.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier un utilisateur.');
+        }
         $user = User::where('id_util', $id)->firstOrFail();
         $typeUsers = TypeUser::all();
         return view('users.edit', compact('user', 'typeUsers'));
@@ -119,6 +132,10 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->can('delete-users')) {
+            return redirect()->route('users.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à supprimer un utilisateur.');
+        }
         try {
             $user = User::where('id_util', $id)->firstOrFail();
             $user->delete();

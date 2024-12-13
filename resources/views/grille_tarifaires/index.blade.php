@@ -68,7 +68,7 @@
                 <tbody>
                     @foreach($grilleTarifaires as $grille)
                     <tr class="hover:bg-gray-100 transition duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap">{{ $grille->produit->nom_prod ?? 'Non défini' }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ $grille->produit->nom_prod }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">{{ number_format($grille->montant_min, 0, ',', ' ') }} FCFA</td>
                         <td class="px-6 py-4 whitespace-nowrap">{{ number_format($grille->montant_max, 0, ',', ' ') }} FCFA</td>
                         <td class="px-6 py-4 whitespace-nowrap">{{ number_format($grille->commission_grille_tarifaire, 0, ',', ' ') }} FCFA</td>

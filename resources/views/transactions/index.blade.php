@@ -93,7 +93,9 @@
                         <tr>
                             <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->created_at->format('d/m/Y H:i:s') }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->typeTransaction->nom_type_transa }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->produit->nom_prod }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {{ $transaction->produit->nom_prod }}
+                            </td>
                             <td class="px-6 py-4 whitespace-nowrap">{{ number_format($transaction->montant_trans, 0, ',', ' ') }} FCFA</td>
                             <td class="px-6 py-4 whitespace-nowrap">{{ number_format($transaction->commission_appliquee, 0, ',', ' ') }} FCFA</td>
                             <td class="px-6 py-4 whitespace-nowrap">{{ $transaction->num_beneficiaire }}</td>

@@ -87,11 +87,15 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/caisses/{id}', [CaisseController::class, 'update'])->name('caisses.update');
 
         // Supprimer une caisse
-        Route::delete('/caisses/destroy', [CaisseController::class, 'destroy'])->name('caisses.destroy');
+        Route::delete('/caisses/{id}', [CaisseController::class, 'Destroy'])->name('caisses.destroy');
     });
 
     // Gestion des types de transactions
     Route::resource('type-transactions', TypeTransactionController::class);
+
+    Route::get('type-transactions/{id}/edit', [TypeTransactionController::class, 'edit'])->name('type-transactions.edit');
+    Route::get('type-transaction', [TypeTransactionController::class, 'index'])->name('type-transaction.index');
+    Route::get('types-transaction', [TypeTransactionController::class, 'index'])->name('types-transaction.index');
 });
 
 // Routes d'authentification

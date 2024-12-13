@@ -12,22 +12,22 @@ class GrilleTarifaireController extends Controller
     {
         $query = GrilleTarifaire::with('produit');
 
-        // Product filter
+
         if ($request->filled('produit_filter')) {
             $query->where('produit_id', $request->produit_filter);
         }
 
-        // Minimum amount filter
+
         if ($request->filled('montant_min_filter')) {
             $query->where('montant_min', '>=', $request->montant_min_filter);
         }
 
-        // Maximum amount filter
+
         if ($request->filled('montant_max_filter')) {
             $query->where('montant_max', '<=', $request->montant_max_filter);
         }
 
-        // Commission filter
+
         if ($request->filled('commission_filter')) {
             $query->where('commission_grille_tarifaire', '<=', $request->commission_filter);
         }
@@ -40,6 +40,11 @@ class GrilleTarifaireController extends Controller
 
     public function create()
     {
+        if (!auth()->user()->can('create-grille_tarifaires')) {
+            return redirect()->route('grille-tarifaires.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier cette grille tarifaire.');
+        }
+
         $produits = Produit::where('actif', true)->get();
         return view('grille_tarifaires.create', compact('produits'));
     }
@@ -49,7 +54,7 @@ class GrilleTarifaireController extends Controller
         \Log::info('Données reçues :', $request->all());
 
         try {
-            // Valider les données
+
             $validated = $request->validate([
                 'produit_id' => 'required|exists:produits,id_prod',
                 'montant_min' => 'required|numeric|min:0',
@@ -57,7 +62,7 @@ class GrilleTarifaireController extends Controller
                 'commission_grille_tarifaire' => 'required|numeric|min:0',
             ]);
 
-            // Vérifier que le montant_max est bien supérieur au montant_min
+
             if ($validated['montant_max'] <= $validated['montant_min']) {
                 return back()->withInput()->with('error', 'Le montant maximum doit être supérieur au montant minimum.');
             }
@@ -76,7 +81,7 @@ class GrilleTarifaireController extends Controller
                     ->with('error', 'Une grille tarifaire existe déjà pour cette plage de montants.');
             }
 
-            // Créer la grille tarifaire
+
             GrilleTarifaire::create($validated);
 
             return redirect()
@@ -117,7 +122,7 @@ class GrilleTarifaireController extends Controller
                 'commission_grille_tarifaire' => 'required|numeric|min:0',
             ]);
 
-            // Vérifier si une autre grille tarifaire existe déjà pour cette plage
+
             $exists = GrilleTarifaire::where('produit_id', $validated['produit_id'])
                 ->where('id_grille_tarifaire', '!=', $id)
                 ->where(function ($query) use ($validated) {
