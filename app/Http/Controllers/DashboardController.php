@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Produit;
 use App\Models\Transaction;
+use App\Models\TypeTransaction;
+
 use App\Models\Caisse;
 use Carbon\Carbon;
 use DB;
@@ -28,23 +30,25 @@ class DashboardController extends Controller
         $dashboardData['caisses'] = Caisse::all();
 
         // Transactions groupées par type
-        $transactionsByType = Transaction::select('type_transaction_id', DB::raw('SUM(montant_trans) as total'))
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->groupBy('type_transaction_id')
+        $type_transactions = DB::table('transactions')
+            ->join('type_transactions', 'type_transactions.id_type_transa', '=', 'type_transaction_id')
+            ->select('type_transactions.nom_type_transa', DB::raw('SUM(transactions.montant_trans) as total'))
+            ->groupBy('type_transactions.nom_type_transa')
             ->get();
 
 
+
         // Gérer les données vides
-        if ($transactionsByType->isEmpty()) {
-            $transactionsByType = collect(); // Crée une collection vide
+        if ($type_transactions->isEmpty()) {
+            $type_transactions = collect(); // Crée une collection vide
         }
 
         // Conversion en tableau et récupération des clés
-        $transactionsArray = $transactionsByType->toArray();
+        $transactionsArray = $type_transactions->toArray();
         $keys = array_keys($transactionsArray);
 
         // Passer les données à la vue
-        return view('dashboard.index', compact('dashboardData', 'transactionsByType', 'keys'));
+        return view('dashboard.index', compact('dashboardData', 'type_transactions', 'keys'));
     }
 
     public function getChartData(Request $request)

@@ -9,7 +9,7 @@
                 <h2 class="text-2xl font-bold text-gray-800">Types de Transactions</h2>
                 <a href="{{ route('type-transactions.create') }}"
                     class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300 ease-in-out font-semibold border border-blue-600"
-                    onclick="return handleUnauthorized('{{ auth()->user()->can('create-type-transactions') }}', 'créer une nouvelle grille')">
+                    onclick="return handleUnauthorized('{{ auth()->user()->can('create-type_transactions') }}', 'créer une nouvelle grille')">
 
                     Nouveau Type
                 </a>

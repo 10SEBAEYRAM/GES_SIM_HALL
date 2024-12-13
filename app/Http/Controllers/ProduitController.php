@@ -68,7 +68,7 @@ class ProduitController extends Controller
     {
         if (!auth()->user()->can('create-produits')) {
             return redirect()->route('produits.index')
-                ->with('error', 'Vous n\'êtes pas autorisé à supprimer le produit.');
+                ->with('error', 'Vous n\'êtes pas autorisé à créer  un produit.');
         }
 
         return view('produits.create');

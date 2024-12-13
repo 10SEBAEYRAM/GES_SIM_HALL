@@ -19,7 +19,9 @@ class TypeTransactionController extends Controller
             return redirect()->route('type-transaction.index')
                 ->with('error', 'Vous n\'êtes pas autorisé à créer un type de transaction.');
         }
-        return view('type_transactions.index');
+
+        $typeTransactions = TypeTransaction::all(); // Récupérer tous les types de transactions
+        return view('type_transactions.create', compact('typeTransactions'));
     }
 
     public function store(Request $request)

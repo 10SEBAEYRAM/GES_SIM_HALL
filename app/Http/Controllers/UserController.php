@@ -17,7 +17,7 @@ class UserController extends Controller
     {
         $users = User::paginate(10);
         $typeUsers = TypeUser::all();
-        $totalUsers = User::count(); =
+        $totalUsers = User::count();
         return view('users.index', compact('users', 'typeUsers', 'totalUsers'));
     }
 

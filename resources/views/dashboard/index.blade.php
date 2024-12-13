@@ -39,10 +39,10 @@
         <!-- Section des statistiques principales -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <!-- Transactions par type -->
-            @forelse ($transactionsByType as $transaction)
+            @forelse ($type_transactions as $transaction)
             <div class="card bg-yellow-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
                 <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fas fa-exchange-alt mr-3 text-yellow-500"></i> Transaction Type {{ $transaction->type_transaction_id }}
+                    <i class="fas fa-exchange-alt mr-3 text-yellow-500"></i> Type de Transaction : {{ $transaction->nom_type_transa }}
                 </h2>
                 <p class="text-2xl font-bold text-gray-900">
                     {{ number_format($transaction->total, 2, ',', ' ') }} FCFA
@@ -54,6 +54,7 @@
             </div>
             @endforelse
         </div>
+
 
 
         <!-- Section des caisses -->
@@ -93,6 +94,21 @@
             </div>
             @endforelse
         </div>
+        <form id="filters" class="mb-6 flex items-center gap-4">
+            <select id="filter-period" class="px-4 py-2 rounded bg-gray-50 border">
+                <option value="day">Aujourd'hui</option>
+                <option value="week">Cette semaine</option>
+                <option value="month">Ce mois</option>
+                <option value="year">Cette année</option>
+            </select>
+            <select id="filter-product" class="px-4 py-2 rounded bg-gray-50 border">
+                <option value="">Tous les produits</option>
+                @foreach ($dashboardData['produits'] as $produit)
+                <option value="{{ $produit->id_prod }}">{{ $produit->nom_prod }}</option>
+                @endforeach
+            </select>
+            <button type="button" id="apply-filters" class="px-4 py-2 bg-blue-500 text-white rounded">Appliquer</button>
+        </form>
 
         <!-- Graphiques -->
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Graphiques</h2>
@@ -119,8 +135,8 @@
     </div>
 
     <script>
-        const types = @json(isset($dashboardData['transactionsByType']) ? array_keys($dashboardData['transactionsByType']) : []);
-        const amounts = @json(isset($dashboardData['transactionsByType']) ? array_map(fn($t) => $t['montant'], $dashboardData['transactionsByType']) : []);
+        const types = @json(isset($dashboardData['type_transactions']) ? array_keys($dashboardData['type_transactions']) : []);
+        const amounts = @json(isset($dashboardData['type_transactions']) ? array_map(fn($t) => $t['montant'], $dashboardData['type_transactions']) : []);
 
         // Graphique des transactions par type
         const ctxType = document.getElementById('typeTransactionsChart').getContext('2d');
@@ -161,6 +177,28 @@
                 responsive: true
             }
         });
+
+        document.getElementById('apply-filters').addEventListener('click', function() {
+            const period = document.getElementById('filter-period').value;
+            const product = document.getElementById('filter-product').value;
+
+            fetch(`/dashboard-data?period=${period}&product=${product}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Mettre à jour les graphiques
+                    updateCharts(data.type_transactions, data.transactions_amounts);
+                });
+        });
+
+        function updateCharts(typeTransactions, amounts) {
+            typeTransactionsChart.data.labels = Object.keys(typeTransactions);
+            typeTransactionsChart.data.datasets[0].data = Object.values(typeTransactions);
+            typeTransactionsChart.update();
+
+            transactionsPieChart.data.labels = Object.keys(typeTransactions);
+            transactionsPieChart.data.datasets[0].data = Object.values(typeTransactions);
+            transactionsPieChart.update();
+        }
     </script>
 </body>
 
