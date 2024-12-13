@@ -33,8 +33,10 @@ Route::middleware(['auth'])->group(function () {
     // Gestion du tableau de bord
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
+    Route::get('/api/dashboard', [DashboardController::class, 'getFilteredData']);
     // Gestion des utilisateurs
     Route::resource('users', UserController::class);
+    Route::get('/dashboard/filter', [DashboardController::class, 'filter'])->name('dashboard.filter');
 
     // Gestion des produits
     Route::middleware(['auth'])->group(function () {

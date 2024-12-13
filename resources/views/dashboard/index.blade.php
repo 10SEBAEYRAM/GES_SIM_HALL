@@ -29,6 +29,13 @@
             width: 100% !important;
             height: 300px;
         }
+
+        .filter-section {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            justify-content: center;
+        }
     </style>
 </head>
 
@@ -36,79 +43,27 @@
     <div class="max-w-7xl mx-auto py-12 px-6 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Tableau de Bord</h1>
 
-        <!-- Section des statistiques principales -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <!-- Transactions par type -->
-            @forelse ($type_transactions as $transaction)
-            <div class="card bg-yellow-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
-                <h2 class="text-xl font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fas fa-exchange-alt mr-3 text-yellow-500"></i> Type de Transaction : {{ $transaction->nom_type_transa }}
-                </h2>
-                <p class="text-2xl font-bold text-gray-900">
-                    {{ number_format($transaction->total, 2, ',', ' ') }} FCFA
-                </p>
-            </div>
-            @empty
-            <div class="col-span-full text-center">
-                <p class="text-gray-600 text-lg">Aucune donnée de transaction disponible pour cette période.</p>
-            </div>
-            @endforelse
-        </div>
-
-
-
-        <!-- Section des caisses -->
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Détail des Caisses et Soldes</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            @forelse ($dashboardData['caisses'] as $caisse)
-            <div class="card bg-green-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                    {{ $caisse->nom_caisse }}
-                </h2>
-                <p class="text-2xl font-bold text-gray-900">
-                    {{ number_format($caisse->balance_caisse, 2, ',', ' ') }} FCFA
-                </p>
-            </div>
-            @empty
-            <div class="col-span-full text-center">
-                <p class="text-gray-600 text-lg">Aucune caisse disponible.</p>
-            </div>
-            @endforelse
-        </div>
-
-        <!-- Section des produits -->
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Produits et Soldes</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            @forelse ($dashboardData['produits'] as $produit)
-            <div class="card bg-blue-100 shadow-lg rounded-lg p-6 hover:shadow-xl">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">
-                    {{ $produit->nom_prod }}
-                </h2>
-                <p class="text-2xl font-bold text-gray-900">
-                    {{ number_format($produit->balance, 2, ',', ' ') }} FCFA
-                </p>
-            </div>
-            @empty
-            <div class="col-span-full text-center">
-                <p class="text-gray-600 text-lg">Aucun produit disponible.</p>
-            </div>
-            @endforelse
-        </div>
-        <form id="filters" class="mb-6 flex items-center gap-4">
-            <select id="filter-period" class="px-4 py-2 rounded bg-gray-50 border">
-                <option value="day">Aujourd'hui</option>
-                <option value="week">Cette semaine</option>
-                <option value="month">Ce mois</option>
-                <option value="year">Cette année</option>
+        <!-- Filtrage dynamique -->
+        <div class="filter-section">
+            <select id="filter-period" class="px-4 py-2 border rounded-md">
+                <option value="jour">Jour</option>
+                <option value="semaine">Semaine</option>
+                <option value="mois">Mois</option>
+                <option value="annee">Année</option>
             </select>
-            <select id="filter-product" class="px-4 py-2 rounded bg-gray-50 border">
-                <option value="">Tous les produits</option>
+            <select id="filter-product" class="px-4 py-2 border rounded-md">
+                <option value="tous">Tous les produits</option>
                 @foreach ($dashboardData['produits'] as $produit)
                 <option value="{{ $produit->id_prod }}">{{ $produit->nom_prod }}</option>
                 @endforeach
             </select>
-            <button type="button" id="apply-filters" class="px-4 py-2 bg-blue-500 text-white rounded">Appliquer</button>
-        </form>
+            <button id="apply-filters" class="bg-blue-500 text-white px-6 py-2 rounded-md">Appliquer les filtres</button>
+        </div>
+
+        <!-- Sections mises à jour dynamiquement -->
+        <div id="dashboard-content">
+            @include('partials.dashboard-content', ['dashboardData' => $dashboardData])
+        </div>
 
         <!-- Graphiques -->
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Graphiques</h2>
@@ -135,22 +90,15 @@
     </div>
 
     <script>
-        const types = @json(isset($dashboardData['type_transactions']) ? array_keys($dashboardData['type_transactions']) : []);
-        const amounts = @json(isset($dashboardData['type_transactions']) ? array_map(fn($t) => $t['montant'], $dashboardData['type_transactions']) : []);
-
-        // Graphique des transactions par type
+        // Initialisation des graphiques
         const ctxType = document.getElementById('typeTransactionsChart').getContext('2d');
-        new Chart(ctxType, {
+        const ctxPie = document.getElementById('transactionsPieChart').getContext('2d');
+
+        let typeTransactionsChart = new Chart(ctxType, {
             type: 'bar',
             data: {
-                labels: types,
-                datasets: [{
-                    label: 'Montant par Type',
-                    data: amounts,
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1,
-                }]
+                labels: [],
+                datasets: []
             },
             options: {
                 responsive: true,
@@ -158,20 +106,15 @@
                     y: {
                         beginAtZero: true
                     }
-                }
+                },
             }
         });
 
-        // Graphique circulaire
-        const ctxPie = document.getElementById('transactionsPieChart').getContext('2d');
-        new Chart(ctxPie, {
+        let transactionsPieChart = new Chart(ctxPie, {
             type: 'pie',
             data: {
-                labels: types,
-                datasets: [{
-                    data: amounts,
-                    backgroundColor: ['#FF5733', '#33FF57', '#3357FF', '#FFC300', '#DAF7A6'],
-                }]
+                labels: [],
+                datasets: []
             },
             options: {
                 responsive: true
@@ -182,23 +125,40 @@
             const period = document.getElementById('filter-period').value;
             const product = document.getElementById('filter-product').value;
 
-            fetch(`/dashboard-data?period=${period}&product=${product}`)
-                .then(response => response.json())
+            fetch(`/dashboard/filter?period=${encodeURIComponent(period)}&product=${encodeURIComponent(product)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors de la requête');
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    // Mettre à jour les sections HTML
+                    document.getElementById('dashboard-content').innerHTML = data.htmlContent;
+
                     // Mettre à jour les graphiques
-                    updateCharts(data.type_transactions, data.transactions_amounts);
+                    typeTransactionsChart.data.labels = data.typeTransactions.labels;
+                    typeTransactionsChart.data.datasets = [{
+                        label: 'Montant par Type',
+                        data: data.typeTransactions.data,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }];
+                    typeTransactionsChart.update();
+
+                    transactionsPieChart.data.labels = data.typeTransactions.labels;
+                    transactionsPieChart.data.datasets = [{
+                        data: data.typeTransactions.data,
+                        backgroundColor: ['#FF5733', '#33FF57', '#3357FF', '#FFC300', '#DAF7A6']
+                    }];
+                    transactionsPieChart.update();
+                })
+                .catch(error => {
+                    console.error('Erreur lors du filtrage:', error);
+                    alert('Une erreur s’est produite lors de l’application des filtres.');
                 });
         });
-
-        function updateCharts(typeTransactions, amounts) {
-            typeTransactionsChart.data.labels = Object.keys(typeTransactions);
-            typeTransactionsChart.data.datasets[0].data = Object.values(typeTransactions);
-            typeTransactionsChart.update();
-
-            transactionsPieChart.data.labels = Object.keys(typeTransactions);
-            transactionsPieChart.data.datasets[0].data = Object.values(typeTransactions);
-            transactionsPieChart.update();
-        }
     </script>
 </body>
 

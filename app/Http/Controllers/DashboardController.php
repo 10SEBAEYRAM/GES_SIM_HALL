@@ -14,6 +14,7 @@ use DB;
 
 class DashboardController extends Controller
 {
+    protected $dashboardService;
     public function index(Request $request)
     {
         // Récupérer la plage de dates sélectionnée ou par défaut (aujourd'hui)
@@ -36,8 +37,6 @@ class DashboardController extends Controller
             ->groupBy('type_transactions.nom_type_transa')
             ->get();
 
-
-
         // Gérer les données vides
         if ($type_transactions->isEmpty()) {
             $type_transactions = collect(); // Crée une collection vide
@@ -47,10 +46,68 @@ class DashboardController extends Controller
         $transactionsArray = $type_transactions->toArray();
         $keys = array_keys($transactionsArray);
 
+        // Récupérer les utilisateurs créés dans les 7 derniers jours
+        $nouveauxUtilisateurs = User::where('created_at', '>=', now()->subDays(7))->get();
+
+        // Récupérer le nombre total d'utilisateurs
+        $totalUtilisateurs = User::count();
+
+        // Définir les variables manquantes
+        $totalProduits = Produit::sum('balance');  // Somme des balances des produits
+        $totalTransactions = Transaction::sum('montant_trans');  // Somme des montants des transactions
+        $balanceProduits = Produit::sum('balance');  // Somme des soldes des produits (ou selon votre logique)
+
+        // Définir le montant total de la caisse
+        $montantCaisse = Caisse::sum('balance_caisse');  // Total des soldes des caisses (ou ajustez si nécessaire)
+
+        // Récupérer toutes les transactions ou celles dans la période spécifiée
+        $transactions = Transaction::whereBetween('created_at', [$startDate, $endDate])->get();
+
+        // Définir les dates des transactions
+        $transactionDates = $transactions->pluck('created_at')->unique()->sort();  // Récupère les dates uniques triées
+
+        // Calculer les montants des transactions
+        $transactionAmounts = $transactions->sum('montant_trans');  // Somme des montants des transactions
+
+        $users = User::all(); // Exemple pour récupérer tous les utilisateurs
+
         // Passer les données à la vue
-        return view('dashboard.index', compact('dashboardData', 'type_transactions', 'keys'));
+        return view('dashboard.index', compact(
+            'dashboardData',
+            'type_transactions',
+            'keys',
+            'nouveauxUtilisateurs',
+            'totalUtilisateurs',
+            'totalProduits',
+            'totalTransactions',
+            'balanceProduits',
+            'montantCaisse',
+            'transactions',
+            'users',
+            'transactionAmounts',
+            'transactionDates',  // Passer la variable transactionDates
+            'startDate',
+            'endDate',
+            'previousStartDate',
+            'previousEndDate'
+        ));
     }
 
+
+
+
+    public function filter(Request $request)
+    {
+        $period = $request->query('period'); // Ex : 'jour'
+        $product = $request->query('product'); // Ex : 1
+
+        // Logique pour filtrer les données selon la période et le produit
+        return response()->json([
+            'success' => true,
+            'period' => $period,
+            'product' => $product,
+        ]);
+    }
     public function getChartData(Request $request)
     {
         $dateFilter = $request->input('dateFilter', 'month');
@@ -86,39 +143,62 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function getFilteredDates($dateFilter)
+    public function getFilteredData(Request $request)
     {
-        $today = Carbon::today();
+        $period = $request->input('period', 'jour'); // Valeur par défaut : jour
+        $productId = $request->input('product', 'tous'); // Valeur par défaut : tous
 
-        switch ($dateFilter) {
-            case 'month':
-                return [
-                    'startDate' => $today->startOfMonth(),
-                    'endDate' => $today->endOfMonth(),
-                ];
-            case 'week':
-                return [
-                    'startDate' => $today->startOfWeek(),
-                    'endDate' => $today->endOfWeek(),
-                ];
-            case 'day':
-                return [
-                    'startDate' => $today->startOfDay(),
-                    'endDate' => $today->endOfDay(),
-                ];
-            case 'year':
-                return [
-                    'startDate' => $today->startOfYear(),
-                    'endDate' => $today->endOfYear(),
-                ];
-            default:
-                return [
-                    'startDate' => $today->startOfMonth(),
-                    'endDate' => $today->endOfMonth(),
-                ];
+        // Définir la période de filtrage en fonction de la période sélectionnée
+        $query = Transaction::query();
+        switch ($period) {
+            case 'jour':
+                $query->whereDate('created_at', now()->format('Y-m-d'));
+                break;
+            case 'semaine':
+                $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+                break;
+            case 'mois':
+                $query->whereMonth('created_at', now()->month);
+                break;
+            case 'annee':
+                $query->whereYear('created_at', now()->year);
+                break;
         }
-    }
 
+        // Si un produit spécifique est sélectionné
+        if ($productId !== 'tous') {
+            $query->where('product_id', $productId);
+        }
+
+        // Récupérer les transactions et leurs montants
+        $typeTransactions = $query->selectRaw('type_transaction, SUM(montant) as total')
+            ->groupBy('type_transaction')
+            ->get();
+
+        // Répartition des montants par produit
+        $products = Produit::all();
+
+        // Récupérer les caisses et leurs soldes
+        $caisses = Caisse::all();
+
+        // Préparer les données pour le graphique
+        $typeTransactionData = $typeTransactions->mapWithKeys(function ($transaction) {
+            return [$transaction->type_transaction => $transaction->total];
+        });
+
+        return response()->json([
+            'typeTransactions' => [
+                'labels' => $typeTransactionData->keys(),
+                'data' => $typeTransactionData->values(),
+            ],
+            'pieChart' => [
+                'labels' => $products->pluck('nom_prod'),
+                'data' => $products->pluck('balance'),
+            ],
+            'caisses' => $caisses,
+            'produits' => $products,
+        ]);
+    }
     private function getDateRange($dateRange)
     {
         $startDate = match ($dateRange) {
