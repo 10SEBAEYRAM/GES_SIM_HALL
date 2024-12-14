@@ -27,8 +27,11 @@ class DashboardController extends Controller
         // Récupérer les données du tableau de bord
         $dashboardData = $this->getDashboardData($startDate, $endDate, $previousStartDate, $previousEndDate);
 
+        // Récupérer toutes les caisses
+        $caisses = Caisse::all();  // Définir la variable des caisses
+
         // Ajouter les caisses au tableau des données
-        $dashboardData['caisses'] = Caisse::all();
+        $dashboardData['caisses'] = $caisses;
 
         // Transactions groupées par type
         $type_transactions = DB::table('transactions')
@@ -41,10 +44,6 @@ class DashboardController extends Controller
         if ($type_transactions->isEmpty()) {
             $type_transactions = collect(); // Crée une collection vide
         }
-
-        // Conversion en tableau et récupération des clés
-        $transactionsArray = $type_transactions->toArray();
-        $keys = array_keys($transactionsArray);
 
         // Récupérer les utilisateurs créés dans les 7 derniers jours
         $nouveauxUtilisateurs = User::where('created_at', '>=', now()->subDays(7))->get();
@@ -69,13 +68,13 @@ class DashboardController extends Controller
         // Calculer les montants des transactions
         $transactionAmounts = $transactions->sum('montant_trans');  // Somme des montants des transactions
 
-        $users = User::all(); // Exemple pour récupérer tous les utilisateurs
+        // Récupérer tous les produits
+        $produits = Produit::all(); // Récupère tous les produits et leurs soldes
 
         // Passer les données à la vue
         return view('dashboard.index', compact(
             'dashboardData',
-            'type_transactions',
-            'keys',
+            'type_transactions',  // Utiliser la variable correcte (pluriel)
             'nouveauxUtilisateurs',
             'totalUtilisateurs',
             'totalProduits',
@@ -83,7 +82,8 @@ class DashboardController extends Controller
             'balanceProduits',
             'montantCaisse',
             'transactions',
-            'users',
+            'produits',  // Passer la variable produits
+            'caisses',  // Passer la variable caisses
             'transactionAmounts',
             'transactionDates',  // Passer la variable transactionDates
             'startDate',
@@ -92,6 +92,9 @@ class DashboardController extends Controller
             'previousEndDate'
         ));
     }
+
+
+
 
 
 
