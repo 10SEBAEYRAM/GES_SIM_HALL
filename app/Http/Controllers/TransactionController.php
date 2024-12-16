@@ -65,11 +65,12 @@ class TransactionController extends Controller
                 'produit_id' => 'required|exists:produits,id_prod',
                 'montant_trans' => 'required|numeric|min:0',
                 'num_beneficiaire' => 'required|string|max:255',
-                'frais_service' => 'required|numeric',
-                'motif' => 'required|string|in:transfert,paiement_ceet,paiement_canal',
+                'frais_service' => 'numeric|nullable',
+                'motif' => 'string|nullable|in:transfert,paiement_ceet,paiement_canal',
                 'user_id' => 'required|exists:users,id_util',
                 'id_caisse' => 'required|exists:caisses,id_caisse',
             ]);
+
 
             // Récupérer la caisse, produit et type de transaction
 
@@ -94,9 +95,11 @@ class TransactionController extends Controller
 
 
 
-            // Calcul du solde caisse après
+            // Calcul du solde caisse après avec gestion de frais_service null
+            $frais_service = $request->has('frais_service') ? $validated['frais_service'] : 0;
+
             $solde_caisse_apres = $nomTransaction === "Dépôt"
-                ? ($solde_caisse_avant + $validated['montant_trans'] + ($validated['frais_service'] ?? 0))
+                ? ($solde_caisse_avant + $validated['montant_trans'] + $frais_service)
                 : ($solde_caisse_avant - $validated['montant_trans']);
             // dd($solde_caisse_apres);
 
@@ -114,9 +117,9 @@ class TransactionController extends Controller
                 'user_id' => auth()->user()->id_util,
                 'montant_trans' => $validated['montant_trans'],
                 'commission_appliquee' => $commission,
-                'frais_service' => $validated['frais_service'],
+                'frais_service' => $frais_service,
                 'num_beneficiaire' => $validated['num_beneficiaire'],
-                'motif' =>  $validated['motif'],
+                'motif' => $request->input('motif', "pas de motif"),
                 'statut' => 'COMPLETE',
                 'solde_avant' => $solde_produit_avant,
                 'solde_apres' => $solde_produit_apres,
@@ -124,6 +127,7 @@ class TransactionController extends Controller
                 'solde_caisse_apres' => $solde_caisse_apres,
                 'id_caisse' => $validated['id_caisse'],
             ]);
+
 
             // Mise à jour des soldes
             $produit->update(['balance' => $solde_produit_apres]);
@@ -231,7 +235,7 @@ class TransactionController extends Controller
             $caisse->balance_caisse -= $transaction->frais_service;
         } elseif ($transaction->typeTransaction->nom_type_transa == 'Retrait') {
             $caisse->balance_caisse -= $transaction->montant_trans;
-            $caisse->balance_caisse -= $transaction->frais_de_service;
+            $caisse->balance_caisse -= $transaction->frais_service;
         }
         $caisse->save();
     }

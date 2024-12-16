@@ -18,5 +18,8 @@ class Caisse extends Model
     protected $fillable = [
         'balance_caisse',
         'nom_caisse',
+        'emprunt_sim_hall',
+        'montant_retrait',
+        'remboursement_sim_hall',
     ];
 }

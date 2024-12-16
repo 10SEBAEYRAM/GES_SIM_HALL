@@ -17,7 +17,7 @@ class DashboardController extends Controller
     protected $dashboardService;
     public function index(Request $request)
     {
-        // Récupérer la plage de dates sélectionnée ou par défaut (aujourd'hui)
+
         $dateRange = $request->input('date_range', 'today');
 
         // Définir les plages de dates actuelles et précédentes
@@ -28,7 +28,7 @@ class DashboardController extends Controller
         $dashboardData = $this->getDashboardData($startDate, $endDate, $previousStartDate, $previousEndDate);
 
         // Récupérer toutes les caisses
-        $caisses = Caisse::all();  // Définir la variable des caisses
+        $caisses = Caisse::all();
 
         // Ajouter les caisses au tableau des données
         $dashboardData['caisses'] = $caisses;
@@ -42,39 +42,39 @@ class DashboardController extends Controller
 
         // Gérer les données vides
         if ($type_transactions->isEmpty()) {
-            $type_transactions = collect(); // Crée une collection vide
+            $type_transactions = collect();
         }
 
-        // Récupérer les utilisateurs créés dans les 7 derniers jours
+
         $nouveauxUtilisateurs = User::where('created_at', '>=', now()->subDays(7))->get();
 
-        // Récupérer le nombre total d'utilisateurs
+
         $totalUtilisateurs = User::count();
 
-        // Définir les variables manquantes
-        $totalProduits = Produit::sum('balance');  // Somme des balances des produits
-        $totalTransactions = Transaction::sum('montant_trans');  // Somme des montants des transactions
-        $balanceProduits = Produit::sum('balance');  // Somme des soldes des produits (ou selon votre logique)
 
-        // Définir le montant total de la caisse
-        $montantCaisse = Caisse::sum('balance_caisse');  // Total des soldes des caisses (ou ajustez si nécessaire)
+        $totalProduits = Produit::sum('balance');
+        $totalTransactions = Transaction::sum('montant_trans');
+        $balanceProduits = Produit::sum('balance');
 
-        // Récupérer toutes les transactions ou celles dans la période spécifiée
+
+        $montantCaisse = Caisse::sum('balance_caisse');
+
+
         $transactions = Transaction::whereBetween('created_at', [$startDate, $endDate])->get();
 
-        // Définir les dates des transactions
-        $transactionDates = $transactions->pluck('created_at')->unique()->sort();  // Récupère les dates uniques triées
 
-        // Calculer les montants des transactions
-        $transactionAmounts = $transactions->sum('montant_trans');  // Somme des montants des transactions
+        $transactionDates = $transactions->pluck('created_at')->unique()->sort();
 
-        // Récupérer tous les produits
-        $produits = Produit::all(); // Récupère tous les produits et leurs soldes
 
-        // Passer les données à la vue
+        $transactionAmounts = $transactions->sum('montant_trans');
+
+
+        $produits = Produit::all();
+
+
         return view('dashboard.index', compact(
             'dashboardData',
-            'type_transactions',  // Utiliser la variable correcte (pluriel)
+            'type_transactions',
             'nouveauxUtilisateurs',
             'totalUtilisateurs',
             'totalProduits',
@@ -82,10 +82,10 @@ class DashboardController extends Controller
             'balanceProduits',
             'montantCaisse',
             'transactions',
-            'produits',  // Passer la variable produits
-            'caisses',  // Passer la variable caisses
+            'produits',
+            'caisses',
             'transactionAmounts',
-            'transactionDates',  // Passer la variable transactionDates
+            'transactionDates',
             'startDate',
             'endDate',
             'previousStartDate',
@@ -99,18 +99,58 @@ class DashboardController extends Controller
 
 
 
+
     public function filter(Request $request)
     {
-        $period = $request->query('period'); // Ex : 'jour'
-        $product = $request->query('product'); // Ex : 1
+        $period = $request->input('period');
+        $product = $request->input('product');
 
-        // Logique pour filtrer les données selon la période et le produit
+        $query = Transaction::query();
+
+        // Appliquer le filtre pour le produit
+        if ($product) {
+            $query->where('produit_id', $product);
+        }
+
+        // Appliquer le filtre pour la période
+        if ($period) {
+            switch ($period) {
+                case 'jour':
+                    $query->whereDate('created_at', Carbon::today());
+                    break;
+                case 'semaine':
+                    $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+                    break;
+                case 'mois':
+                    $query->whereMonth('created_at', Carbon::now()->month);
+                    break;
+                case 'annee':
+                    $query->whereYear('created_at', Carbon::now()->year);
+                    break;
+                default:
+                    // Aucune action si la période est inconnue
+                    break;
+            }
+        }
+
+        $transactions = $query->get();
+
+        // Exemple de données JSON pour les graphiques
+        $typeTransactions = $transactions->groupBy('type')->map(function ($group) {
+            return $group->sum('montant_trans');
+        });
+
         return response()->json([
-            'success' => true,
-            'period' => $period,
-            'product' => $product,
+            'typeTransactions' => [
+                'labels' => $typeTransactions->keys(),
+                'data' => $typeTransactions->values(),
+            ],
+            'htmlContent' => view('dashboard.partials.filtered-transactions', compact('transactions'))->render()
         ]);
     }
+
+
+
     public function getChartData(Request $request)
     {
         $dateFilter = $request->input('dateFilter', 'month');

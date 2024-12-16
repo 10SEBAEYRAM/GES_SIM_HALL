@@ -11,6 +11,12 @@
 @endsection
 
 @section('content')
+{{-- Par celle-ci --}}
+{{-- Dans resources/views/caisses/index.blade.php --}}
+<a href="{{ route('caisses.create', ['type' => 'mouvement']) }}"
+    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md border border-green-700 transition duration-300 ease-in-out">
+    Ajouter une Transaction
+</a>
 
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -34,14 +40,16 @@
             </div>
 
             {{-- Messages flash --}}
-            @if(session('success'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md shadow-md border border-green-300">
+            @if (session('success'))
+            <div
+                class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md shadow-md border border-green-300">
                 {{ session('success') }}
             </div>
             @endif
 
-            @if(session('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md shadow-md border border-red-300">
+            @if (session('error'))
+            <div
+                class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md shadow-md border border-red-300">
                 {{ session('error') }}
             </div>
             @endif
@@ -50,19 +58,23 @@
             <div class="flex space-x-4 mb-6">
                 <div>
                     <label for="date_start" class="text-sm font-medium text-gray-700">Date de début</label>
-                    <input type="date" id="date_start" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    <input type="date" id="date_start"
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                 </div>
                 <div>
                     <label for="date_end" class="text-sm font-medium text-gray-700">Date de fin</label>
-                    <input type="date" id="date_end" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    <input type="date" id="date_end"
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                 </div>
                 <div>
                     <label for="min_balance" class="text-sm font-medium text-gray-700">Montant minimum</label>
-                    <input type="number" id="min_balance" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" step="any">
+                    <input type="number" id="min_balance"
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md" step="any">
                 </div>
                 <div>
                     <label for="max_balance" class="text-sm font-medium text-gray-700">Montant maximum</label>
-                    <input type="number" id="max_balance" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" step="any">
+                    <input type="number" id="max_balance"
+                        class="mt-1 block w-full p-2 border border-gray-300 rounded-md" step="any">
                 </div>
             </div>
 
@@ -70,17 +82,23 @@
             <table id="caissesTable" class="min-w-full divide-y divide-gray-200 bg-white shadow-lg rounded-lg">
                 <thead class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-300">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nom de la Caisse</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Montant</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nom
+                            de la Caisse</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Montant</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Date</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($caisses as $caisse)
+                    @foreach ($caisses as $caisse)
                     <tr class="hover:bg-gray-100 transition duration-200">
                         <td class="px-6 py-4 whitespace-nowrap">{{ $caisse->nom_caisse }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ number_format($caisse->balance_caisse, 0, ',', ' ') }} XOF</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} XOF
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap">{{ $caisse->created_at->format('d-m-Y') }}</td>
                         <td class="px-6 py-4 text-right text-sm font-medium">
                             <div class="flex gap-3 justify-end">
@@ -91,7 +109,8 @@
                                 </a>
 
 
-                                <form action="{{ route('caisses.destroy', $caisse->id_caisse) }}" method="POST" class="inline-block">
+                                <form action="{{ route('caisses.destroy', $caisse->id_caisse) }}" method="POST"
+                                    class="inline-block">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"

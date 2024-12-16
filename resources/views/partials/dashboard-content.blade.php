@@ -141,10 +141,10 @@
     var chart2 = new Chart(ctx2, {
         type: 'bar',
         data: {
-            labels: @json($type_transactions-> pluck('nom_type_transa')),
+            labels: @json($type_transactions->pluck('nom_type_transa')),
             datasets: [{
                 label: 'Montant Total',
-                data: @json($type_transactions-> pluck('total')),
+                data: @json($type_transactions->pluck('total')),
                 backgroundColor: 'rgba(54, 162, 235, 0.6)',
                 borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1

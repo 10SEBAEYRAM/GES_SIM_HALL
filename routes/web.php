@@ -36,7 +36,13 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/dashboard', [DashboardController::class, 'getFilteredData']);
     // Gestion des utilisateurs
     Route::resource('users', UserController::class);
+    Route::get('/dashboard/filter', [DashboardController::class, 'filter']);
+
     Route::get('/dashboard/filter', [DashboardController::class, 'filter'])->name('dashboard.filter');
+    Route::get('/caisses/caisse_transactions/create', [TransactionController::class, 'create'])
+        ->name('caisses.caisse_transactions.create');
+    Route::post('/caisses/caisse_transactions/store', [TransactionController::class, 'store'])
+        ->name('caisses.caisse_transactions.store');
 
     // Gestion des produits
     Route::middleware(['auth'])->group(function () {

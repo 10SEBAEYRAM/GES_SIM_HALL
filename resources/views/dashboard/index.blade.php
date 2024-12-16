@@ -40,6 +40,12 @@
 </head>
 
 <body class="bg-gray-100 font-sans antialiased">
+<aside class="w-56 bg-white shadow-lg p-6 fixed inset-y-0">
+            @include('layouts.navigation') <!-- Sidebar Navigation -->
+        </aside>
+
+        <div class="flex-1 ml-56 p-8 bg-gray-50 overflow-auto">
+
     <div class="max-w-7xl mx-auto py-12 px-6 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Tableau de Bord</h1>
 
@@ -51,7 +57,7 @@
                 <option value="mois">Mois</option>
                 <option value="annee">Année</option>
             </select>
-            <select id="filter-product" class="px-4 py-2 border rounded-md">
+            <select id="filter-produit" class="px-4 py-2 border rounded-md">
                 <option value="tous">Tous les produits</option>
                 @foreach ($dashboardData['produits'] as $produit)
                 <option value="{{ $produit->id_prod }}">{{ $produit->nom_prod }}</option>
@@ -88,12 +94,14 @@
             </div>
         </div>
     </div>
+        </div>
 
     <script>
-        // Initialisation des graphiques
+        // Initialisation des graphiques avec Chart.js
         const ctxType = document.getElementById('typeTransactionsChart').getContext('2d');
         const ctxPie = document.getElementById('transactionsPieChart').getContext('2d');
 
+        // Graphique en barres pour les types de transactions
         let typeTransactionsChart = new Chart(ctxType, {
             type: 'bar',
             data: {
@@ -106,10 +114,11 @@
                     y: {
                         beginAtZero: true
                     }
-                },
+                }
             }
         });
 
+        // Graphique en camembert pour les types de transactions
         let transactionsPieChart = new Chart(ctxPie, {
             type: 'pie',
             data: {
@@ -121,22 +130,34 @@
             }
         });
 
+        // Gestionnaire d'événement pour le bouton "Appliquer les filtres"
         document.getElementById('apply-filters').addEventListener('click', function() {
+            // Récupération des valeurs des filtres
             const period = document.getElementById('filter-period').value;
-            const product = document.getElementById('filter-product').value;
+            const produit = document.getElementById('filter-produit').value;
 
-            fetch(`/dashboard/filter?period=${encodeURIComponent(period)}&product=${encodeURIComponent(product)}`)
+            // Requête AJAX pour récupérer les données filtrées
+            fetch(`/dashboard/filter?period=${encodeURIComponent(period)}&produit=${encodeURIComponent(produit)}`)
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error('Erreur lors de la requête');
+                        throw new Error(`Erreur HTTP : ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    // Mettre à jour les sections HTML
+                    console.log('Données reçues :', data); // Affiche les données dans la console pour debug
+
+                    // Vérification des données retournées
+                    if (!data || !data.typeTransactions || !data.typeTransactions.labels || !data.typeTransactions.data) {
+                        console.error('Données manquantes ou invalides:', data);
+                        alert('Les données retournées par le serveur sont incomplètes.');
+                        return;
+                    }
+
+                    // Mise à jour de la section HTML avec le contenu filtré
                     document.getElementById('dashboard-content').innerHTML = data.htmlContent;
 
-                    // Mettre à jour les graphiques
+                    // Mise à jour du graphique en barres
                     typeTransactionsChart.data.labels = data.typeTransactions.labels;
                     typeTransactionsChart.data.datasets = [{
                         label: 'Montant par Type',
@@ -147,6 +168,7 @@
                     }];
                     typeTransactionsChart.update();
 
+                    // Mise à jour du graphique en camembert
                     transactionsPieChart.data.labels = data.typeTransactions.labels;
                     transactionsPieChart.data.datasets = [{
                         data: data.typeTransactions.data,
@@ -155,11 +177,12 @@
                     transactionsPieChart.update();
                 })
                 .catch(error => {
-                    console.error('Erreur lors du filtrage:', error);
+                    console.error('Erreur lors de la requête ou du traitement des données :', error);
                     alert('Une erreur s’est produite lors de l’application des filtres.');
                 });
         });
     </script>
+
 </body>
 
 </html>
