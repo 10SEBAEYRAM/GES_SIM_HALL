@@ -16,14 +16,31 @@ class DashboardController extends Controller
 {
     protected $dashboardService;
     public function index(Request $request)
-    {
+{
+    try {
+        // Récupération des données existantes
         $caisses = Caisse::select('id_caisse', 'nom_caisse', 'balance_caisse')->get();
         $produits = Produit::select('id_prod', 'nom_prod', 'balance')->get();
-        $typeTransactions = TypeTransaction::withSum('transactions as montant_total', 'montant_trans')->get();
+        
+        // Correction de la requête pour les types de transactions
+        $typeTransactions = TypeTransaction::select(
+                'type_transactions.id_type_transa',
+                'type_transactions.nom_type_transa'
+            )
+            ->leftJoin('transactions', 'type_transactions.id_type_transa', '=', 'transactions.type_transaction_id')
+            ->selectRaw('COALESCE(SUM(transactions.montant_trans), 0) as montant_total')
+            ->groupBy('type_transactions.id_type_transa', 'type_transactions.nom_type_transa')
+            ->get();
 
         $totalBalance = $caisses->sum('balance_caisse');
         $totalProduits = $produits->sum('balance');
         $totalTransactions = Transaction::sum('montant_trans');
+
+        // Préparation des données pour les graphiques
+        $chartData = [
+            'labels' => $typeTransactions->pluck('nom_type_transa')->toArray(),
+            'values' => $typeTransactions->pluck('montant_total')->toArray()
+        ];
 
         return view('dashboard.index', compact(
             'caisses',
@@ -31,60 +48,62 @@ class DashboardController extends Controller
             'typeTransactions',
             'totalBalance',
             'totalProduits',
-            'totalTransactions'
+            'totalTransactions',
+            'chartData',
+            // 'pieChartData',
+            // 'statistics'
+            
         ));
+    } catch (\Exception $e) {
+        dd($e->getMessage());
     }
+}
 
 
     public function filter(Request $request)
-    {
-        $period = $request->input('period');
-        $product = $request->input('product');
+{
+    $period = $request->input('period', 'day');
+    
+    // Définir la plage de dates en fonction de la période
+    $startDate = match($period) {
+        'day' => now()->startOfDay(),
+        'week' => now()->startOfWeek(),
+        'month' => now()->startOfMonth(),
+        'year' => now()->startOfYear(),
+        default => now()->startOfDay(),
+    };
 
-        $query = Transaction::query();
+    // Récupérer les transactions pour la période
+    $transactions = Transaction::with('typeTransaction')
+        ->whereBetween('created_at', [$startDate, now()])
+        ->get();
 
-        // Appliquer le filtre pour le produit
-        if ($product) {
-            $query->where('produit_id', $product);
-        }
+    // Préparer les données pour les graphiques
+    $chartData = [
+        'labels' => [],
+        'values' => []
+    ];
 
-        // Appliquer le filtre pour la période
-        if ($period) {
-            switch ($period) {
-                case 'jour':
-                    $query->whereDate('created_at', Carbon::today());
-                    break;
-                case 'semaine':
-                    $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-                    break;
-                case 'mois':
-                    $query->whereMonth('created_at', Carbon::now()->month);
-                    break;
-                case 'annee':
-                    $query->whereYear('created_at', Carbon::now()->year);
-                    break;
-                default:
-                    // Aucune action si la période est inconnue
-                    break;
-            }
-        }
-
-        $transactions = $query->get();
-
-        // Exemple de données JSON pour les graphiques
-        $typeTransactions = $transactions->groupBy('type')->map(function ($group) {
-            return $group->sum('montant_trans');
-        });
-
-        return response()->json([
-            'typeTransactions' => [
-                'labels' => $typeTransactions->keys(),
-                'data' => $typeTransactions->values(),
-            ],
-            'htmlContent' => view('dashboard.partials.filtered-transactions', compact('transactions'))->render()
-        ]);
+    // Grouper les transactions par type
+    $groupedTransactions = $transactions->groupBy('typeTransaction.nom_type_transa');
+    
+    foreach($groupedTransactions as $type => $typeTransactions) {
+        $chartData['labels'][] = $type;
+        $chartData['values'][] = $typeTransactions->sum('montant_trans');
     }
 
+    // Calculer les statistiques
+    $statistics = [
+        'totalTransactions' => $transactions->sum('montant_trans'),
+        'totalCount' => $transactions->count(),
+        'averageAmount' => $transactions->avg('montant_trans'),
+    ];
+
+    return response()->json([
+        'chartData' => $chartData,
+        'statistics' => $statistics
+    ]);
+}
 
 
     public function getChartData(Request $request)

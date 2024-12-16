@@ -1,188 +1,290 @@
-<!DOCTYPE html>
-<html lang="fr">
+@extends('layouts.app')
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de Bord</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-
-        .card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        canvas {
-            display: block;
-            width: 100% !important;
-            height: 300px;
-        }
-
-        .filter-section {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            justify-content: center;
-        }
-    </style>
-</head>
-
-<body class="bg-gray-100 font-sans antialiased">
-<aside class="w-56 bg-white shadow-lg p-6 fixed inset-y-0">
-            @include('layouts.navigation') <!-- Sidebar Navigation -->
-        </aside>
-
-        <div class="flex-1 ml-56 p-8 bg-gray-50 overflow-auto">
-
-    <div class="max-w-7xl mx-auto py-12 px-6 sm:px-6 lg:px-8">
-        <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Tableau de Bord</h1>
-
-        <!-- Filtrage dynamique -->
-        <div class="filter-section">
-            <select id="filter-period" class="px-4 py-2 border rounded-md">
-                <option value="jour">Jour</option>
-                <option value="semaine">Semaine</option>
-                <option value="mois">Mois</option>
-                <option value="annee">Année</option>
-            </select>
-            <select id="filter-produit" class="px-4 py-2 border rounded-md">
-                <option value="tous">Tous les produits</option>
-                @foreach ($dashboardData['produits'] as $produit)
-                <option value="{{ $produit->id_prod }}">{{ $produit->nom_prod }}</option>
-                @endforeach
-            </select>
-            <button id="apply-filters" class="bg-blue-500 text-white px-6 py-2 rounded-md">Appliquer les filtres</button>
+@section('content')
+<div class="min-h-screen bg-gradient-to-br from-gray-800 to-indigo-900 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête animé -->
+        <div class="text-center mb-10 animate__animated animate__fadeInDown">
+            <h1 class="text-4xl font-bold text-white mb-2">Tableau de Bord</h1>
+            <p class="text-gray-300">Supervision en temps réel</p>
         </div>
 
-        <!-- Sections mises à jour dynamiquement -->
-        <div id="dashboard-content">
-            @include('partials.dashboard-content', ['dashboardData' => $dashboardData])
+        <!-- Filtres -->
+        <div class="bg-white/10 backdrop-blur-lg rounded-xl p-4 mb-8 animate__animated animate__fadeIn">
+            <div class="flex flex-wrap gap-4 justify-center">
+                <select id="period-filter" class="bg-white/20 text-white border border-white/30 rounded-lg px-4 py-2">
+                    <option value="day">Aujourd'hui</option>
+                    <option value="week">Cette semaine</option>
+                    <option value="month">Ce mois</option>
+                    <option value="year">Cette année</option>
+                </select>
+            </div>
         </div>
 
-        <!-- Graphiques -->
-        <h2 class="text-2xl font-bold text-gray-800 mb-6">Graphiques</h2>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Transactions par Type -->
-            <div class="card bg-white shadow-lg rounded-lg p-6 hover:shadow-xl">
-                <h2 class="text-2xl font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fas fa-chart-bar mr-3 text-blue-500"></i> Transactions par Type
-                </h2>
-                <div class="relative">
-                    <canvas id="typeTransactionsChart"></canvas>
+        <!-- Cartes des statistiques principales -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Balance Totale -->
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 transform hover:scale-105 transition-all duration-300 shadow-lg animate__animated animate__fadeInUp">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-blue-100">Balance Totale</p>
+                        <h3 class="text-2xl font-bold text-white mt-2">{{ number_format($totalBalance, 0, ',', ' ') }} FCFA</h3>
+                    </div>
+                    <div class="bg-blue-400/30 rounded-full p-3">
+                        <i class="fas fa-wallet text-2xl text-white"></i>
+                    </div>
                 </div>
             </div>
-            <!-- Répartition des Transactions -->
-            <div class="card bg-white shadow-lg rounded-lg p-6 hover:shadow-xl">
-                <h2 class="text-2xl font-semibold text-gray-800 flex items-center mb-4">
-                    <i class="fas fa-chart-pie mr-3 text-green-500"></i> Répartition des Transactions
-                </h2>
-                <div class="relative">
-                    <canvas id="transactionsPieChart"></canvas>
+       
+
+            <!-- Total Produits -->
+            <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 transform hover:scale-105 transition-all duration-300 shadow-lg animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-emerald-100">Balance Produits</p>
+                        <h3 class="text-2xl font-bold text-white mt-2">{{ number_format($totalProduits, 0, ',', ' ') }} FCFA</h3>
+                    </div>
+                    <div class="bg-emerald-400/30 rounded-full p-3">
+                        <i class="fas fa-box text-2xl text-white"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Transactions -->
+            <div class="bg-gradient-to-br from-violet-500 to-violet-600 rounded-xl p-6 transform hover:scale-105 transition-all duration-300 shadow-lg animate__animated animate__fadeInUp" style="animation-delay: 0.4s">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-violet-100">Total Transactions</p>
+                        <h3 class="text-2xl font-bold text-white mt-2">{{ number_format($totalTransactions, 0, ',', ' ') }} FCFA</h3>
+                    </div>
+                    <div class="bg-violet-400/30 rounded-full p-3">
+                        <i class="fas fa-exchange-alt text-2xl text-white"></i>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Sections détaillées -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Balance par Caisse -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInLeft">
+                <h3 class="text-xl font-bold text-white mb-6">Balance par Caisse</h3>
+                <div class="space-y-4">
+                    @foreach($caisses as $caisse)
+                    <div class="bg-white/5 rounded-lg p-4 transform hover:scale-102 transition-all duration-300">
+                        <div class="flex justify-between items-center">
+                            <span class="text-white">{{ $caisse->nom_caisse }}</span>
+                            <span class="text-emerald-400 font-bold">{{ number_format($caisse->balance_caisse, 0, ',', ' ') }} FCFA</span>
+                        </div>
+                        <div class="mt-2 bg-white/20 rounded-full h-2">
+                            <div class="bg-emerald-500 h-2 rounded-full" style="width: {{ ($caisse->balance_caisse / $totalBalance) * 100 }}%"></div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <!-- Balance par Produit -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInRight">
+                <h3 class="text-xl font-bold text-white mb-6">Balance par Produit</h3>
+                <div class="space-y-4">
+                    @foreach($produits as $produit)
+                    <div class="bg-white/5 rounded-lg p-4 transform hover:scale-102 transition-all duration-300">
+                        <div class="flex justify-between items-center">
+                            <span class="text-white">{{ $produit->nom_prod }}</span>
+                            <span class="text-blue-400 font-bold">{{ number_format($produit->balance, 0, ',', ' ') }} FCFA</span>
+                        </div>
+                        <div class="mt-2 bg-white/20 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: {{ ($produit->balance / $totalProduits) * 100 }}%"></div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+      <!-- Graphiques -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Graphique à barres -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInLeft">
+                <h3 class="text-xl font-bold text-white mb-6">Transactions par Type</h3>
+                <canvas id="barChart" class="w-full h-64"></canvas>
+            </div>
+
+            <!-- Graphique circulaire -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInRight">
+                <h3 class="text-xl font-bold text-white mb-6">Répartition des Transactions</h3>
+                <canvas id="pieChart" class="w-full h-64"></canvas>
+            </div>
+        </div>
+        <!-- Transactions par Type -->
+        <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp">
+    <h3 class="text-xl font-bold text-white mb-6">Transactions par Type</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @forelse($typeTransactions as $type_transaction)
+                <div class="bg-white/5 rounded-lg p-6 transform hover:scale-105 transition-all duration-300">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-white font-medium">
+                            {{ $type_transaction->nom_type_transa ?? 'Type inconnu' }}
+                        </span>
+                        <div class="bg-indigo-500/30 rounded-full p-2">
+                            <i class="fas fa-chart-line text-indigo-400"></i>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold text-indigo-400">
+                        {{ number_format($type_transaction->montant_total ?? 0, 0, ',', ' ') }} FCFA
+                    </p>
+                </div>
+            @empty
+                <p class="text-white">Aucune transaction disponible pour le moment.</p>
+            @endforelse
+        </div>
+</div>
+
     </div>
-        </div>
+</div>
 
-    <script>
-        // Initialisation des graphiques avec Chart.js
-        const ctxType = document.getElementById('typeTransactionsChart').getContext('2d');
-        const ctxPie = document.getElementById('transactionsPieChart').getContext('2d');
+@push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+@endpush
 
-        // Graphique en barres pour les types de transactions
-        let typeTransactionsChart = new Chart(ctxType, {
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Configuration des graphiques
+    let barChart;
+    let pieChart;
+
+    // Fonction pour initialiser les graphiques
+    function initCharts(data) {
+        // Configuration du graphique à barres
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        if (barChart) barChart.destroy();
+        barChart = new Chart(barCtx, {
             type: 'bar',
             data: {
-                labels: [],
-                datasets: []
+                labels: data.labels,
+                datasets: [{
+                    label: 'Montant des transactions',
+                    data: data.values,
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(239, 68, 68, 0.8)'
+                    ],
+                    borderWidth: 1
+                }]
             },
             options: {
                 responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: 'white'
+                        }
+                    }
+                },
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        ticks: {
+                            color: 'white'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: 'white'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
                     }
                 }
             }
         });
 
-        // Graphique en camembert pour les types de transactions
-        let transactionsPieChart = new Chart(ctxPie, {
-            type: 'pie',
+        // Configuration du graphique circulaire
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        if (pieChart) pieChart.destroy();
+        pieChart = new Chart(pieCtx, {
+            type: 'doughnut',
             data: {
-                labels: [],
-                datasets: []
+                labels: data.labels,
+                datasets: [{
+                    data: data.values,
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(239, 68, 68, 0.8)'
+                    ]
+                }]
             },
             options: {
-                responsive: true
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'white'
+                        }
+                    }
+                }
             }
         });
+    }
 
-        // Gestionnaire d'événement pour le bouton "Appliquer les filtres"
-        document.getElementById('apply-filters').addEventListener('click', function() {
-            // Récupération des valeurs des filtres
-            const period = document.getElementById('filter-period').value;
-            const produit = document.getElementById('filter-produit').value;
+    // Fonction pour mettre à jour les données
+    function updateDashboard(period) {
+        fetch(`/dashboard/filter?period=${period}`)
+            .then(response => response.json())
+            .then(data => {
+                // Mise à jour des graphiques
+                initCharts(data.chartData);
 
-            // Requête AJAX pour récupérer les données filtrées
-            fetch(`/dashboard/filter?period=${encodeURIComponent(period)}&produit=${encodeURIComponent(produit)}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Erreur HTTP : ${response.status}`);
+                // Mise à jour des statistiques
+                document.querySelectorAll('[data-statistic]').forEach(element => {
+                    const key = element.dataset.statistic;
+                    if (data.statistics[key]) {
+                        element.textContent = new Intl.NumberFormat('fr-FR').format(data.statistics[key]) + ' FCFA';
                     }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Données reçues :', data); // Affiche les données dans la console pour debug
-
-                    // Vérification des données retournées
-                    if (!data || !data.typeTransactions || !data.typeTransactions.labels || !data.typeTransactions.data) {
-                        console.error('Données manquantes ou invalides:', data);
-                        alert('Les données retournées par le serveur sont incomplètes.');
-                        return;
-                    }
-
-                    // Mise à jour de la section HTML avec le contenu filtré
-                    document.getElementById('dashboard-content').innerHTML = data.htmlContent;
-
-                    // Mise à jour du graphique en barres
-                    typeTransactionsChart.data.labels = data.typeTransactions.labels;
-                    typeTransactionsChart.data.datasets = [{
-                        label: 'Montant par Type',
-                        data: data.typeTransactions.data,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }];
-                    typeTransactionsChart.update();
-
-                    // Mise à jour du graphique en camembert
-                    transactionsPieChart.data.labels = data.typeTransactions.labels;
-                    transactionsPieChart.data.datasets = [{
-                        data: data.typeTransactions.data,
-                        backgroundColor: ['#FF5733', '#33FF57', '#3357FF', '#FFC300', '#DAF7A6']
-                    }];
-                    transactionsPieChart.update();
-                })
-                .catch(error => {
-                    console.error('Erreur lors de la requête ou du traitement des données :', error);
-                    alert('Une erreur s’est produite lors de l’application des filtres.');
                 });
+            });
+    }
+
+    // Écouteur d'événement pour le filtre
+    document.getElementById('period-filter').addEventListener('change', function(e) {
+        updateDashboard(e.target.value);
+    });
+
+    // Initialisation des graphiques au chargement
+    document.addEventListener('DOMContentLoaded', function() {
+        const initialData = {
+            labels: {!! json_encode($chartData['labels']) !!},
+            values: {!! json_encode($chartData['values']) !!}
+        };
+        initCharts(initialData);
+    });
+
+    // Animation au scroll
+    const observerOptions = {
+        threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animate__animated', 'animate__fadeInUp');
+            }
         });
-    </script>
+    }, observerOptions);
 
-</body>
-
-</html>
+    document.querySelectorAll('.animate__animated').forEach((element) => {
+        observer.observe(element);
+    });
+</script>
+@endpush
+@endsection

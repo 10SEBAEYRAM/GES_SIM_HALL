@@ -58,7 +58,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('mouvements/create', [CaisseController::class, 'createMouvement'])->name('mouvements.create');
         Route::post('mouvements/store', [CaisseController::class, 'storeMouvement'])->name('mouvements.store');
         // Nouvelle route pour afficher les détails
-        
+
         // Route pour les mouvements de caisse
         Route::post('/caisses/mouvement', [CaisseController::class, 'storeMouvement'])->name('caisses.mouvement.store');
     });
@@ -101,7 +101,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{id}', [CaisseController::class, 'destroy'])->name('destroy');
         Route::get('/{id}/show', [CaisseController::class, 'show'])->name('show');
     });
-    
+
 
     // Gestion des types de transactions
     Route::resource('type-transactions', TypeTransactionController::class);
@@ -113,3 +113,5 @@ Route::middleware(['auth'])->group(function () {
 
 // Routes d'authentification
 require __DIR__ . '/auth.php';
+
+Route::get('/api/dashboard-data', [DashboardController::class, 'getDashboardData']);

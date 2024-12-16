@@ -49,20 +49,12 @@ class Transaction extends Model
     // Relations
     public function typeTransaction()
     {
-        return $this->belongsTo(
-            TypeTransaction::class,
-            'type_transaction_id',
-            'id_type_transa'
-        );
+        return $this->belongsTo(TypeTransaction::class, 'type_transaction_id', 'id_type_transa');
     }
 
     public function produit()
     {
-        return $this->belongsTo(
-            Produit::class,
-            'produit_id',
-            'id_prod'
-        );
+        return $this->belongsTo(Produit::class, 'produit_id', 'id_prod');
     }
 
     public function user()
