@@ -13,11 +13,10 @@
 @section('content')
 {{-- Par celle-ci --}}
 {{-- Dans resources/views/caisses/index.blade.php --}}
-<a href="{{ route('caisses.create', ['type' => 'mouvement']) }}"
+<a href="{{ route('caisses.mouvements.create') }}"
     class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-md border border-green-700 transition duration-300 ease-in-out">
-    Ajouter une Transaction
+    Ajouter un Mouvement
 </a>
-
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
         <div class="bg-white shadow-lg rounded-lg border border-gray-300 p-6">
@@ -102,15 +101,20 @@
                         <td class="px-6 py-4 whitespace-nowrap">{{ $caisse->created_at->format('d-m-Y') }}</td>
                         <td class="px-6 py-4 text-right text-sm font-medium">
                             <div class="flex gap-3 justify-end">
+                                {{-- Bouton Voir détails --}}
+                                <a href="{{ route('caisses.show', $caisse->id_caisse) }}"
+                                    class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-indigo-700">
+                                    Voir détails
+                                </a>
 
+                                {{-- Bouton Modifier (existant) --}}
                                 <a href="{{ route('caisses.edit', $caisse->id_caisse) }}"
                                     class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-blue-700">
                                     Modifier
                                 </a>
 
-
-                                <form action="{{ route('caisses.destroy', $caisse->id_caisse) }}" method="POST"
-                                    class="inline-block">
+                                {{-- Bouton Supprimer (existant) --}}
+                                <form action="{{ route('caisses.destroy', $caisse->id_caisse) }}" method="POST" class="inline-block">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit"
@@ -120,7 +124,6 @@
                                     </button>
                                 </form>
                             </div>
-
                         </td>
                     </tr>
                     @endforeach

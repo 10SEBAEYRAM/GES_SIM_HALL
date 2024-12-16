@@ -9,14 +9,14 @@
     </thead>
     <tbody>
         @forelse($transactions as $transaction)
-     
+
         <tr>
             <td class="border border-gray-300 px-4 py-2">{{ $loop->iteration }}</td>
             <td class="border border-gray-300 px-4 py-2">
-            
-            @php
-            $type_transaction = App\Models\TypeTransaction::find($transaction->type_transaction_id);
-            @endphp
+
+                @php
+                $type_transaction = App\Models\TypeTransaction::find($transaction->type_transaction_id);
+                @endphp
                 {{ $type_transaction->nom_type_transa }}
             </td>
             <td class="border border-gray-300 px-4 py-2 text-right">
@@ -27,10 +27,10 @@
             </td>
         </tr>
 
-        @empty
+        <!-- @empty
         <tr>
             <td colspan="4" class="border border-gray-300 px-4 py-2 text-center">Aucune transaction trouvée</td>
         </tr>
-        @endforelse
+        @endforelse -->
     </tbody>
 </table>

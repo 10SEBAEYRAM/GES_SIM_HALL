@@ -4,7 +4,13 @@ namespace App\Http\Controllers;
 
 use Yajra\DataTables\Facades\DataTables;
 use App\Models\Caisse;
+
+use App\Models\MouvementCaisse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+
 
 class CaisseController extends Controller
 {
@@ -93,108 +99,211 @@ class CaisseController extends Controller
 
     public function store(Request $request)
     {
+
+
+        $validated = $request->validate([
+            'nom_caisse' => 'required|string|max:255|unique:caisses,nom_caisse',
+            'balance_caisse' => 'required|numeric|min:0',
+        ], [
+            'nom_caisse.required' => 'Le nom de la caisse est requis',
+            'nom_caisse.unique' => 'Ce nom de caisse existe déjà',
+            'balance_caisse.required' => 'La balance initiale est requise',
+            'balance_caisse.numeric' => 'La balance doit être un nombre',
+            'balance_caisse.min' => 'La balance ne peut pas être négative',
+        ]);
+
         try {
-            DB::beginTransaction();
+            $caisse = Caisse::create($validated);
 
-            // Si c'est un mouvement de caisse
-            if ($request->has('type_mouvement')) {
-                $validated = $request->validate([
-                    'type_mouvement' => 'required|in:emprunt,remboursement,retrait',
-                    'id_caisse' => 'required|exists:caisses,id_caisse',
-                    'montant' => 'required|numeric|min:0',
-                    'motif' => 'required|string'
-                ]);
-
-                $caisse = Caisse::findOrFail($validated['id_caisse']);
-                $montant = $validated['montant'];
-
-                // Vérification du solde pour les retraits et emprunts
-                if (in_array($validated['type_mouvement'], ['retrait', 'emprunt'])) {
-                    if ($caisse->balance_caisse < $montant) {
-                        throw new \Exception('Solde insuffisant dans la caisse.');
-                    }
-                }
-
-                // Mise à jour des colonnes selon le type de mouvement
-                switch ($validated['type_mouvement']) {
-                    case 'emprunt':
-                        $caisse->emprunt_sim_hall += $montant;
-                        $caisse->balance_caisse -= $montant;
-                        break;
-                    case 'remboursement':
-                        if ($caisse->emprunt_sim_hall < $montant) {
-                            throw new \Exception('Le montant du remboursement ne peut pas être supérieur au montant emprunté.');
-                        }
-                        $caisse->remboursement_sim_hall += $montant;
-                        $caisse->emprunt_sim_hall -= $montant;
-                        $caisse->balance_caisse += $montant;
-                        break;
-                    case 'retrait':
-                        $caisse->montant_retrait += $montant;
-                        $caisse->balance_caisse -= $montant;
-                        break;
-                }
-
-                $caisse->save();
-
-                DB::commit();
-
-                return redirect()
-                    ->route('caisses.index')
-                    ->with('success', 'Mouvement de caisse enregistré avec succès');
-            }
-
-            // Sinon, c'est une création de caisse normale
-            $request->validate([
-                'nom_caisse' => 'required|string|max:255',
-                'balance_caisse' => 'required|numeric',
-            ]);
-
-            Caisse::create($request->all());
-
-            DB::commit();
-
-            return redirect()->route('caisses.index')
+            return redirect()
+                ->route('caisses.index')
                 ->with('success', 'Caisse créée avec succès');
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()
                 ->withInput()
-                ->with('error', 'Erreur : ' . $e->getMessage());
+                ->with('error', 'Erreur lors de la création de la caisse : ' . $e->getMessage());
         }
     }
-
-
     public function edit($id)
     {
         if (!auth()->user()->can('edit-caisses')) {
             return redirect()->route('caisses.index')
                 ->with('error', 'Vous n\'êtes pas autorisé à modifier une caisse.');
         }
+        // Récupérer la caisse
         $caisse = Caisse::findOrFail($id);
+
         return view('caisses.edit', compact('caisse'));
     }
 
-
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->can('edit-caisses')) {
+        if (!auth()->user()->can('update-caisses')) {
             return redirect()->route('caisses.index')
-                ->with('error', 'Vous n\'êtes pas autorisé à modifier une caisse.');
+                ->with('error', 'Vous n\'êtes pas autorisé à mettre à jour une caisse.');
         }
-
-        $caisse = Caisse::findOrFail($id);
-
+        // Validation
         $validated = $request->validate([
             'nom_caisse' => 'required|string|max:255',
-            'balance_caisse' => 'required|numeric',
+            'balance_caisse' => 'required|numeric|min:0',
         ]);
 
+        // Récupérer la caisse
+        $caisse = Caisse::findOrFail($id);
+
+        // Mettre à jour la caisse
         $caisse->update($validated);
 
-        return redirect()->route('caisses.index')->with('success', 'Caisse mise à jour avec succès.');
+        return redirect()
+            ->route('caisses.index')
+            ->with('success', 'Caisse mise à jour avec succès');
     }
 
+    public function createMouvement()
+    {
+        if (!auth()->user()->can('create-caisses')) {
+            return redirect()->route('caisses.index')
+                ->with('error', 'Vous n\'êtes pas autorisé à créer un mouvement.');
+        }
+
+        $caisses = Caisse::all();
+        return view('caisses.mouvements.create', compact('caisses'));
+    }
+
+    public function storeMouvement(Request $request)
+    {
+        try {
+            // DD 1: Voir les données initiales
+            [
+                'Données initiales' => [
+                    'Request' => $request->all(),
+                    'User' => auth()->user(),
+                    'User ID' => auth()->user()->id_util // Assurez-vous d'utiliser la bonne colonne ID
+                ]
+            ];
+
+            DB::beginTransaction();
+
+            // Validation
+            $validated = $request->validate([
+                'id_caisse' => 'required|exists:caisses,id_caisse',
+                'type_mouvement' => 'required|in:emprunt,remboursement,retrait',
+                'montant' => 'required|numeric|min:0',
+                'motif' => 'required|string'
+            ]);
+
+            // DD 2: Après validation
+            [
+                'Données validées' => $validated
+            ];
+
+            // Récupération de la caisse
+            $caisse = Caisse::findOrFail($validated['id_caisse']);
+            $montant = (float)$validated['montant'];
+            $soldeAvant = (float)$caisse->balance_caisse;
+
+            // DD 3: Après récupération de la caisse
+            [
+                'Données caisse' => [
+                    'Caisse' => $caisse->toArray(),
+                    'Montant' => $montant,
+                    'Solde avant' => $soldeAvant
+                ]
+            ];
+
+            // Récupération de l'ID utilisateur correct
+            $userId = auth()->user()->id_util;
+
+            // Traitement selon le type de mouvement
+            switch ($validated['type_mouvement']) {
+                case 'emprunt':
+                    if ($montant > $soldeAvant) {
+                        throw new \Exception('Solde insuffisant pour cet emprunt');
+                    }
+                    $caisse->balance_caisse = $soldeAvant - $montant;
+                    $caisse->total_emprunts = (float)($caisse->total_emprunts ?? 0) + $montant;
+                    break;
+
+                case 'remboursement':
+                    $caisse->balance_caisse = $soldeAvant + $montant;
+                    $caisse->total_remboursements = (float)($caisse->total_remboursements ?? 0) + $montant;
+                    break;
+
+                case 'retrait':
+                    if ($montant > $soldeAvant) {
+                        throw new \Exception('Solde insuffisant pour ce retrait');
+                    }
+                    $caisse->balance_caisse = $soldeAvant - $montant;
+                    $caisse->total_retraits = (float)($caisse->total_retraits ?? 0) + $montant;
+                    break;
+            }
+
+            // DD 4: Après calculs
+            [
+                'Après calculs' => [
+                    'Type mouvement' => $validated['type_mouvement'],
+                    'Solde avant' => $soldeAvant,
+                    'Montant' => $montant,
+                    'Nouveau solde' => $caisse->balance_caisse,
+                    'Nouveaux totaux' => [
+                        'Emprunts' => $caisse->total_emprunts,
+                        'Remboursements' => $caisse->total_remboursements,
+                        'Retraits' => $caisse->total_retraits
+                    ]
+                ]
+            ];
+
+            // Sauvegarde de la caisse
+            $caisse->save();
+
+            // Création du mouvement avec l'ID utilisateur correct
+            $mouvement = MouvementCaisse::create([
+                'caisse_id' => $caisse->id_caisse,
+                'type_mouvement' => $validated['type_mouvement'],
+                'montant' => $montant,
+                'motif' => $validated['motif'],
+                'solde_avant' => $soldeAvant,
+                'solde_apres' => $caisse->balance_caisse,
+                'user_id' => $userId
+            ]);
+
+            // DD 5: Après création du mouvement
+            // Si le `dd` est au milieu du code
+            [
+                'Mouvement créé' => [
+                    'Mouvement' => $mouvement->toArray(),
+                    'Caisse mise à jour' => $caisse->fresh()->toArray()
+                ]
+            ];
+
+            // Ou simplement supprimer la partie complète si elle n'est pas utilisée
+
+            DB::commit();
+
+            return redirect()
+                ->route('caisses.index')
+                ->with('success', 'Mouvement enregistré avec succès');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur dans storeMouvement', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            // DD en cas d'erreur
+            [
+                'Erreur' => [
+                    'Message' => $e->getMessage(),
+                    'Trace' => $e->getTrace(),
+                    'Request' => $request->all()
+                ]
+            ];
+
+            return back()
+                ->withInput()
+                ->with('error', 'Erreur : ' . $e->getMessage());
+        }
+    }
     public function Destroy($id)
     {
 
@@ -218,6 +327,8 @@ class CaisseController extends Controller
                 ->with('error', 'Erreur lors de la suppression');
         }
     }
+
+
     public function empruntSimHall(Request $request)
     {
         // Récupérer la caisse
@@ -225,7 +336,7 @@ class CaisseController extends Controller
 
         // Ajouter le montant de l'emprunt à la caisse
         $caisse->update([
-            'solde_balance' => $caisse->solde_balance + $request->montant,
+            'balance_caisse' => $caisse->balance_caisse + $request->montant,
             'emprunt_sim_hall' => $caisse->emprunt_sim_hall + $request->montant,
         ]);
 
@@ -244,7 +355,7 @@ class CaisseController extends Controller
 
         // Effectuer le retrait et mettre à jour la caisse
         $caisse->update([
-            'solde_balance' => $caisse->solde_balance - $request->montant,
+            'balance_caisse' => $caisse->balance_caisse - $request->montant,
             'montant_retrait' => $caisse->montant_retrait + $request->montant,
         ]);
 
@@ -263,11 +374,34 @@ class CaisseController extends Controller
 
         // Effectuer le remboursement et mettre à jour la caisse
         $caisse->update([
-            'solde_balance' => $caisse->solde_balance - $request->montant,
+            'balance_caisse' => $caisse->balance_caisse - $request->montant,
             'emprunt_sim_hall' => $caisse->emprunt_sim_hall - $request->montant,
             'remboursement_sim_hall' => $caisse->remboursement_sim_hall + $request->montant,
         ]);
 
         return back()->with('success', 'Remboursement effectué à Sim Hall.');
+    }
+
+    public function show($id)
+    {
+        // Récupérer la caisse avec ses mouvements
+        $caisse = Caisse::with(['mouvements' => function ($query) {
+            $query->with('user')
+                ->orderBy('created_at', 'desc');
+        }])->findOrFail($id);
+
+        // Pour déboguer, ajoutez temporairement ce dd()
+        [
+            'caisse' => $caisse->toArray(),
+            'nom_caisse' => $caisse->nom_caisse,
+            'balance' => $caisse->balance_caisse,
+            'created_at' => $caisse->created_at,
+            'mouvements' => $caisse->mouvements->toArray()
+        ];
+
+        return view('caisses.show', [
+            'caisse' => $caisse,
+            'mouvements' => $caisse->mouvements
+        ]);
     }
 }

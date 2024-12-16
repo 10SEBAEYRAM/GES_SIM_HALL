@@ -9,17 +9,57 @@ class Caisse extends Model
 {
     use HasFactory;
 
-    // Si votre clé primaire n'est pas 'id'
-    protected $table = 'caisses'; // Associe ce modèle à la table "caisses"
-    protected $primaryKey = 'id_caisse'; // Spécifie que la clé primaire est "id_caisse"
-    public $incrementing = true; // Indique que la clé primaire est auto-incrémentée
-    protected $keyType = 'int'; // Type de la clé primaire
+    protected $table = 'caisses';
+    protected $primaryKey = 'id_caisse';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
-        'balance_caisse',
         'nom_caisse',
-        'emprunt_sim_hall',
-        'montant_retrait',
-        'remboursement_sim_hall',
+        'balance_caisse',
+        'total_emprunts',
+        'total_remboursements',
+        'total_retraits'
     ];
+
+    protected $casts = [
+        'balance_caisse' => 'decimal:2',
+        'total_emprunts' => 'decimal:2',
+        'total_remboursements' => 'decimal:2',
+        'total_retraits' => 'decimal:2'
+    ];
+
+    // Relation avec les mouvements de caisse
+    public function mouvements()
+    {
+        return $this->hasMany(MouvementCaisse::class, 'caisse_id', 'id_caisse');
+    }
+
+    // Méthodes utilitaires
+    public function getSoldeDisponibleAttribute()
+    {
+        return $this->balance_caisse;
+    }
+
+    public function getMontantEmprunteAttribute()
+    {
+        return $this->emprunt_sim_hall - $this->remboursement_sim_hall;
+    }
+
+    public function getTotalRetraitsAttribute()
+    {
+        return $this->montant_retrait;
+    }
+
+    // Méthode pour vérifier si un retrait est possible
+    public function peutRetirer($montant)
+    {
+        return $this->balance_caisse >= $montant;
+    }
+
+    // Méthode pour vérifier si un remboursement est possible
+    public function peutRembourser($montant)
+    {
+        return $this->getMontantEmprunteAttribute() >= $montant;
+    }
 }

@@ -51,7 +51,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/produits/datatable', [ProduitController::class, 'getDatatable'])->name('produits.data');
     });
 
-    // Gestion des transactions
+
+    // Affiche le formulaire de création d'un mouvement (méthode GET)
+    Route::prefix('caisses')->name('caisses.')->group(function () {
+        Route::get('/', [CaisseController::class, 'index'])->name('index');
+        Route::get('mouvements/create', [CaisseController::class, 'createMouvement'])->name('mouvements.create');
+        Route::post('mouvements/store', [CaisseController::class, 'storeMouvement'])->name('mouvements.store');
+        // Nouvelle route pour afficher les détails
+        
+        // Route pour les mouvements de caisse
+        Route::post('/caisses/mouvement', [CaisseController::class, 'storeMouvement'])->name('caisses.mouvement.store');
+    });
 
     Route::resource('transactions', TransactionController::class);
 
@@ -82,21 +92,16 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Gestion des caisses
-    Route::middleware(['auth'])->group(function () {
-        // Afficher la liste des caisses
-        Route::get('/caisses', [CaisseController::class, 'index'])->name('caisses.index');
-
-        // Créer une nouvelle caisse
-        Route::get('/caisses/create', [CaisseController::class, 'create'])->name('caisses.create');
-        Route::post('/caisses', [CaisseController::class, 'store'])->name('caisses.store');
-
-        // Modifier une caisse existante
-        Route::get('/caisses/{id}/edit', [CaisseController::class, 'edit'])->name('caisses.edit');
-        Route::put('/caisses/{id}', [CaisseController::class, 'update'])->name('caisses.update');
-
-        // Supprimer une caisse
-        Route::delete('/caisses/{id}', [CaisseController::class, 'Destroy'])->name('caisses.destroy');
+    Route::prefix('caisses')->name('caisses.')->group(function () {
+        Route::get('/', [CaisseController::class, 'index'])->name('index');
+        Route::get('/create', [CaisseController::class, 'create'])->name('create');
+        Route::post('/', [CaisseController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [CaisseController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [CaisseController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CaisseController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/show', [CaisseController::class, 'show'])->name('show');
     });
+    
 
     // Gestion des types de transactions
     Route::resource('type-transactions', TypeTransactionController::class);
