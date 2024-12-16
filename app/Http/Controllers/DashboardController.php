@@ -17,87 +17,23 @@ class DashboardController extends Controller
     protected $dashboardService;
     public function index(Request $request)
     {
+        $caisses = Caisse::select('id_caisse', 'nom_caisse', 'balance_caisse')->get();
+        $produits = Produit::select('id_prod', 'nom_prod', 'balance')->get();
+        $typeTransactions = TypeTransaction::withSum('transactions as montant_total', 'montant_trans')->get();
 
-        $dateRange = $request->input('date_range', 'today');
-
-        // Définir les plages de dates actuelles et précédentes
-        [$startDate, $endDate] = $this->getDateRange($dateRange);
-        [$previousStartDate, $previousEndDate] = $this->getPreviousDateRange($dateRange);
-
-        // Récupérer les données du tableau de bord
-        $dashboardData = $this->getDashboardData($startDate, $endDate, $previousStartDate, $previousEndDate);
-
-        // Récupérer toutes les caisses
-        $caisses = Caisse::all();
-
-        // Ajouter les caisses au tableau des données
-        $dashboardData['caisses'] = $caisses;
-
-        // Transactions groupées par type
-        $type_transactions = DB::table('transactions')
-            ->join('type_transactions', 'type_transactions.id_type_transa', '=', 'type_transaction_id')
-            ->select('type_transactions.nom_type_transa', DB::raw('SUM(transactions.montant_trans) as total'))
-            ->groupBy('type_transactions.nom_type_transa')
-            ->get();
-
-        // Gérer les données vides
-        if ($type_transactions->isEmpty()) {
-            $type_transactions = collect();
-        }
-
-
-        $nouveauxUtilisateurs = User::where('created_at', '>=', now()->subDays(7))->get();
-
-
-        $totalUtilisateurs = User::count();
-
-
-        $totalProduits = Produit::sum('balance');
+        $totalBalance = $caisses->sum('balance_caisse');
+        $totalProduits = $produits->sum('balance');
         $totalTransactions = Transaction::sum('montant_trans');
-        $balanceProduits = Produit::sum('balance');
-
-
-        $montantCaisse = Caisse::sum('balance_caisse');
-
-
-        $transactions = Transaction::whereBetween('created_at', [$startDate, $endDate])->get();
-
-
-        $transactionDates = $transactions->pluck('created_at')->unique()->sort();
-
-
-        $transactionAmounts = $transactions->sum('montant_trans');
-
-
-        $produits = Produit::all();
-
 
         return view('dashboard.index', compact(
-            'dashboardData',
-            'type_transactions',
-            'nouveauxUtilisateurs',
-            'totalUtilisateurs',
-            'totalProduits',
-            'totalTransactions',
-            'balanceProduits',
-            'montantCaisse',
-            'transactions',
-            'produits',
             'caisses',
-            'transactionAmounts',
-            'transactionDates',
-            'startDate',
-            'endDate',
-            'previousStartDate',
-            'previousEndDate'
+            'produits',
+            'typeTransactions',
+            'totalBalance',
+            'totalProduits',
+            'totalTransactions'
         ));
     }
-
-
-
-
-
-
 
 
     public function filter(Request $request)
@@ -311,7 +247,7 @@ class DashboardController extends Controller
             ->take(10)
             ->get();
 
-        // Ajouter les produits aux données
+        // Ajouter les produits aux donn��es
         $produits = Produit::all(); // Récupérer tous les produits pour l'affichage
 
         return [
