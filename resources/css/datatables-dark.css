@@ -1,0 +1,62 @@
+/* datatables-dark.css */
+/* Réinitialisation complète */
+.dataTables_wrapper *,
+.dataTables_wrapper *::before,
+.dataTables_wrapper *::after {
+    background: transparent !important;
+    color: white !important;
+}
+
+/* Conteneur principal */
+.dataTables_wrapper {
+    padding: 1rem;
+}
+
+/* Contrôles de base */
+.dataTables_length select,
+.dataTables_filter input {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 0.5rem !important;
+    padding: 0.5rem !important;
+}
+
+/* Boutons d'export */
+.dt-buttons .dt-button {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    color: white !important;
+    padding: 0.5rem 1rem !important;
+    margin: 0.25rem !important;
+    border-radius: 0.5rem !important;
+}
+
+/* Pagination */
+.dataTables_paginate .paginate_button {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    color: white !important;
+    margin: 0 0.25rem !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.5rem !important;
+}
+
+.dataTables_paginate .paginate_button.current {
+    background: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Table */
+table.dataTable {
+    background: transparent !important;
+}
+
+table.dataTable thead th {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Suppression des éléments indésirables */
+.dt-button-background,
+.dt-button-collection {
+    display: none !important;
+}

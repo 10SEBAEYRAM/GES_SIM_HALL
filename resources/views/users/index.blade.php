@@ -1,148 +1,329 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-screen-xl mx-auto px-8 py-6 bg-white shadow-lg rounded-lg border border-gray-300">
-    {{-- En-tête avec Titre et Bouton --}}
-    <div class="flex justify-between items-center mb-6 border-b pb-4 border-gray-300">
-        <h1 class="text-2xl font-bold text-gray-800">Liste des Utilisateurs</h1>
-        <a href="{{ route('users.create') }}"
-            class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg shadow-md transform transition duration-300 hover:scale-105 border border-blue-700"
-            onclick="return handleUnauthorized('{{ auth()->user()->can('create-users') }}', 'créer une nouvelle grille')">
+<div class="min-h-screen bg-gradient-to-br from-gray-800 to-indigo-900 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête avec effet glassmorphism -->
+        <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInDown">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-2">Liste des Utilisateurs</h1>
+                    <p class="text-gray-300">Gestion et administration des accès</p>
+                </div>
+                <a href="{{ route('users.create') }}"
+                    class="bg-blue-600/20 hover:bg-blue-600/30 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 border border-blue-500/30"
+                    onclick="return handleUnauthorized('{{ auth()->user()->can('create-users') }}', 'créer un nouvel utilisateur')">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Nouvel Utilisateur</span>
+                </a>
+            </div>
+        </div>
 
-            Nouvel Utilisateur
-        </a>
-    </div>
-    {{-- Messages de feedback --}}
-    @if(session('success'))
-    <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-md mb-4 shadow-md border border-green-400">
-        {{ session('success') }}
-    </div>
-    @endif
+        <!-- Messages de feedback -->
+        @if(session('success'))
+        <div class="bg-emerald-500/20 backdrop-blur-lg border-l-4 border-emerald-500 text-white px-6 py-4 rounded-lg mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle text-emerald-400 mr-3"></i>
+                {{ session('success') }}
+            </div>
+        </div>
+        @endif
 
+        @if(session('error'))
+        <div class="bg-red-500/20 backdrop-blur-lg border-l-4 border-red-500 text-white px-6 py-4 rounded-lg mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle text-red-400 mr-3"></i>
+                {{ session('error') }}
+            </div>
+        </div>
+        @endif
 
-
-    @if(session('error'))
-    <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-md mb-4 shadow-md border border-red-400">
-        {{ session('error') }}
-    </div>
-    @endif
-
-    {{-- Table des utilisateurs --}}
-    <div class="bg-white shadow-md rounded-lg overflow-hidden border border-gray-300">
-        <table class="min-w-full divide-y divide-gray-200" id="users-table">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @foreach($users as $user)
-                <tr class="hover:bg-gray-50 transition duration-200">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                        {{ $user->nom_util }} {{ $user->prenom_util }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ $user->email_util }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        @php
-                        $typeClasses = [
-                        'Admin' => 'bg-red-100 text-red-800',
-                        'Utilisateur' => 'bg-blue-100 text-blue-800',
-                        'Invité' => 'bg-green-100 text-green-800',
-                        ];
-                        $typeClass = $typeClasses[$user->typeUser?->nom_type_users] ?? 'bg-gray-100 text-gray-800';
-                        @endphp
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $typeClass }}">
-                            {{ $user->typeUser?->nom_type_users ?? 'N/A' }}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div class="flex space-x-3">
-                            <a href="{{ route('users.edit', $user->id_util) }}"
-                                class="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-md transition duration-300"
-                                onclick="return handleUnauthorized('{{ auth()->user()->can('edit-users') }}', 'créer une nouvelle grille')">
-
-                                Modifier
-                            </a>
-                            <form action="{{ route('users.destroy', $user->id_util) }}" method="POST">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                    class="bg-red-500 text-white hover:bg-red-600 px-4 py-2 rounded-md transition duration-300"
-                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
-                                    Supprimer
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        <!-- Table avec effet glassmorphism -->
+        <div class="bg-white/10 backdrop-blur-lg rounded-xl overflow-hidden shadow-xl animate__animated animate__fadeInUp">
+            <div class="p-6">
+                <table id="users-table" class="w-full">
+                    <thead>
+                        <tr class="border-b border-white/5">
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-white">Utilisateur</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-white">Email</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-white">Type</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-white">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-700">
+                        @foreach($users as $user)
+                        <tr class="hover:bg-white/5 transition-colors duration-200">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
+                                        {{ strtoupper(substr($user->nom_util, 0, 1)) }}
+                                    </div>
+                                    <div class="text-white">{{ $user->nom_util }} {{ $user->prenom_util }}</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-gray-300">{{ $user->email_util }}</td>
+                            <td class="px-6 py-4">
+                                @php
+                                $typeClasses = [
+                                    'Admin' => 'from-red-400 to-red-600',
+                                    'Utilisateur' => 'from-blue-400 to-blue-600',
+                                    'Invité' => 'from-green-400 to-green-600'
+                                ];
+                                $gradientClass = $typeClasses[$user->typeUser?->nom_type_users] ?? 'from-gray-400 to-gray-600';
+                                @endphp
+                                <span class="px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r {{ $gradientClass }} text-white">
+                                    {{ $user->typeUser?->nom_type_users ?? 'N/A' }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex space-x-2">
+                                    <a href="{{ route('users.edit', $user->id_util) }}"
+                                        class="bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2">
+                                        <i class="fas fa-edit"></i>
+                                        <span>Modifier</span>
+                                    </a>
+                                    <form action="{{ route('users.destroy', $user->id_util) }}" method="POST" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2"
+                                            onclick="return confirm('Confirmer la suppression ?')">
+                                            <i class="fas fa-trash-alt"></i>
+                                            <span>Supprimer</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
+@push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+<style>
+    /* Styles spécifiques pour le message "Aucun élément à afficher" */
+    .dataTables_empty,
+    table.dataTable tbody tr.odd td.dataTables_empty,
+    table.dataTable tbody tr.even td.dataTables_empty,
+    .dataTables_wrapper .dataTables_empty {
+        color: white !important;
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    /* Force la couleur blanche sur toutes les cellules du tableau */
+    table.dataTable tbody td,
+    table.dataTable tbody tr td {
+        color: white !important;
+    }
+
+    /* Reset complet pour DataTables */
+    .dataTables_wrapper,
+    .dataTables_wrapper * {
+        background: transparent !important;
+    }
+
+    /* Inputs et Selects */
+    .dataTables_filter input,
+    .dataTables_length select,
+    select[name="users-table_length"] {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 0.5rem !important;
+        padding: 0.5rem 1rem !important;
+        color: white !important;
+    }
+
+    /* Couleur du texte des options dans les selects */
+    .dataTables_length select option {
+        background: #1F2937 !important;
+        color: black !important;
+    }
+
+    /* Pagination */
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        background: transparent !important;
+        border: none !important;
+        color: white !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: rgba(255, 255, 255, 0.2) !important;
+        border: none !important;
+        color: white !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+    }
+
+    /* Table */
+    table.dataTable {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+    }
+
+    table.dataTable.no-footer {
+        border-bottom: none !important;
+    }
+
+    /* Boutons d'export */
+    .dt-button {
+        background: rgba(59, 130, 246, 0.2) !important;
+        border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        color: white !important;
+    }
+
+    /* Info et Length menu */
+    .dataTables_info {
+        color: white !important;
+    }
+
+    .dataTables_length label,
+    .dataTables_filter label {
+        color: white !important;
+    }
+
+    /* Styles spécifiques pour la pagination */
+    .dataTables_wrapper .dataTables_paginate .paginate_button,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.next {
+        color: white !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    /* Style pour les boutons désactivés */
+    .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+        color: rgba(255, 255, 255, 0.5) !important;
+        background: transparent !important;
+        border: none !important;
+    }
+</style>
+@endpush
 
 @push('scripts')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
-
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/vfs_fonts.js"></script>
 
 <script>
-    $(document).ready(function() {
-        $('#users-table').DataTable({
-            dom: 'Bfrtip',
-            buttons: [{
-                    extend: 'excel',
-                    text: 'Exporter Excel',
-                    className: 'btn btn-success'
+$(document).ready(function() {
+    var table = $('#users-table').DataTable({
+        dom: '<"top"Bf>rt<"bottom"lip>',
+        buttons: [
+            {
+                extend: 'excel',
+                text: '<i class="fas fa-file-excel mr-2"></i>Excel',
+                className: 'dt-button',
+                exportOptions: {
+                    columns: [0, 1, 2]
                 },
-                {
-                    extend: 'csv',
-                    text: 'Exporter CSV',
-                    className: 'btn btn-secondary'
+                title: 'Liste des Utilisateurs - Export Excel'
+            },
+            {
+                extend: 'pdf',
+                text: '<i class="fas fa-file-pdf mr-2"></i>PDF',
+                className: 'dt-button',
+                exportOptions: {
+                    columns: [0, 1, 2]
                 },
-                {
-                    extend: 'pdf',
-                    text: 'Exporter PDF',
-                    className: 'btn btn-danger'
+                title: 'Liste des Utilisateurs - Export PDF'
+            },
+            {
+                extend: 'print',
+                text: '<i class="fas fa-print mr-2"></i>Imprimer',
+                className: 'dt-button',
+                exportOptions: {
+                    columns: [0, 1, 2]
                 },
-                {
-                    extend: 'print',
-                    text: 'Imprimer',
-                    className: 'btn btn-info'
-                },
-            ],
-            language: {
-                processing: "Traitement en cours...",
-                search: "Rechercher&nbsp;:",
-                lengthMenu: "Afficher _MENU_ éléments",
-                info: "Affichage de _START_ à _END_ sur _TOTAL_ éléments",
-                infoEmpty: "Affichage de 0 à 0 sur 0 élément",
-                infoFiltered: "(filtré de _MAX_ éléments au total)",
-                loadingRecords: "Chargement...",
-                zeroRecords: "Aucun résultat trouvé",
-                emptyTable: "Aucune donnée disponible",
-                paginate: {
-                    first: "Premier",
-                    previous: "Précédent",
-                    next: "Suivant",
-                    last: "Dernier"
-                }
+                title: 'Liste des Utilisateurs'
             }
-        });
+        ],
+        language: {
+            processing: "Traitement en cours...",
+            search: "Rechercher :",
+            lengthMenu: "Afficher _MENU_ éléments",
+            info: "Affichage de l'élément _START_ à _END_ sur _TOTAL_ éléments",
+            infoEmpty: "Affichage de l'élément 0 à 0 sur 0 élément",
+            infoFiltered: "(filtré de _MAX_ éléments au total)",
+            loadingRecords: "Chargement en cours...",
+            zeroRecords: '<span style="color: white !important;">Aucun élément à afficher</span>',
+            emptyTable: '<span style="color: white !important;">Aucune donnée disponible dans le tableau</span>',
+            paginate: {
+                first: "Premier",
+                previous: "Précédent",
+                next: "Suivant",
+                last: "Dernier"
+            }
+        },
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Tout"]],
+        order: [[0, 'asc']],
+        responsive: true,
+        initComplete: function(settings, json) {
+            applyCustomStyles();
+        }
     });
+
+    function applyCustomStyles() {
+        // Styles des boutons
+        $('.dt-buttons .dt-button').addClass('bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30');
+        
+        // Styles des inputs
+        $('.dataTables_filter input, .dataTables_length select').addClass('bg-white/10 border-white/20');
+        
+        // Force les couleurs
+        $('#users-table_wrapper').find('*:not(select option)').css('color', 'white');
+        
+        // Style pour les options des selects
+        $('select option').css('color', 'black');
+        
+        // Reset des backgrounds
+        $('.dataTables_wrapper *').css('background', 'transparent');
+        
+        // Force la couleur blanche pour les boutons de pagination
+        $('.dataTables_paginate .paginate_button').each(function() {
+            $(this).css({
+                'color': 'white !important',
+                'background': 'transparent !important',
+                'border': 'none !important'
+            });
+        });
+    }
+
+    // Appliquer les styles après un court délai
+    setTimeout(applyCustomStyles, 100);
+
+    // Gestionnaire d'événements pour le redraw
+    table.on('draw.dt', function() {
+        applyCustomStyles();
+    });
+});
+
+// Fonction pour gérer les autorisations
+function handleUnauthorized(hasPermission, action) {
+    if (hasPermission === 'false') {
+        alert(`Vous n'êtes pas autorisé à ${action}.`);
+        return false;
+    }
+    return true;
+}
 </script>
 @endpush
 @endsection

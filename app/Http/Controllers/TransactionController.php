@@ -1,5 +1,6 @@
 <?php
 
+
 namespace App\Http\Controllers;
 
 use App\Models\Transaction;
@@ -9,14 +10,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\Caisse;
 use Illuminate\Support\Facades\Log;
-
-
-
+use Illuminate\Support\Facades\Validator;
 
 class TransactionController extends Controller
 {
-
-
     public function index()
     {
         // Récupérer les transactions avec leurs relations
@@ -42,8 +39,6 @@ class TransactionController extends Controller
         return view('transactions.index', compact('transactions', 'produits', 'caisses', 'data'));
     }
 
-
-
     public function create()
     {
         $caisses = Caisse::all();
@@ -59,11 +54,11 @@ class TransactionController extends Controller
         try {
             DB::beginTransaction();
 
-            // Validation des données
             $validated = $request->validate([
                 'type_transaction_id' => 'required|exists:type_transactions,id_type_transa',
                 'produit_id' => 'required|exists:produits,id_prod',
-                'montant_trans' => 'required|numeric|min:0',
+                'montant' => 'required|numeric|min:0',
+                'commission_grille_tarifaire' => 'required|numeric|min:0',
                 'num_beneficiaire' => 'required|string|max:255',
                 'frais_service' => 'numeric|nullable',
                 'motif' => 'string|nullable|in:transfert,paiement_ceet,paiement_canal',
@@ -71,37 +66,29 @@ class TransactionController extends Controller
                 'id_caisse' => 'required|exists:caisses,id_caisse',
             ]);
 
-
             // Récupérer la caisse, produit et type de transaction
-
             $caisse = Caisse::findOrFail($validated['id_caisse']);
-
             $produit = Produit::findOrFail($validated['produit_id']);
-
             $typeTransaction = TypeTransaction::findOrFail($validated['type_transaction_id']);
 
             $nomTransaction = $typeTransaction->nom_type_transa;
-            // dd($nomTransaction);
-            $commission = $produit->getCommissionForAmount($validated['montant_trans']);
 
+            // Les soldes avant
             $solde_caisse_avant = $caisse->balance_caisse;
-
             $solde_produit_avant = $produit->balance;
-            // dd($solde_produit_avant);
+
+            // Calcul des soldes après
             $solde_produit_apres = $nomTransaction === "Dépôt"
-                ? ($solde_produit_avant - $validated['montant_trans'] + $commission)
-                : ($solde_produit_avant + $validated['montant_trans'] + $commission);
-            // dd($solde_produit_apres);
+                ? ($solde_produit_avant - $validated['montant'] + $validated['commission_grille_tarifaire'])
+                : ($solde_produit_avant + $validated['montant'] + $validated['commission_grille_tarifaire']);
 
-
-
-            // Calcul du solde caisse après avec gestion de frais_service null
+            // Gestion des frais de service
             $frais_service = $request->has('frais_service') ? $validated['frais_service'] : 0;
 
+            // Calcul du solde caisse après
             $solde_caisse_apres = $nomTransaction === "Dépôt"
-                ? ($solde_caisse_avant + $validated['montant_trans'] + $frais_service)
-                : ($solde_caisse_avant - $validated['montant_trans']);
-            // dd($solde_caisse_apres);
+                ? ($solde_caisse_avant + $validated['montant'] + $frais_service)
+                : ($solde_caisse_avant - $validated['montant']);
 
             // Vérification du solde
             if ($solde_caisse_apres < 0) {
@@ -110,13 +97,13 @@ class TransactionController extends Controller
                     ->with('error', 'Solde insuffisant dans la caisse pour effectuer cette transaction.');
             }
 
-            // Enregistrement de la transaction
+            // Création de la transaction
             $transaction = Transaction::create([
                 'type_transaction_id' => $validated['type_transaction_id'],
                 'produit_id' => $validated['produit_id'],
                 'user_id' => auth()->user()->id_util,
-                'montant_trans' => $validated['montant_trans'],
-                'commission_appliquee' => $commission,
+                'montant_trans' => $validated['montant'],
+                'commission_grille_tarifaire' => $validated['commission_grille_tarifaire'],
                 'frais_service' => $frais_service,
                 'num_beneficiaire' => $validated['num_beneficiaire'],
                 'motif' => $request->input('motif', "pas de motif"),
@@ -128,11 +115,9 @@ class TransactionController extends Controller
                 'id_caisse' => $validated['id_caisse'],
             ]);
 
-
             // Mise à jour des soldes
             $produit->update(['balance' => $solde_produit_apres]);
             $caisse->update(['balance_caisse' => $solde_caisse_apres]);
-
 
             DB::commit();
 
@@ -142,14 +127,12 @@ class TransactionController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur lors de la création de la transaction : ' . $e->getMessage());
+
             return back()
                 ->withInput()
-                ->with('error', 'Une erreur est survenue lors de la création de la transaction.');
+                ->with('error', 'Une erreur est survenue lors de la création de la transaction : ' . $e->getMessage());
         }
     }
-
-
-
 
     public function show($id)
     {
@@ -160,24 +143,72 @@ class TransactionController extends Controller
     public function getCommission(Request $request)
     {
         try {
-            $request->validate([
+            // Log the incoming request for debugging
+            Log::info('Commission calculation request:', $request->all());
+
+            // Validate the request
+            $validator = Validator::make($request->all(), [
                 'produit_id' => 'required|exists:produits,id_prod',
                 'montant_trans' => 'required|numeric|min:0',
+                'type_transaction_id' => 'required|exists:type_transactions,id_type_transa'
             ]);
 
-            $produit = Produit::findOrFail($request->produit_id);
-            $commission = $produit->getCommissionForAmount($request->montant);
+            if ($validator->fails()) {
+                Log::warning('Commission validation failed:', $validator->errors()->toArray());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation échouée',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
 
-            return response()->json([
-                'success' => true,
-                'commission' => $commission
-            ]);
+            // Find the product
+            $produit = Produit::find($request->produit_id);
+            if (!$produit) {
+                Log::warning('Product not found:', ['produit_id' => $request->produit_id]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produit non trouvé'
+                ], 404);
+            }
+
+            // Calculate commission
+            try {
+                $commission = $produit->getCommissionForAmount(
+                    $request->montant_trans,
+                    $request->type_transaction_id
+                );
+                
+                Log::info('Commission calculated successfully:', [
+                    'montant' => $request->montant_trans,
+                    'commission' => $commission
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'commission' => $commission
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Commission calculation error:', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage()
+                ], 500);
+            }
+
         } catch (\Exception $e) {
+            Log::error('General error in getCommission:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Erreur lors du calcul de la commission',
+                'message' => 'Une erreur inattendue est survenue',
                 'error' => $e->getMessage()
-            ], 400);
+            ], 500);
         }
     }
 
@@ -205,13 +236,9 @@ class TransactionController extends Controller
         }
     }
 
-
-
     public function edit($id)
     {
-
         $transaction = Transaction::findOrFail($id);
-
 
         return view('transactions.edit', compact('transaction'));
     }
@@ -220,10 +247,10 @@ class TransactionController extends Controller
     {
         if ($transaction->typeTransaction->nom_type_transa == 'Dépôt') {
             $produit->balance += $transaction->montant_trans;
-            $produit->balance -= $transaction->commission_appliquee;
+            $produit->balance -= $transaction->commission_grille_tarifaire;
         } elseif ($transaction->typeTransaction->nom_type_transa == 'Retrait') {
             $produit->balance -= $transaction->montant_trans;
-            $produit->balance -= $transaction->commission_appliquee;
+            $produit->balance -= $transaction->commission_grille_tarifaire;
         }
         $produit->save();
     }

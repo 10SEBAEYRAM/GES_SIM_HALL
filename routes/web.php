@@ -11,10 +11,20 @@ use App\Http\Controllers\{
     DashboardController
 };
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Log;
+
 
 // Page d'accueil redirige vers login
 Route::get('/', function () {
-    return view('auth.login');
+    Log::channel('single')->info('Test log info');
+    Log::channel('single')->emergency('Test log emergency');
+    Log::alerte('Test log alert');
+    Log::critical('Test log critical');
+    Log::error('Test log error');
+    Log::warning('Test log warning');
+    Log::notice('Test log notice');
+    Log::debug('Test log debug');
+return view('auth.login');
 })->name('home');
 
 Route::middleware(['role:admin'])->group(function () {
@@ -28,16 +38,23 @@ Route::middleware(['role:admin'])->group(function () {
 Route::middleware(['role:operator'])->group(function () {
     Route::resource('transactions', TransactionController::class)->only(['create', 'edit', 'store']);
 });
+
 // Routes protégées par authentification
 Route::middleware(['auth'])->group(function () {
+    // Route pour le calcul de commission (doit être avant les routes resource)
+    Route::get('/api/commission/calculate', [TransactionController::class, 'getCommission'])
+        ->name('transactions.get-commission');
+
     // Gestion du tableau de bord
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+
+    // Route pour le calcul de commission
+    Route::get('/calculate-commission', [GrilleTarifaireController::class, 'commissionGrilleTarifaire'])
+        ->name('commission.calculate');
 
     Route::get('/api/dashboard', [DashboardController::class, 'getFilteredData']);
     // Gestion des utilisateurs
     Route::resource('users', UserController::class);
-    Route::get('/dashboard/filter', [DashboardController::class, 'filter']);
-
     Route::get('/dashboard/filter', [DashboardController::class, 'filter'])->name('dashboard.filter');
     Route::get('/caisses/caisse_transactions/create', [TransactionController::class, 'create'])
         ->name('caisses.caisse_transactions.create');
@@ -75,14 +92,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('transactions/export', [TransactionController::class, 'export'])
         ->name('transactions.export');
 
-    Route::get('/transactions/get-commission', [TransactionController::class, 'getCommission'])
-        ->name('transactions.get-commission');
-
-
     // Gestion de la grille tarifaire
-    Route::resource('grille-tarifaires', GrilleTarifaireController::class);
+   
     Route::resource('grille_tarifaires', GrilleTarifaireController::class);
+    Route::resource('grille-tarifaires', GrilleTarifaireController::class);
 
+Route::get('grille_tarifaires/data', [GrilleTarifaireController::class, 'getData'])->name('grille_tarifaires.data');
 
     // Gestion du profil
     Route::controller(ProfileController::class)->group(function () {
@@ -104,12 +119,17 @@ Route::middleware(['auth'])->group(function () {
 
 
     // Gestion des types de transactions
-    Route::resource('type-transactions', TypeTransactionController::class);
+    Route::resource('type-transactions', TypeTransactionController::class)->except(['edit']);
 
-    Route::get('type-transactions/{id}/edit', [TypeTransactionController::class, 'edit'])->name('type-transactions.edit');
-    Route::get('type-transaction', [TypeTransactionController::class, 'index'])->name('type-transaction.index');
-    Route::get('types-transaction', [TypeTransactionController::class, 'index'])->name('types-transaction.index');
+    // Route personnalisée pour edit
+    Route::get('/type-transactions/{id}/modifier', [TypeTransactionController::class, 'edit'])
+        ->name('type-transactions.modifier');
+
+    Route::put('/type_transactions/{type_transaction}', [TypeTransactionController::class, 'update'])->name('type_transactions.update');
+    Route::delete('/type_transactions/{type_transaction}', [TypeTransactionController::class, 'destroy'])->name('type_transactions.destroy');
 });
+Route::get('grille-tarifaires/create', [GrilleTarifaireController::class, 'create'])->name('grille-tarifaires.create');
+
 
 // Routes d'authentification
 require __DIR__ . '/auth.php';

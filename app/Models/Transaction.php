@@ -23,7 +23,7 @@ class Transaction extends Model
         'produit_id',
         'user_id',
         'montant_trans',
-        'commission_appliquee',
+        'commission_grille_tarifaire',
         'frais_service',
         'num_beneficiaire',
         'statut',
@@ -45,6 +45,32 @@ class Transaction extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($transaction) {
+            $transaction->commission = $transaction->calculateCommission();
+        });
+    }
+
+    public function calculateCommission()
+    {
+        // Récupérer la grille tarifaire correspondante
+        $grilleTarifaire = GrilleTarifaire::where('type_transaction_id', $this->type_transaction_id)
+            ->where('produit_id', $this->produit_id)
+            ->where('montant_min', '<=', $this->montant)
+            ->where('montant_max', '>=', $this->montant)
+            ->first();
+
+        if (!$grilleTarifaire) {
+            // Si aucune grille n'est trouvée, retourner 0 ou lancer une exception selon vos besoins
+            throw new \Exception("Aucune grille tarifaire trouvée pour cette transaction");
+        }
+
+        return $grilleTarifaire->commission_grille_tarifaire;
+    }
 
     // Relations
     public function typeTransaction()

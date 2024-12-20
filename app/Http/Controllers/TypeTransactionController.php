@@ -51,7 +51,7 @@ class TypeTransactionController extends Controller
         }
 
         $typeTransaction = TypeTransaction::findOrFail($id);
-        return view('type-transactions.edit', compact('typeTransaction'));
+        return view('type_transactions.edit', compact('typeTransaction'));
     }
 
     public function update(Request $request, $id)

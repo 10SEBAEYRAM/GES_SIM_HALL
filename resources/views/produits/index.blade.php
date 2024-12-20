@@ -1,121 +1,207 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-gradient-to-br from-blue-50 via-white to-gray-50 overflow-hidden shadow-lg sm:rounded-lg p-6 border border-gray-300">
-            <div class="flex justify-between items-center mb-6 border-b border-gray-300 pb-4">
-                <h2 class="text-3xl font-bold text-gray-700">Produits</h2>
+<div class="min-h-screen bg-gradient-to-br from-gray-800 to-indigo-900 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête avec effet glassmorphism -->
+        <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInDown">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-2">Produits</h1>
+                    <p class="text-gray-300">Gestion des produits</p>
+                </div>
                 <a href="{{ route('produits.create') }}"
-                    class="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:from-blue-600 hover:via-blue-700 hover:to-blue-800 text-white px-6 py-3 rounded-lg shadow-md transform transition duration-300 hover:scale-105 border border-blue-700">
-                    Nouveau Produit
+                    class="bg-blue-600/20 hover:bg-blue-600/30 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 border border-blue-500/30">
+                    <i class="fas fa-plus"></i>
+                    <span>Nouveau Produit</span>
                 </a>
             </div>
+        </div>
 
-            {{-- Messages de feedback --}}
-            @if(session('success'))
-            <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 rounded-md mb-4 shadow-md border border-green-400">
+        <!-- Messages de feedback -->
+        @if(session('success'))
+        <div class="bg-emerald-500/20 backdrop-blur-lg border-l-4 border-emerald-500 text-white px-6 py-4 rounded-lg mb-6 animate__animated animate__fadeInDown">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle text-emerald-400 mr-3"></i>
                 {{ session('success') }}
             </div>
-            @endif
+        </div>
+        @endif
 
-            @if(session('error'))
-            <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-md mb-4 shadow-md border border-red-400">
+        @if(session('error'))
+        <div class="bg-red-500/20 backdrop-blur-lg border-l-4 border-red-500 text-white px-6 py-4 rounded-lg mb-6 animate__animated animate__fadeInDown">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle text-red-400 mr-3"></i>
                 {{ session('error') }}
             </div>
-            @endif
-
-            <!-- Zone de filtrage -->
-            <div class="mb-4 flex gap-4 animate-fade-in-down">
-                <select id="filterStatut" class="border-gray-300 rounded-lg p-3 shadow-md">
-                    <option value="">Tous les statuts</option>
-                    <option value="Actif">Actif</option>
-                    <option value="Inactif">Inactif</option>
-                </select>
-
-                <input type="number" id="filterMinBalance" class="border-gray-300 rounded-lg p-3 shadow-md" placeholder="Balance Min">
-                <input type="number" id="filterMaxBalance" class="border-gray-300 rounded-lg p-3 shadow-md" placeholder="Balance Max">
-                <input type="text" id="filterNom" class="border-gray-300 rounded-lg p-3 shadow-md" placeholder="Nom du Produit">
-            </div>
-
-            <!-- Tableau -->
-            <table id="produitsTable" class="min-w-full divide-y divide-gray-200 bg-white shadow-lg rounded-lg">
-                <thead class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-300">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Nom
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Balance
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Statut
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($produits as $produit)
-                    <tr class="hover:bg-gray-100 transition duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap">{{ $produit->nom_prod }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">{{ number_format($produit->balance, 2, ',', ' ') }} FCFA</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                {{ $produit->actif ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ $produit->actif ? 'Actif' : 'Inactif' }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-right text-sm font-medium">
-                            <div class="flex gap-3 justify-end">
-                                <a href="{{ route('produits.edit', $produit->id_prod) }}"
-                                    class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-blue-700">
-                                    Modifier
-                                </a>
-                                <form action="{{ route('produits.destroy', $produit->id_prod) }}" method="POST" class="inline-block">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button
-                                        type="submit"
-                                        class="bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-red-700"
-                                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')">
-                                        Supprimer
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </tbody>
-            </table>
         </div>
+        @endif
+
+        <!-- Table -->
+        <!-- Table -->
+<div class="bg-white/10 backdrop-blur-lg rounded-xl overflow-hidden shadow-xl animate__animated animate__fadeInUp">
+    <div class="p-6">
+        <table id="produitsTable" class="w-full">
+            <thead>
+                <tr class="border-b border-indigo-500/30">
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-white">Nom</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-white">Balance</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-white">Status</th>
+                    <th class="px-6 py-3 text-right text-sm font-semibold text-white">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700">
+                @foreach($produits as $produit)
+                <tr class="hover:bg-white/5 transition-colors duration-200">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
+                                {{ strtoupper(substr($produit->nom, 0, 1)) }}
+                            </div>
+                            <span class="text-white">{{ $produit->nom_prod }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-300">{{ number_format($produit->balance, 0, ',', ' ') }} FCFA</td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium {{ $produit->status ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300' }}">
+                            {{ $produit->status ? 'Actif' : 'Actif' }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex gap-3 justify-end">
+                              <a href="{{ route('produits.edit', $produit->id_prod) }}"
+                                class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-blue-300">
+                                <i class="fas fa-edit"></i>
+                                <span>Modifier</span>
+                            </a>
+                            <form action="{{ route('produits.destroy', $produit->id_prod) }}" method="POST" class="inline-block">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')"
+                                    class="bg-red-600/20 hover:bg-red-600/30 text-red-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-red-300">
+                                    <i class="fas fa-trash-alt"></i>
+                                    <span>Supprimer</span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
     </div>
 </div>
 
-<style>
-    @import url('https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css');
-    @import url('https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css');
+@push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
 
-    .animate-fade-in-down {
-        animation: fadeInDown 0.5s ease-out;
+<style>
+    /* Styles spécifiques pour le message "Aucun élément à afficher" */
+    .dataTables_empty,
+    table.dataTable tbody tr.odd td.dataTables_empty,
+    table.dataTable tbody tr.even td.dataTables_empty,
+    .dataTables_wrapper .dataTables_empty {
+        color: white !important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
 
-    @keyframes fadeInDown {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
+    /* Force la couleur blanche sur toutes les cellules du tableau */
+    table.dataTable tbody td,
+    table.dataTable tbody tr td {
+        color: white !important;
+    }
 
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    /* Reset complet pour DataTables */
+    .dataTables_wrapper,
+    .dataTables_wrapper * {
+        background: transparent !important;
+    }
+
+    /* Inputs et Selects */
+    .dataTables_filter input,
+    .dataTables_length select,
+    select[name="produitsTable_length"] {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 0.5rem !important;
+        padding: 0.5rem 1rem !important;
+        color: white !important;
+    }
+
+    /* Couleur du texte des options dans les selects */
+    .dataTables_length select option {
+        background: #1F2937 !important;
+        color: black !important;
+    }
+
+    /* Table */
+    table.dataTable {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+    }
+
+    table.dataTable.no-footer {
+        border-bottom: none !important;
+    }
+
+    /* Boutons d'export */
+    .dt-button {
+        background: rgba(59, 130, 246, 0.2) !important;
+        border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        color: white !important;
+        margin: 0.25rem !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 0.5rem !important;
+    }
+
+    .dt-button:hover {
+        background: rgba(59, 130, 246, 0.3) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Info et Length menu */
+    .dataTables_info {
+        color: white !important;
+    }
+
+    .dataTables_length label,
+    .dataTables_filter label {
+        color: white !important;
+    }
+
+    /* Styles spécifiques pour la pagination */
+    .dataTables_wrapper .dataTables_paginate .paginate_button,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.next {
+        color: white !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+    }
+
+    /* Style pour les boutons désactivés */
+    .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+        color: rgba(255, 255, 255, 0.5) !important;
+        background: transparent !important;
+        border: none !important;
     }
 </style>
+@endpush
 
 @push('scripts')
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
 <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
@@ -125,95 +211,131 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/vfs_fonts.js"></script>
 
 <script>
-    $(document).ready(function() {
-        var table = $('#produitsTable').DataTable({
-            dom: 'Bfrtip',
-            buttons: [{
-                    extend: 'copy',
-                    text: 'Copier',
-                    exportOptions: {
-                        columns: [0, 1, 2] // Index des colonnes à inclure dans l'export
-                    }
+$(document).ready(function() {
+    var table = $('#produitsTable').DataTable({
+        dom: '<"top"Bf>rt<"bottom"lip>',
+        buttons: [
+            {
+                extend: 'excel',
+                text: '<i class="fas fa-file-excel mr-2"></i>Excel',
+                className: 'dt-button',
+                exportOptions: {
+                    columns: [0, 1]
                 },
-                {
-                    extend: 'csv',
-                    text: 'CSV',
-                    exportOptions: {
-                        columns: [0, 1, 2]
-                    }
+                title: 'Produits - Export Excel'
+            },
+            {
+                extend: 'pdf',
+                text: '<i class="fas fa-file-pdf mr-2"></i>PDF',
+                className: 'dt-button',
+                exportOptions: {
+                    columns: [0, 1]
                 },
-                {
-                    extend: 'excel',
-                    text: 'Excel',
-                    exportOptions: {
-                        columns: [0, 1, 2]
-                    }
+                title: 'Produits - Export PDF'
+            },
+            {
+                extend: 'print',
+                text: '<i class="fas fa-print mr-2"></i>Imprimer',
+                className: 'dt-button',
+                exportOptions: {
+                    columns: [0, 1]
                 },
-                {
-                    extend: 'pdf',
-                    text: 'PDF',
-                    exportOptions: {
-                        columns: [0, 1, 2]
-                    }
-                },
-                {
-                    extend: 'print',
-                    text: 'Imprimer',
-                    exportOptions: {
-                        columns: [0, 1, 2]
-                    }
-                }
-            ],
-            language: {
-                processing: "Traitement en cours...",
-                search: "Rechercher&nbsp;:",
-                lengthMenu: "Afficher _MENU_ éléments",
-                info: "Affichage de l'élément _START_ à _END_ sur _TOTAL_ éléments",
-                infoEmpty: "Affichage de l'élément 0 à 0 sur 0 élément",
-                infoFiltered: "(filtré à partir de _MAX_ éléments au total)",
-                loadingRecords: "Chargement en cours...",
-                zeroRecords: "Aucun élément à afficher",
-                emptyTable: "Aucune donnée disponible dans le tableau",
-                paginate: {
-                    first: "Premier",
-                    previous: "Précédent",
-                    next: "Suivant",
-                    last: "Dernier"
-                }
+                title: 'Produits'
+            }
+        ],
+        language: {
+            processing: "Traitement en cours...",
+            search: "Rechercher :",
+            lengthMenu: "Afficher _MENU_ éléments",
+            info: "Affichage de l'élément _START_ à _END_ sur _TOTAL_ éléments",
+            infoEmpty: "Affichage de l'élément 0 à 0 sur 0 élément",
+            infoFiltered: "(filtré de _MAX_ éléments au total)",
+            loadingRecords: "Chargement en cours...",
+            zeroRecords: '<span style="color: white !important;">Aucun élément à afficher</span>',
+            emptyTable: '<span style="color: white !important;">Aucune donnée disponible dans le tableau</span>',
+            paginate: {
+                first: "Premier",
+                previous: "Précédent",
+                next: "Suivant",
+                last: "Dernier"
+            }
+        },
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Tout"]],
+        order: [[0, 'asc']],
+        responsive: true,
+        initComplete: function(settings, json) {
+            applyCustomStyles();
+            
+            const observer = new MutationObserver(function(mutations) {
+                applyCustomStyles();
+            });
+
+            observer.observe(document.querySelector('#produitsTable_wrapper'), {
+                childList: true,
+                subtree: true
+            });
+        }
+    });
+
+    function applyCustomStyles() {
+        // Styles des boutons
+        $('.dt-buttons .dt-button').addClass('bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30');
+        
+        // Styles des inputs
+        $('.dataTables_filter input, .dataTables_length select').addClass('bg-white/10 border-white/20');
+        
+        // Force les couleurs
+        $('#produitsTable_wrapper').find('*:not(select option)').css('color', 'white');
+        
+        // Style pour les options des selects
+        $('select option').css('color', 'black');
+        
+        // Reset des backgrounds
+        $('.dataTables_wrapper *').css('background', 'transparent');
+        
+        // Force la couleur blanche pour tous les boutons de pagination
+        $('.dataTables_paginate .paginate_button').each(function() {
+            if (!$(this).hasClass('disabled')) {
+                $(this).css({
+                    'color': 'white !important',
+                    'background': 'transparent !important',
+                    'border': 'none !important'
+                });
             }
         });
 
-        $('#filterStatut').on('change', function() {
-            table.column(2).search(this.value).draw();
+        // Style spécifique pour Previous/Next
+        $('.dataTables_paginate .previous, .dataTables_paginate .next').css({
+            'color': 'white !important',
+            'background': 'transparent !important',
+            'border': 'none !important'
         });
 
-        $('#filterMinBalance').on('input', function() {
-            $.fn.dataTable.ext.search.push(
-                function(settings, data) {
-                    var min = parseFloat($('#filterMinBalance').val()) || 0;
-                    var balance = parseFloat(data[1].replace(/\s/g, '').replace('FCFA', '')) || 0;
-                    return balance >= min;
-                }
-            );
-            table.draw();
+        // Style pour les boutons désactivés
+        $('.dataTables_paginate .paginate_button.disabled').css({
+            'color': 'rgba(255, 255, 255, 0.5) !important',
+            'background': 'transparent !important'
         });
+    }
 
-        $('#filterMaxBalance').on('input', function() {
-            $.fn.dataTable.ext.search.push(
-                function(settings, data) {
-                    var max = parseFloat($('#filterMaxBalance').val()) || Infinity;
-                    var balance = parseFloat(data[1].replace(/\s/g, '').replace('FCFA', '')) || 0;
-                    return balance <= max;
-                }
-            );
-            table.draw();
-        });
+    // Appliquer les styles après un court délai
+    setTimeout(applyCustomStyles, 100);
 
-        $('#filterNom').on('input', function() {
-            table.column(0).search(this.value).draw();
-        });
+    // Gestionnaire d'événements pour le redraw
+    table.on('draw.dt', function() {
+        applyCustomStyles();
     });
+});
+
+// Fonction pour gérer les autorisations
+function handleUnauthorized(hasPermission, action) {
+    if (hasPermission === 'false') {
+        alert(`Vous n'êtes pas autorisé à ${action}.`);
+        return false;
+    }
+    return true;
+}
 </script>
 @endpush
-
 @endsection

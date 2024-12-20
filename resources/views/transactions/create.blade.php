@@ -78,22 +78,28 @@
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Montant de la transaction</label>
                     <input type="number" 
-                           name="montant_trans" 
-                           id="montant_trans"
-                           value="{{ old('montant_trans') }}"
-                           step="1" 
-                           min="0"
-                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                           name="montant" 
+                           id="montant" 
+                           value="{{ old('montant') }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                            required>
                 </div>
 
-                <!-- Commission -->
+                <!-- Commission (en lecture seule) -->
                 <div class="space-y-2">
                     <label class="block text-sm font-medium text-gray-700">Commission</label>
                     <input type="text" 
-                           id="commission" 
+                           id="commission_display" 
                            readonly
-                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm">
+                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm"
+                           placeholder="La commission sera calculée automatiquement">
+                    <input type="hidden" 
+                           name="commission_appliquee" 
+                           id="commission_appliquee"
+                           required>
+                    <div id="commission_error" class="text-red-500 text-sm hidden">
+                        La commission est requise. Veuillez vérifier le montant et le type de transaction.
+                    </div>
                 </div>
 
                 <!-- Numéro Bénéficiaire -->
@@ -237,6 +243,101 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialiser l'état
     updateFraisServiceState();
+
+    const montantInput = document.getElementById('montant');
+    const typeTransactionSelect = document.querySelector('select[name="type_transaction_id"]');
+    const produitSelect = document.querySelector('select[name="produit_id"]');
+    const commissionDisplay = document.getElementById('commission_display');
+    const commissionInput = document.getElementById('commission_appliquee');
+
+    async function updateCommission() {
+        const montant = montantInput.value;
+        const typeTransactionId = typeTransactionSelect.value;
+        const produitId = produitSelect.value;
+        const commissionError = document.getElementById('commission_error');
+
+        console.log('Tentative de calcul avec:', { montant, typeTransactionId, produitId });
+
+        // Réinitialiser l'affichage
+        commissionDisplay.value = '';
+        commissionInput.value = '';
+        if (commissionError) {
+            commissionError.classList.add('hidden');
+        }
+
+        if (montant && typeTransactionId && produitId) {
+            try {
+                // Construire l'URL avec les paramètres de requête
+                const url = `${window.location.origin}/api/commission/calculate?montant_trans=${montant}&type_transaction_id=${typeTransactionId}&produit_id=${produitId}`;
+
+                console.log('URL de la requête:', url);
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Réponse du serveur:', errorText);
+                    throw new Error(`Erreur HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('Données reçues:', data);
+
+                if (data.success) {
+                    const commission = parseFloat(data.commission);
+                    if (isNaN(commission)) {
+                        throw new Error('La commission reçue n\'est pas un nombre valide');
+                    }
+                    commissionDisplay.value = new Intl.NumberFormat('fr-FR').format(commission) + ' FCFA';
+                    commissionInput.value = commission;
+                    if (commissionError) {
+                        commissionError.classList.add('hidden');
+                    }
+                } else {
+                    throw new Error(data.message || 'Aucune commission trouvée');
+                }
+            } catch (error) {
+                console.error('Erreur détaillée:', error);
+                commissionDisplay.value = 'Erreur de calcul';
+                commissionInput.value = '';
+                if (commissionError) {
+                    commissionError.textContent = error.message;
+                    commissionError.classList.remove('hidden');
+                }
+            }
+        } else {
+            commissionDisplay.value = 'Veuillez remplir tous les champs';
+            if (commissionError) {
+                commissionError.textContent = 'Tous les champs sont requis';
+                commissionError.classList.remove('hidden');
+            }
+        }
+    }
+
+    // Ajouter les écouteurs d'événements pour le calcul de la commission
+    montantInput.addEventListener('input', updateCommission);
+    typeTransactionSelect.addEventListener('change', updateCommission);
+    produitSelect.addEventListener('change', updateCommission);
+
+    // Validation du formulaire
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const commission = document.getElementById('commission_appliquee').value;
+        console.log('Valeur de la commission lors de la soumission:', commission);
+        
+        if (!commission || isNaN(parseFloat(commission))) {
+            e.preventDefault();
+            alert('La commission n\'est pas correctement calculée. Veuillez réessayer.');
+            return false;
+        }
+    });
 });
 </script>
 @endpush

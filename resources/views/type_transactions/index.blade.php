@@ -1,75 +1,81 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="py-12">
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white border border-gray-300 shadow-sm sm:rounded-lg p-6">
-            {{-- En-tête avec Titre et Bouton --}}
-            <div class="flex justify-between items-center mb-6 border-b pb-4 border-gray-300">
-                <h2 class="text-2xl font-bold text-gray-800">Types de Transactions</h2>
+<div class="min-h-screen bg-gradient-to-br from-gray-800 to-indigo-900 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- En-tête avec effet glassmorphism -->
+        <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInDown">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-2">Types de Transactions</h1>
+                    <p class="text-gray-300">Gestion des types de transactions</p>
+                </div>
                 <a href="{{ route('type-transactions.create') }}"
-                    class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-300 ease-in-out font-semibold border border-blue-600"
-                    onclick="return handleUnauthorized('{{ auth()->user()->can('create-type_transactions') }}', 'créer une nouvelle grille')">
-
-                    Nouveau Type
+                    class="bg-blue-600/20 hover:bg-blue-600/30 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 border border-blue-500/30">
+                    <i class="fas fa-plus"></i>
+                    <span>Nouveau Type</span>
                 </a>
             </div>
+        </div>
 
-            {{-- Alertes --}}
-            @if(session('success'))
-            <div class="bg-green-100 border border-green-500 text-green-700 px-4 py-3 rounded-md shadow-md mb-4">
+        <!-- Messages de feedback -->
+        @if(session('success'))
+        <div class="bg-emerald-500/20 backdrop-blur-lg border-l-4 border-emerald-500 text-white px-6 py-4 rounded-lg mb-6 animate__animated animate__fadeInDown">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle text-emerald-400 mr-3"></i>
                 {{ session('success') }}
             </div>
-            @endif
+        </div>
+        @endif
 
-            @if(session('error'))
-            <div class="bg-red-100 border border-red-500 text-red-700 px-4 py-3 rounded-md shadow-md mb-4">
+        @if(session('error'))
+        <div class="bg-red-500/20 backdrop-blur-lg border-l-4 border-red-500 text-white px-6 py-4 rounded-lg mb-6 animate__animated animate__fadeInDown">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle text-red-400 mr-3"></i>
                 {{ session('error') }}
             </div>
-            @endif
+        </div>
+        @endif
 
-            {{-- Tableau avec DataTables --}}
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden border border-gray-300">
-                <table id="transactionsTable" class="min-w-full divide-y divide-gray-200 border border-gray-300">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">
-                                Nom
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">
-                                Description
-                            </th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-300">
-                                Actions
-                            </th>
+        <!-- Table -->
+        <div class="bg-white/10 backdrop-blur-lg rounded-xl overflow-hidden shadow-xl animate__animated animate__fadeInUp">
+            <div class="p-6">
+                <table id="typeTransactionsTable" class="w-full">
+                    <thead>
+                        <tr class="border-b border-indigo-500/30">
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-white">Nom</th>
+                            <th class="px-6 py-3 text-left text-sm font-semibold text-white">Description</th>
+                            <th class="px-6 py-3 text-right text-sm font-semibold text-white">Actions</th>
                         </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
+                    <tbody class="divide-y divide-gray-700">
                         @foreach($typeTransactions as $type)
-                        <tr class="hover:bg-gray-50 transition duration-200">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-b border-gray-300">
-                                {{ $type->nom_type_transa }}
+                        <tr class="hover:bg-white/5 transition-colors duration-200">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
+                                        {{ strtoupper(substr($type->nom_type_transa, 0, 1)) }}
+                                    </div>
+                                    <span class="text-white">{{ $type->nom_type_transa }}</span>
+                                </div>
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-500 border-b border-gray-300">
-                                {{ $type->description_type_trans }}
-                            </td>
-                            <td class="px-6 py-4 text-right text-sm font-medium border-b border-gray-300">
-                                <div class="flex space-x-3">
+                            <td class="px-6 py-4 text-gray-300">{{ $type->description_type_trans }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex gap-3 justify-end">
                                     <a href="{{ route('type-transactions.edit', $type->id_type_transa) }}"
-                                        class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded transition duration-200 font-semibold border border-blue-600">
-                                        Modifier
+                                        class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-blue-300">
+                                        <i class="fas fa-edit"></i>
+                                        <span>Modifier</span>
                                     </a>
-
-
-                                    <form action="{{ route('type-transactions.destroy', $type->id_type_transa) }}"
-                                        method="POST"
-                                        class="inline-block">
+                                    <form action="{{ route('type-transactions.destroy', $type->id_type_transa) }}" 
+                                          method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                            class="bg-red-600 text-white hover:bg-red-700 px-4 py-2 rounded transition duration-200 font-semibold border border-red-600"
-                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce type de transaction ?')">
-                                            Supprimer
+                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce type de transaction ?')"
+                                            class="bg-red-600/20 hover:bg-red-600/30 text-red-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-red-300">
+                                            <i class="fas fa-trash-alt"></i>
+                                            <span>Supprimer</span>
                                         </button>
                                     </form>
                                 </div>
@@ -79,63 +85,242 @@
                     </tbody>
                 </table>
             </div>
-
         </div>
     </div>
 </div>
 
-{{-- Scripts DataTables --}}
+@push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+<style>
+    /* Styles spécifiques pour le message "Aucun élément à afficher" */
+    .dataTables_empty,
+    table.dataTable tbody tr.odd td.dataTables_empty,
+    table.dataTable tbody tr.even td.dataTables_empty,
+    .dataTables_wrapper .dataTables_empty {
+        color: white !important;
+        background: transparent !important;
+        background-color: transparent !important;
+    }
+
+    /* Force la couleur blanche sur toutes les cellules du tableau */
+    table.dataTable tbody td,
+    table.dataTable tbody tr td {
+        color: white !important;
+    }
+
+    /* Reset complet pour DataTables */
+    .dataTables_wrapper,
+    .dataTables_wrapper * {
+        background: transparent !important;
+    }
+
+    /* Inputs et Selects */
+    .dataTables_filter input,
+    .dataTables_length select,
+    select[name="typeTransactionsTable_length"] {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        border-radius: 0.5rem !important;
+        padding: 0.5rem 1rem !important;
+        color: white !important;
+    }
+
+    /* Couleur du texte des options dans les selects */
+    .dataTables_length select option {
+        background: #1F2937 !important;
+        color: black !important;
+    }
+
+    /* Table */
+    table.dataTable {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+    }
+
+    table.dataTable.no-footer {
+        border-bottom: none !important;
+    }
+
+    /* Boutons d'export */
+    .dt-button {
+        background: rgba(59, 130, 246, 0.2) !important;
+        border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        color: white !important;
+        margin: 0.25rem !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 0.5rem !important;
+    }
+
+    .dt-button:hover {
+        background: rgba(59, 130, 246, 0.3) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Info et Length menu */
+    .dataTables_info {
+        color: white !important;
+    }
+
+    .dataTables_length label,
+    .dataTables_filter label {
+        color: white !important;
+    }
+
+    /* Styles spécifiques pour la pagination */
+    .dataTables_wrapper .dataTables_paginate .paginate_button,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.previous,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.next {
+        color: white !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+    }
+
+    /* Style pour les boutons désactivés */
+    .dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
+    .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+        color: rgba(255, 255, 255, 0.5) !important;
+        background: transparent !important;
+        border: none !important;
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.6/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.6/vfs_fonts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.68/vfs_fonts.js"></script>
 
 <script>
-    $(document).ready(function() {
-        $('#transactionsTable').DataTable({
-            dom: 'Bfrtip', // Affiche les boutons
-            buttons: [{
-                    extend: 'print',
-                    text: 'Imprimer',
-                    className: 'bg-gray-600 text-white px-3 py-1 rounded'
+$(document).ready(function() {
+    var table = $('#typeTransactionsTable').DataTable({
+        dom: '<"top"Bf>rt<"bottom"lip>',
+        buttons: [
+            {
+                extend: 'excel',
+                text: '<i class="fas fa-file-excel mr-2"></i>Excel',
+                className: 'dt-button',
+                exportOptions: {
+                    columns: [0, 1]
                 },
-                {
-                    extend: 'excel',
-                    text: 'Excel',
-                    className: 'bg-green-600 text-white px-3 py-1 rounded'
+                title: 'Types de Transactions - Export Excel'
+            },
+            {
+                extend: 'pdf',
+                text: '<i class="fas fa-file-pdf mr-2"></i>PDF',
+                className: 'dt-button',
+                exportOptions: {
+                    columns: [0, 1]
                 },
-                {
-                    extend: 'csv',
-                    text: 'CSV',
-                    className: 'bg-blue-600 text-white px-3 py-1 rounded'
+                title: 'Types de Transactions - Export PDF'
+            },
+            {
+                extend: 'print',
+                text: '<i class="fas fa-print mr-2"></i>Imprimer',
+                className: 'dt-button',
+                exportOptions: {
+                    columns: [0, 1]
                 },
-                {
-                    extend: 'pdf',
-                    text: 'PDF',
-                    className: 'bg-red-600 text-white px-3 py-1 rounded'
-                }
-            ],
-            language: {
-                processing: "Traitement en cours...",
-                search: "Rechercher&nbsp;:",
-                lengthMenu: "Afficher _MENU_ éléments",
-                info: "Affichage de l'élément _START_ à _END_ sur _TOTAL_ éléments",
-                infoEmpty: "Affichage de l'élément 0 à 0 sur 0 élément",
-                infoFiltered: "(filtré à partir de _MAX_ éléments au total)",
-                loadingRecords: "Chargement en cours...",
-                zeroRecords: "Aucun élément à afficher",
-                emptyTable: "Aucune donnée disponible dans le tableau",
-                paginate: {
-                    first: "Premier",
-                    previous: "Précédent",
-                    next: "Suivant",
-                    last: "Dernier"
-                }
+                title: 'Types de Transactions'
+            }
+        ],
+        language: {
+            processing: "Traitement en cours...",
+            search: "Rechercher :",
+            lengthMenu: "Afficher _MENU_ éléments",
+            info: "Affichage de l'élément _START_ à _END_ sur _TOTAL_ éléments",
+            infoEmpty: "Affichage de l'élément 0 à 0 sur 0 élément",
+            infoFiltered: "(filtré de _MAX_ éléments au total)",
+            loadingRecords: "Chargement en cours...",
+            zeroRecords: '<span style="color: white !important;">Aucun élément à afficher</span>',
+            emptyTable: '<span style="color: white !important;">Aucune donnée disponible dans le tableau</span>',
+            paginate: {
+                first: "Premier",
+                previous: "Précédent",
+                next: "Suivant",
+                last: "Dernier"
+            }
+        },
+        pageLength: 10,
+        lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "Tout"]],
+        order: [[0, 'asc']],
+        responsive: true,
+        initComplete: function(settings, json) {
+            applyCustomStyles();
+            
+            const observer = new MutationObserver(function(mutations) {
+                applyCustomStyles();
+            });
+
+            observer.observe(document.querySelector('#typeTransactionsTable_wrapper'), {
+                childList: true,
+                subtree: true
+            });
+        }
+    });
+
+    function applyCustomStyles() {
+        // Styles des boutons
+        $('.dt-buttons .dt-button').addClass('bg-blue-600/20 hover:bg-blue-600/30 border-blue-500/30');
+        
+        // Styles des inputs
+        $('.dataTables_filter input, .dataTables_length select').addClass('bg-white/10 border-white/20');
+        
+        // Force les couleurs
+        $('#typeTransactionsTable_wrapper').find('*:not(select option)').css('color', 'white');
+        
+        // Style pour les options des selects
+        $('select option').css('color', 'black');
+        
+        // Reset des backgrounds
+        $('.dataTables_wrapper *').css('background', 'transparent');
+        
+        // Force la couleur blanche pour tous les boutons de pagination
+        $('.dataTables_paginate .paginate_button').each(function() {
+            if (!$(this).hasClass('disabled')) {
+                $(this).css({
+                    'color': 'white !important',
+                    'background': 'transparent !important',
+                    'border': 'none !important'
+                });
             }
         });
+
+        // Style spécifique pour Previous/Next
+        $('.dataTables_paginate .previous, .dataTables_paginate .next').css({
+            'color': 'white !important',
+            'background': 'transparent !important',
+            'border': 'none !important'
+        });
+
+        // Style pour les boutons désactivés
+        $('.dataTables_paginate .paginate_button.disabled').css({
+            'color': 'rgba(255, 255, 255, 0.5) !important',
+            'background': 'transparent !important'
+        });
+    }
+
+    // Appliquer les styles après un court délai
+    setTimeout(applyCustomStyles, 100);
+
+    // Gestionnaire d'événements pour le redraw
+    table.on('draw.dt', function() {
+        applyCustomStyles();
     });
+});
 </script>
+@endpush
 @endsection
