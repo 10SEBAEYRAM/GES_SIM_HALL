@@ -85,7 +85,22 @@
                            required>
                 </div>
 
-                
+                <!-- Commission (en lecture seule) -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Commission</label>
+                    <input type="text" 
+                           id="commission_display" 
+                           readonly
+                           class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm"
+                           placeholder="La commission sera calculée automatiquement">
+                    <input type="hidden" 
+                           name="commission_appliquee" 
+                           id="commission_appliquee"
+                           required>
+                    <div id="commission_error" class="text-red-500 text-sm hidden">
+                        La commission est requise. Veuillez vérifier le montant et le type de transaction.
+                    </div>
+                </div>
 
                 <!-- Numéro Bénéficiaire -->
                 <div class="space-y-2">
@@ -169,7 +184,6 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Gestion des frais de service et motifs
     const fraisServiceContainer = document.getElementById('fraisServiceContainer');
     const fraisServiceInput = document.getElementById('frais_service');
     const fraisServiceLabel = document.getElementById('fraisServiceLabel');
@@ -220,19 +234,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Ajouter les écouteurs d'événements pour les motifs
+    // Ajouter les écouteurs d'événements
     motifCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             handleMotifChange(this);
         });
     });
 
-    // Gestion du calcul automatique de la commission
+    // Initialiser l'état
+    updateFraisServiceState();
+
     const montantInput = document.getElementById('montant');
     const typeTransactionSelect = document.querySelector('select[name="type_transaction_id"]');
     const produitSelect = document.querySelector('select[name="produit_id"]');
     const commissionDisplay = document.getElementById('commission_display');
-    const commissionInput = document.getElementById('commission_grille_tarifaire'); // Modifié pour correspondre au nom du champ
+    const commissionInput = document.getElementById('commission_appliquee');
 
     async function updateCommission() {
         const montant = montantInput.value;
@@ -251,8 +267,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (montant && typeTransactionId && produitId) {
             try {
+                // Construire l'URL avec les paramètres de requête
                 const url = `${window.location.origin}/api/commission/calculate?montant_trans=${montant}&type_transaction_id=${typeTransactionId}&produit_id=${produitId}`;
-                
+
+                console.log('URL de la requête:', url);
+
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
@@ -262,11 +281,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     },
                     credentials: 'same-origin'
                 });
-
+                
                 if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Réponse du serveur:', errorText);
                     throw new Error(`Erreur HTTP: ${response.status}`);
                 }
-
+                
                 const data = await response.json();
                 console.log('Données reçues:', data);
 
@@ -281,16 +302,22 @@ document.addEventListener('DOMContentLoaded', function() {
                         commissionError.classList.add('hidden');
                     }
                 } else {
-                    throw new Error(data.message || 'Aucune grille tarifaire trouvée pour ces critères');
+                    throw new Error(data.message || 'Aucune commission trouvée');
                 }
             } catch (error) {
-                console.error('Erreur:', error);
+                console.error('Erreur détaillée:', error);
                 commissionDisplay.value = 'Erreur de calcul';
                 commissionInput.value = '';
                 if (commissionError) {
                     commissionError.textContent = error.message;
                     commissionError.classList.remove('hidden');
                 }
+            }
+        } else {
+            commissionDisplay.value = 'Veuillez remplir tous les champs';
+            if (commissionError) {
+                commissionError.textContent = 'Tous les champs sont requis';
+                commissionError.classList.remove('hidden');
             }
         }
     }
@@ -300,13 +327,9 @@ document.addEventListener('DOMContentLoaded', function() {
     typeTransactionSelect.addEventListener('change', updateCommission);
     produitSelect.addEventListener('change', updateCommission);
 
-    // Initialiser les états
-    updateFraisServiceState();
-    updateCommission();
-
     // Validation du formulaire
     document.querySelector('form').addEventListener('submit', function(e) {
-        const commission = document.getElementById('commission_grille_tarifaire').value;
+        const commission = document.getElementById('commission_appliquee').value;
         console.log('Valeur de la commission lors de la soumission:', commission);
         
         if (!commission || isNaN(parseFloat(commission))) {

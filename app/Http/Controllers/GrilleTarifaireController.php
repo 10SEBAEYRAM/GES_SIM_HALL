@@ -7,44 +7,50 @@ use App\Models\TypeTransaction;
 use App\Models\Produit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Yajra\DataTables\Facades\DataTables;  // Ajout de cet import
+use Illuminate\Support\Facades\Auth;
+use Yajra\DataTables\Facades\DataTables;
 
 
 class GrilleTarifaireController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index(Request $request)
-{
-    // Récupérer les données nécessaires
-    $typeTransactions = TypeTransaction::all();
-    $produits = Produit::where('actif', true)->get();
+    {
+        // Récupérer les données nécessaires
+        $typeTransactions = TypeTransaction::all();
+        $produits = Produit::where('actif', true)->get();
 
-    // Construction de la requête de base
-    $query = GrilleTarifaire::with(['typeTransaction', 'produit']);
+        // Construction de la requête de base
+        $query = GrilleTarifaire::with(['typeTransaction', 'produit']);
 
-    // Appliquer les filtres si présents
-    if ($request->filled('produit_filter')) {
-        $query->where('produit_id', $request->produit_filter);
+        // Appliquer les filtres si présents
+        if ($request->filled('produit_filter')) {
+            $query->where('produit_id', $request->produit_filter);
+        }
+
+        if ($request->filled('montant_min_filter')) {
+            $query->where('montant_min', '>=', $request->montant_min_filter);
+        }
+
+        if ($request->filled('montant_max_filter')) {
+            $query->where('montant_max', '<=', $request->montant_max_filter);
+        }
+
+        if ($request->filled('commission_filter')) {
+            $query->where('commission_grille_tarifaire', '<=', $request->commission_filter);
+        }
+
+        // Exécuter la requête
+        $grilleTarifaires = $query->get();
+
+        // Retourner la vue avec toutes les données nécessaires
+        return view('grille_tarifaires.index', compact('grilleTarifaires', 'typeTransactions', 'produits'));
     }
 
-    if ($request->filled('montant_min_filter')) {
-        $query->where('montant_min', '>=', $request->montant_min_filter);
-    }
-
-    if ($request->filled('montant_max_filter')) {
-        $query->where('montant_max', '<=', $request->montant_max_filter);
-    }
-
-    if ($request->filled('commission_filter')) {
-        $query->where('commission_grille_tarifaire', '<=', $request->commission_filter);
-    }
-
-    // Exécuter la requête
-    $grilleTarifaires = $query->get();
-
-    // Retourner la vue avec toutes les données nécessaires
-    return view('grille_tarifaires.index', compact('grilleTarifaires', 'typeTransactions', 'produits'));
-}
-    
 
     public function create()
     {
@@ -52,16 +58,16 @@ class GrilleTarifaireController extends Controller
             return redirect()->route('grille-tarifaires.index')
                 ->with('error', 'Vous n\'êtes pas autorisé à modifier cette grille tarifaire.');
         }
-    
+
         $produits = Produit::where('actif', true)->get();
         $typeTransactions = TypeTransaction::all(); // Récupération des types de transactions
-        
+
         return view('grille_tarifaires.create', compact('typeTransactions', 'produits'));
     }
     public function getData()
     {
         $grilleTarifaires = GrilleTarifaire::with(['typeTransaction', 'produit']);
-    
+
         return DataTables::of($grilleTarifaires)
             ->addColumn('actions', function ($grille) {
                 // Assurez-vous d'avoir une vue 'grille_tarifaires.actions' pour les actions (Modifier/Supprimer)
@@ -79,10 +85,11 @@ class GrilleTarifaireController extends Controller
             ->rawColumns(['actions']) // Indique que la colonne 'actions' contient du HTML
             ->make(true);
     }
-    
+
 
     public function store(Request $request)
     {
+        // dd($request->all());
         try {
             $validated = $request->validate([
                 'type_transaction_id' => 'required|exists:type_transactions,id_type_transa',
@@ -118,7 +125,7 @@ class GrilleTarifaireController extends Controller
                         ->orWhereBetween('montant_max', [$validated['montant_min'], $validated['montant_max']])
                         ->orWhere(function ($q) use ($validated) {
                             $q->where('montant_min', '<=', $validated['montant_min'])
-                              ->where('montant_max', '>=', $validated['montant_max']);
+                                ->where('montant_max', '>=', $validated['montant_max']);
                         });
                 })
                 ->exists();
@@ -148,14 +155,12 @@ class GrilleTarifaireController extends Controller
             return redirect()->route('grille-tarifaires.index')
                 ->with('error', 'Vous n\'êtes pas autorisé à créer une grille tarifaire.');
         }
-        $grilleTarifaire = GrilleTarifaire::findOrFail($id);
-        $typeTransactions = TypeTransaction::all(); // Récupérer les types de transactions
-
+        $grille = GrilleTarifaire::findOrFail($id);
         $produits = Produit::where('actif', true)->get();
-    
-        return view('grille_tarifaires.edit', compact('grilleTarifaire', 'typeTransactions', 'produits'));
+
+        return view('grille_tarifaires.edit', compact('grille', 'produits'));
     }
-    
+
 
     public function update(Request $request, $id)
     {
