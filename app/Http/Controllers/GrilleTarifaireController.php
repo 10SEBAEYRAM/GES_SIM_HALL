@@ -13,10 +13,7 @@ use Yajra\DataTables\Facades\DataTables;
 
 class GrilleTarifaireController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
+    
 
     public function index(Request $request)
     {
@@ -151,16 +148,18 @@ class GrilleTarifaireController extends Controller
 
     public function edit($id)
     {
-        if (!auth()->user()->can('edit-grille_tarifaires')) {
+        if (!Auth::user()->can('edit-grille_tarifaires')) {
             return redirect()->route('grille-tarifaires.index')
-                ->with('error', 'Vous n\'êtes pas autorisé à créer une grille tarifaire.');
+                ->with('error', 'Vous n\'êtes pas autorisé à modifier cette grille tarifaire.');
         }
-        $grille = GrilleTarifaire::findOrFail($id);
+    
+        $grilleTarifaire = GrilleTarifaire::findOrFail($id); // Renommée ici
         $produits = Produit::where('actif', true)->get();
-
-        return view('grille_tarifaires.edit', compact('grille', 'produits'));
+        $typeTransactions = TypeTransaction::all();
+    
+        return view('grille_tarifaires.edit', compact('grilleTarifaire', 'produits', 'typeTransactions'));
     }
-
+    
 
     public function update(Request $request, $id)
     {

@@ -10,7 +10,7 @@
                         <h1 class="text-3xl font-bold text-white mb-2">Grilles Tarifaires</h1>
                         <p class="text-gray-300">Gestion des grilles tarifaires</p>
                     </div>
-                    <a href="{{ route('grille_tarifaires.create') }}"
+                    <a href="{{ route('grille-tarifaires.create') }}"
                         class="bg-blue-600/20 hover:bg-blue-600/30 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2 border border-blue-500/30"
                         onclick="return handleUnauthorized('{{ auth()->user()->can('create-grille_tarifaires') }}', 'créer une nouvelle grille')">
 
@@ -134,7 +134,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700">
-                        @if(isset($grilleTarifaires))
+                        @if(isset($grilleTarifaires) && $grilleTarifaires->count() > 0)
                             @foreach($grilleTarifaires as $grille)
                             <tr class="hover:bg-white/5 transition-colors duration-200">
                                 <td class="px-6 py-4">
@@ -172,6 +172,12 @@
                                 </td>
                             </tr>
                             @endforeach
+                        @else
+                            <tr>
+                                <td colspan="6" class="px-6 py-4 text-center text-gray-400">
+                                    Aucune grille tarifaire trouvée
+                                </td>
+                            </tr>
                         @endif
                         </tbody>
                     </table>

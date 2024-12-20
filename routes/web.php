@@ -24,7 +24,7 @@ Route::get('/', function () {
     Log::warning('Test log warning');
     Log::notice('Test log notice');
     Log::debug('Test log debug');
-return view('auth.login');
+    return view('auth.login');
 })->name('home');
 
 Route::middleware(['role:admin'])->group(function () {
@@ -93,11 +93,11 @@ Route::middleware(['auth'])->group(function () {
         ->name('transactions.export');
 
     // Gestion de la grille tarifaire
-   
+
     Route::resource('grille_tarifaires', GrilleTarifaireController::class);
     Route::resource('grille-tarifaires', GrilleTarifaireController::class);
 
-Route::get('grille_tarifaires/data', [GrilleTarifaireController::class, 'getData'])->name('grille_tarifaires.data');
+    Route::get('grille_tarifaires/data', [GrilleTarifaireController::class, 'getData'])->name('grille_tarifaires.data');
 
     // Gestion du profil
     Route::controller(ProfileController::class)->group(function () {
