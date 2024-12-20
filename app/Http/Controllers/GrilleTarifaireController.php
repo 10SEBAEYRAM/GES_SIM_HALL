@@ -56,7 +56,7 @@ class GrilleTarifaireController extends Controller
         $produits = Produit::where('actif', true)->get();
         $typeTransactions = TypeTransaction::all(); // Récupération des types de transactions
         
-        return view('grille_tarifaires.index', compact('typeTransactions', 'produits'));
+        return view('grille_tarifaires.create', compact('typeTransactions', 'produits'));
     }
     public function getData()
     {

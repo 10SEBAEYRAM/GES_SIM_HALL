@@ -134,6 +134,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-700">
+                        @if(isset($grilleTarifaires))
                             @foreach($grilleTarifaires as $grille)
                             <tr class="hover:bg-white/5 transition-colors duration-200">
                                 <td class="px-6 py-4">
@@ -171,6 +172,7 @@
                                 </td>
                             </tr>
                             @endforeach
+                        @endif
                         </tbody>
                     </table>
                 </div>

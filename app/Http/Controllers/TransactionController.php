@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Caisse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use App\Models\GrilleTarifaire;
 
 class TransactionController extends Controller
 {
@@ -58,7 +59,6 @@ class TransactionController extends Controller
                 'type_transaction_id' => 'required|exists:type_transactions,id_type_transa',
                 'produit_id' => 'required|exists:produits,id_prod',
                 'montant' => 'required|numeric|min:0',
-                'commission_grille_tarifaire' => 'required|numeric|min:0',
                 'num_beneficiaire' => 'required|string|max:255',
                 'frais_service' => 'numeric|nullable',
                 'motif' => 'string|nullable|in:transfert,paiement_ceet,paiement_canal',
@@ -66,21 +66,33 @@ class TransactionController extends Controller
                 'id_caisse' => 'required|exists:caisses,id_caisse',
             ]);
 
+            // Récupérer la grille tarifaire correspondante
+            $grilleTarifaire = GrilleTarifaire::where('type_transaction_id', $validated['type_transaction_id'])
+                ->where('produit_id', $validated['produit_id'])
+                ->where('montant_min', '<=', $validated['montant'])
+                ->where('montant_max', '>=', $validated['montant'])
+                ->first();
+
+            if (!$grilleTarifaire) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Aucune grille tarifaire trouvée pour ce montant et ce type de transaction.');
+            }
+
             // Récupérer la caisse, produit et type de transaction
             $caisse = Caisse::findOrFail($validated['id_caisse']);
             $produit = Produit::findOrFail($validated['produit_id']);
             $typeTransaction = TypeTransaction::findOrFail($validated['type_transaction_id']);
-
             $nomTransaction = $typeTransaction->nom_type_transa;
 
             // Les soldes avant
             $solde_caisse_avant = $caisse->balance_caisse;
             $solde_produit_avant = $produit->balance;
 
-            // Calcul des soldes après
+            // Calcul des soldes après avec la commission de la grille tarifaire
             $solde_produit_apres = $nomTransaction === "Dépôt"
-                ? ($solde_produit_avant - $validated['montant'] + $validated['commission_grille_tarifaire'])
-                : ($solde_produit_avant + $validated['montant'] + $validated['commission_grille_tarifaire']);
+                ? ($solde_produit_avant - $validated['montant'] + $grilleTarifaire->commission_grille_tarifaire)
+                : ($solde_produit_avant + $validated['montant'] + $grilleTarifaire->commission_grille_tarifaire);
 
             // Gestion des frais de service
             $frais_service = $request->has('frais_service') ? $validated['frais_service'] : 0;
@@ -97,13 +109,13 @@ class TransactionController extends Controller
                     ->with('error', 'Solde insuffisant dans la caisse pour effectuer cette transaction.');
             }
 
-            // Création de la transaction
+            // Création de la transaction avec la commission de la grille tarifaire
             $transaction = Transaction::create([
                 'type_transaction_id' => $validated['type_transaction_id'],
                 'produit_id' => $validated['produit_id'],
                 'user_id' => auth()->user()->id_util,
                 'montant_trans' => $validated['montant'],
-                'commission_grille_tarifaire' => $validated['commission_grille_tarifaire'],
+                'commission_grille_tarifaire' => $grilleTarifaire->commission_grille_tarifaire,
                 'frais_service' => $frais_service,
                 'num_beneficiaire' => $validated['num_beneficiaire'],
                 'motif' => $request->input('motif', "pas de motif"),
@@ -178,7 +190,7 @@ class TransactionController extends Controller
                     $request->montant_trans,
                     $request->type_transaction_id
                 );
-                
+
                 Log::info('Commission calculated successfully:', [
                     'montant' => $request->montant_trans,
                     'commission' => $commission
@@ -198,7 +210,6 @@ class TransactionController extends Controller
                     'message' => $e->getMessage()
                 ], 500);
             }
-
         } catch (\Exception $e) {
             Log::error('General error in getCommission:', [
                 'error' => $e->getMessage(),
