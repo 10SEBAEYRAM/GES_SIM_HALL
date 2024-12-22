@@ -60,7 +60,7 @@
                             <div>
                                 <h3 class="text-sm font-medium text-gray-500">Commission</h3>
                                 <p class="mt-2 text-base font-semibold text-indigo-600">
-                                    {{ number_format($transaction->commission_appliquee, 0, ',', ' ') }} FCFA</p>
+                                    {{ number_format($transaction->commission_grille_tarifaire, 0, ',', ' ') }} FCFA</p>
                             </div>
                         </div>
 

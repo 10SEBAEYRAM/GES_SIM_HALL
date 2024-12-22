@@ -123,7 +123,7 @@
                                 {{ number_format($transaction->montant_trans, 0, ',', ' ') }} FCFA
                             </td>
                             <td class="px-6 py-4 text-gray-300">
-                                {{ number_format($transaction->commission_appliquee, 0, ',', ' ') }} FCFA
+                                {{ number_format($transaction->commission_grille_tarifaire, 0, ',', ' ') }} FCFA
                             </td>
                             <td class="px-6 py-4 text-gray-300">
                                 {{ $transaction->num_beneficiaire }}
