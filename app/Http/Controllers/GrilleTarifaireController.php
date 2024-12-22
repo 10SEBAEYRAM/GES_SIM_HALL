@@ -86,7 +86,7 @@ class GrilleTarifaireController extends Controller
 
     public function store(Request $request)
     {
-        // dd($request->all());
+        //  dd($request->all());
         try {
             $validated = $request->validate([
                 'type_transaction_id' => 'required|exists:type_transactions,id_type_transa',

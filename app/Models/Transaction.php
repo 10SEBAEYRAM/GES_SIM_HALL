@@ -37,7 +37,8 @@ class Transaction extends Model
 
     protected $casts = [
         'montant_trans' => 'decimal:2',
-        'commission_appliquee' => 'decimal:2',
+        'commission_grille_tarifaire' => 'decimal:2',
+        'frais_service' => 'decimal:2',
         'solde_avant' => 'decimal:2',
         'solde_apres' => 'decimal:2',
         'solde_caisse_avant' => 'decimal:2',
@@ -46,22 +47,13 @@ class Transaction extends Model
         'updated_at' => 'datetime',
     ];
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($transaction) {
-            $transaction->commission = $transaction->calculateCommission();
-        });
-    }
-
     public function calculateCommission()
     {
         // Récupérer la grille tarifaire correspondante
         $grilleTarifaire = GrilleTarifaire::where('type_transaction_id', $this->type_transaction_id)
             ->where('produit_id', $this->produit_id)
-            ->where('montant_min', '<=', $this->montant)
-            ->where('montant_max', '>=', $this->montant)
+            ->where('montant_min', '<=', $this->montant_trans)
+            ->where('montant_max', '>=', $this->montant_trans)
             ->first();
 
         if (!$grilleTarifaire) {
@@ -152,11 +144,11 @@ class Transaction extends Model
         $type = $this->typeTransaction->nom_type_transa ?? '';
 
         if ($type === 'Dépôt') {
-            return $this->solde_avant + $this->montant_trans + $this->commission_appliquee;
+            return $this->solde_avant + $this->montant_trans + $this->commission_grille_tarifaire;
         } elseif ($type === 'Retrait') {
-            return $this->solde_avant - $this->montant_trans + $this->commission_appliquee;
+            return $this->solde_avant - $this->montant_trans + $this->commission_grille_tarifaire;
         }
-        return $this->solde_avant + $this->commission_appliquee;
+        return $this->solde_avant + $this->commission_grille_tarifaire;
     }
 
     // Calcul du solde après pour la caisse

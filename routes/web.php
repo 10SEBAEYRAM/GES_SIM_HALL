@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Log;
 Route::get('/', function () {
     Log::channel('single')->info('Test log info');
     Log::channel('single')->emergency('Test log emergency');
-    Log::alerte('Test log alert');
+    Log::alert('Test log alert');
     Log::critical('Test log critical');
     Log::error('Test log error');
     Log::warning('Test log warning');
@@ -93,11 +93,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('transactions.export');
 
     // Gestion de la grille tarifaire
-
     Route::resource('grille_tarifaires', GrilleTarifaireController::class);
-    Route::resource('grille-tarifaires', GrilleTarifaireController::class);
 
-    Route::get('grille_tarifaires/data', [GrilleTarifaireController::class, 'getData'])->name('grille_tarifaires.data');
+    Route::middleware(['auth'])->group(function () {
+        Route::resource('grille-tarifaires', GrilleTarifaireController::class);
+        Route::get('grille-tarifaires/data', [GrilleTarifaireController::class, 'getData'])->name('grille-tarifaires.data');
+    });
 
     // Gestion du profil
     Route::controller(ProfileController::class)->group(function () {
@@ -122,13 +123,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('type-transactions', TypeTransactionController::class)->except(['edit']);
 
     // Route personnalisée pour edit
-    Route::get('/type-transactions/{id}/modifier', [TypeTransactionController::class, 'edit'])
-        ->name('type-transactions.modifier');
+    Route::get('type-transactions/{id}/edit', [TypeTransactionController::class, 'edit'])
+        ->name('type-transactions.edit');
 
     Route::put('/type_transactions/{type_transaction}', [TypeTransactionController::class, 'update'])->name('type_transactions.update');
     Route::delete('/type_transactions/{type_transaction}', [TypeTransactionController::class, 'destroy'])->name('type_transactions.destroy');
 });
-Route::get('grille-tarifaires/create', [GrilleTarifaireController::class, 'create'])->name('grille-tarifaires.create');
+Route::get('grille_tarifaires/create', [GrilleTarifaireController::class, 'create'])->name('grille_tarifaires.create');
 
 
 // Routes d'authentification

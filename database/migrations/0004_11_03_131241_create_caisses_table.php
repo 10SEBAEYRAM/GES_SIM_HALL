@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('caisses', function (Blueprint $table) {
             $table->id('id_caisse');
             $table->string('nom_caisse');
-            $table->decimal('balance_caisse', 15, 2)->change();
+            $table->decimal('balance_caisse', 15, 2)->default(0);
             $table->timestamps();
         });
     }
@@ -24,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('caisses', function (Blueprint $table) {
-            $table->string('balance_caisse')->change();
-        });
+        Schema::dropIfExists('caisses');
     }
 };

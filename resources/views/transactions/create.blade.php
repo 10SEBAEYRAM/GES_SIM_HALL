@@ -94,8 +94,8 @@
                            class="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm"
                            placeholder="La commission sera calculée automatiquement">
                     <input type="hidden" 
-                           name="commission_appliquee" 
-                           id="commission_appliquee"
+                           name="commission_grille_tarifaire" 
+                           id="commission_grille_tarifaire"
                            required>
                     <div id="commission_error" class="text-red-500 text-sm hidden">
                         La commission est requise. Veuillez vérifier le montant et le type de transaction.
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const typeTransactionSelect = document.querySelector('select[name="type_transaction_id"]');
     const produitSelect = document.querySelector('select[name="produit_id"]');
     const commissionDisplay = document.getElementById('commission_display');
-    const commissionInput = document.getElementById('commission_appliquee');
+    const commissionInput = document.getElementById('commission_grille_tarifaire');
 
     async function updateCommission() {
         const montant = montantInput.value;
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Validation du formulaire
     document.querySelector('form').addEventListener('submit', function(e) {
-        const commission = document.getElementById('commission_appliquee').value;
+        const commission = document.getElementById('commission_grille_tarifaire').value;
         console.log('Valeur de la commission lors de la soumission:', commission);
         
         if (!commission || isNaN(parseFloat(commission))) {

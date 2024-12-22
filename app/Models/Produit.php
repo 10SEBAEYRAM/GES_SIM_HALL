@@ -61,32 +61,29 @@ class Produit extends Model
 
     public function getCommissionForAmount($montant, $type_transaction_id)
     {
-        // Validate input parameters
-        if (!is_numeric($montant) || $montant < 0) {
+        // Convert and validate input parameters
+        $montant = floatval($montant);
+        $type_transaction_id = intval($type_transaction_id);
+    
+        if ($montant < 0) {
             throw new \Exception("Le montant doit être un nombre positif");
         }
-
-        // Get all matching grids for debugging
-        $matchingGrids = $this->grilleTarifaires()
-            ->where('type_transaction_id', $type_transaction_id)
-            ->get();
-
-        if ($matchingGrids->isEmpty()) {
-            throw new \Exception("Aucune grille tarifaire trouvée pour ce type de transaction");
-        }
-
-        // Find the specific grid for the amount
+    
+        // Use explicit type casting in the query
         $commission = $this->grilleTarifaires()
             ->where('type_transaction_id', $type_transaction_id)
-            ->where('montant_min', '<=', $montant)
-            ->where('montant_max', '>=', $montant)
+            ->whereRaw('CAST(montant_min as DECIMAL(10,2)) <= ?', [$montant])
+            ->whereRaw('CAST(montant_max as DECIMAL(10,2)) >= ?', [$montant])
             ->value('commission_grille_tarifaire');
-            
+    
         if ($commission === null) {
-            // Get the available ranges for better error message
-            $ranges = $matchingGrids->map(function($grid) {
-                return "({$grid->montant_min} - {$grid->montant_max})";
-            })->join(', ');
+            // Get the ranges for error message
+            $ranges = $this->grilleTarifaires()
+                ->where('type_transaction_id', $type_transaction_id)
+                ->get()
+                ->map(function($grid) {
+                    return "({$grid->montant_min} - {$grid->montant_max})";
+                })->join(', ');
             
             throw new \Exception(
                 "Aucune commission trouvée pour le montant {$montant}. " .
@@ -94,7 +91,7 @@ class Produit extends Model
             );
         }
         
-        return $commission;
+        return floatval($commission);
     }
 
     public function updateBalance()
