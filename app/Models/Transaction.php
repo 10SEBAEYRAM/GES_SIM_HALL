@@ -32,7 +32,10 @@ class Transaction extends Model
         'solde_caisse_avant',
         'solde_caisse_apres',
         'motif',
-        'id_caisse'
+        'id_caisse',
+        'numero_compteur',
+        'numero_validation',
+        'numero_carte_paiement',
     ];
 
     protected $casts = [

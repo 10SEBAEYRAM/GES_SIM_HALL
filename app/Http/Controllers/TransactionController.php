@@ -65,6 +65,9 @@ class TransactionController extends Controller
                 'motif' => 'string|nullable|in:transfert,paiement_ceet,paiement_canal',
                 'user_id' => 'required|exists:users,id_util',
                 'id_caisse' => 'required|exists:caisses,id_caisse',
+                'numero_compteur' => 'required_if:motif,paiement_ceet',
+                'numero_validation' => 'required_if:motif,paiement_ceet',
+                'numero_carte_paiement' => 'required_if:motif,paiement_canal',
            
              ]);
 
@@ -217,6 +220,9 @@ if (!$grilleTarifaire) {
                 'solde_caisse_avant' => $solde_caisse_avant,
                 'solde_caisse_apres' => $solde_caisse_apres,
                 'id_caisse' => $validated['id_caisse'],
+                'numero_compteur' => $request->input('numero_compteur'),
+                'numero_validation' => $request->input('numero_validation'),
+                'numero_carte_paiement' => $request->input('numero_carte_paiement'),
             ]);
 
             // Mise à jour des soldes

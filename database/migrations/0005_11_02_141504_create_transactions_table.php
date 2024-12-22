@@ -53,6 +53,11 @@ return new class extends Migration
             $table->foreignId('id_caisse')
                 ->constrained('caisses', 'id_caisse')
                 ->onDelete('cascade');
+
+            // Ajout des nouveaux champs
+            $table->string('numero_compteur')->nullable();
+            $table->string('numero_validation')->nullable();
+            $table->string('numero_carte_paiement')->nullable();
         });
     }
 

@@ -79,9 +79,41 @@
                             </div>
                             <div>
                                 <h3 class="text-sm font-medium text-gray-500">Motif</h3>
-                                <p class="mt-2 text-base text-gray-900">{{ $transaction->motif ?: 'Aucun motif spécifié' }}
+                                <p class="mt-2 text-base font-semibold text-gray-900">
+                                    @if ($transaction->motif == 'transfert')
+                                        Transfert
+                                    @elseif($transaction->motif == 'paiement_ceet')
+                                        Paiement CEET
+                                    @elseif($transaction->motif == 'paiement_canal')
+                                        Paiement Canal+
+                                    @endif
                                 </p>
                             </div>
+
+                            @if ($transaction->motif == 'paiement_ceet')
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500">Numéro Compteur</h3>
+                                    <p class="mt-2 text-base font-semibold text-gray-900">
+                                        {{ $transaction->numero_compteur }}
+                                    </p>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500">Numéro Validation</h3>
+                                    <p class="mt-2 text-base font-semibold text-gray-900">
+                                        {{ $transaction->numero_validation }}
+                                    </p>
+                                </div>
+                            @endif
+
+                            @if ($transaction->motif == 'paiement_canal')
+                                <div>
+                                    <h3 class="text-sm font-medium text-gray-500">Numéro Carte de Paiement</h3>
+                                    <p class="mt-2 text-base font-semibold text-gray-900">
+                                        {{ $transaction->numero_carte_paiement }}
+                                    </p>
+                                </div>
+                            @endif
+
                             <!-- Modification ici : Afficher les frais de service s'ils existent -->
                             @if ($transaction->frais_service > 0)
                                 <div>
