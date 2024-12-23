@@ -34,7 +34,8 @@ Route::middleware(['role:admin'])->group(function () {
     Route::get('manage-caisse', [CaisseController::class, 'index']);
     Route::get('manage-tarifaire', [GrilleTarifaireController::class, 'index']);
 });
-
+Route::get('/api/caisses/{caisse}/operations-non-remboursees', [CaisseController::class, 'getOperationsNonRemboursees'])
+    ->name('api.caisses.operations-non-remboursees');
 Route::middleware(['role:operator'])->group(function () {
     Route::resource('transactions', TransactionController::class)->only(['create', 'edit', 'store']);
 });
@@ -72,12 +73,16 @@ Route::middleware(['auth'])->group(function () {
     // Affiche le formulaire de création d'un mouvement (méthode GET)
     Route::prefix('caisses')->name('caisses.')->group(function () {
         Route::get('/', [CaisseController::class, 'index'])->name('index');
-        Route::get('mouvements/create', [CaisseController::class, 'createMouvement'])->name('mouvements.create');
-        Route::post('mouvements/store', [CaisseController::class, 'storeMouvement'])->name('mouvements.store');
-        // Nouvelle route pour afficher les détails
+        Route::get('/create', [CaisseController::class, 'create'])->name('create');
+        Route::post('/', [CaisseController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [CaisseController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [CaisseController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CaisseController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}/show', [CaisseController::class, 'show'])->name('show');
 
-        // Route pour les mouvements de caisse
-        Route::post('/caisses/mouvement', [CaisseController::class, 'storeMouvement'])->name('caisses.mouvement.store');
+        // Ajouter ces routes pour les mouvements
+        Route::get('/mouvements/create', [CaisseController::class, 'createMouvement'])->name('mouvements.create');
+        Route::post('/mouvements', [CaisseController::class, 'storeMouvement'])->name('mouvements.store');
     });
 
     Route::resource('transactions', TransactionController::class);
@@ -116,6 +121,10 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{id}', [CaisseController::class, 'update'])->name('update');
         Route::delete('/{id}', [CaisseController::class, 'destroy'])->name('destroy');
         Route::get('/{id}/show', [CaisseController::class, 'show'])->name('show');
+
+        // Ajouter ces routes pour les mouvements
+        Route::get('/mouvements/create', [CaisseController::class, 'createMouvement'])->name('mouvements.create');
+        Route::post('/mouvements', [CaisseController::class, 'storeMouvement'])->name('mouvements.store');
     });
 
 

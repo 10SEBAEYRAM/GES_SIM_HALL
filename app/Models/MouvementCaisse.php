@@ -18,7 +18,9 @@ class MouvementCaisse extends Model
         'motif',
         'solde_avant',
         'solde_apres',
-        'user_id'
+        'user_id',
+        'motif_reference',
+        'montant_restant'
     ];
 
     // Cast des attributs
@@ -26,6 +28,7 @@ class MouvementCaisse extends Model
         'montant' => 'decimal:2',
         'solde_avant' => 'decimal:2',
         'solde_apres' => 'decimal:2',
+        'montant_restant' => 'decimal:2'
     ];
 
     // Relation avec la caisse
@@ -56,5 +59,17 @@ class MouvementCaisse extends Model
     public function getDifferenceAttribute()
     {
         return $this->solde_apres - $this->solde_avant;
+    }
+
+    // Relation avec l'emprunt original
+    public function empruntOriginal()
+    {
+        return $this->belongsTo(MouvementCaisse::class, 'motif_reference');
+    }
+
+    // Relation avec les remboursements
+    public function remboursements()
+    {
+        return $this->hasMany(MouvementCaisse::class, 'motif_reference');
     }
 }

@@ -173,46 +173,66 @@ class CaisseController extends Controller
     public function storeMouvement(Request $request)
     {
         try {
-            // DD 1: Voir les données initiales
-            [
-                'Données initiales' => [
-                    'Request' => $request->all(),
-                    'User' => auth()->user(),
-                    'User ID' => auth()->user()->id_util // Assurez-vous d'utiliser la bonne colonne ID
-                ]
+            Log::info('Début storeMouvement', [
+                'request' => $request->all(),
+                'user' => auth()->user()->id_util
+            ]);
+
+            // Validation de base pour tous les types de mouvements
+            $rules = [
+                'id_caisse' => 'required|exists:caisses,id_caisse',
+                'type_mouvement' => 'required|in:emprunt,remboursement,retrait,pret',
+                'montant' => 'required|numeric|min:0',
+                'motif' => 'required|string',
             ];
+
+            // Validation spécifique pour les remboursements
+            if ($request->input('type_mouvement') === 'remboursement') {
+                $rules['type_operation'] = 'required|in:emprunt,pret';
+                $rules['motif_reference'] = [
+                    'required',
+                    'exists:mouvements_caisse,id_mouvement',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $mouvement = MouvementCaisse::find($value);
+                        if (!$mouvement || $mouvement->type_mouvement !== $request->input('type_operation')) {
+                            $fail('L\'opération sélectionnée n\'est pas valide.');
+                        }
+                    }
+                ];
+            }
+
+            $validated = $request->validate($rules, [
+                'type_operation.required' => 'Le type d\'opération est requis pour un remboursement.',
+                'motif_reference.required' => 'Veuillez sélectionner l\'opération à rembourser.',
+                'motif_reference.exists' => 'L\'opération sélectionnée n\'existe pas.'
+            ]);
 
             DB::beginTransaction();
 
-            // Validation
-            $validated = $request->validate([
-                'id_caisse' => 'required|exists:caisses,id_caisse',
-                'type_mouvement' => 'required|in:emprunt,remboursement,retrait',
-                'montant' => 'required|numeric|min:0',
-                'motif' => 'required|string'
-            ]);
-
-            // DD 2: Après validation
-            [
-                'Données validées' => $validated
-            ];
-
-            // Récupération de la caisse
             $caisse = Caisse::findOrFail($validated['id_caisse']);
             $montant = (float)$validated['montant'];
             $soldeAvant = (float)$caisse->balance_caisse;
-
-            // DD 3: Après récupération de la caisse
-            [
-                'Données caisse' => [
-                    'Caisse' => $caisse->toArray(),
-                    'Montant' => $montant,
-                    'Solde avant' => $soldeAvant
-                ]
-            ];
-
-            // Récupération de l'ID utilisateur correct
             $userId = auth()->user()->id_util;
+
+            // Gestion spécifique pour les remboursements
+            if ($validated['type_mouvement'] === 'remboursement' && isset($validated['motif_reference'])) {
+                $empruntOriginal = MouvementCaisse::findOrFail($validated['motif_reference']);
+
+                if (!$empruntOriginal || !in_array($empruntOriginal->type_mouvement, ['emprunt', 'pret'])) {
+                    throw new \Exception('La référence du motif sélectionné n\'est pas valide.');
+                }
+
+                $montantRestant = $empruntOriginal->montant_restant ?? $empruntOriginal->montant;
+
+                if ($montant > $montantRestant) {
+                    throw new \Exception("Le montant du remboursement ({$montant}) ne peut pas dépasser le montant restant à rembourser ({$montantRestant})");
+                }
+
+                $empruntOriginal->montant_restant = $montantRestant - $montant;
+                $empruntOriginal->save();
+
+                $validated['motif'] = "Remboursement de " . strtolower($empruntOriginal->type_mouvement) . " : " . $empruntOriginal->motif;
+            }
 
             // Traitement selon le type de mouvement
             switch ($validated['type_mouvement']) {
@@ -236,27 +256,19 @@ class CaisseController extends Controller
                     $caisse->balance_caisse = $soldeAvant - $montant;
                     $caisse->total_retraits = (float)($caisse->total_retraits ?? 0) + $montant;
                     break;
+
+                case 'pret':
+                    if ($montant > $soldeAvant) {
+                        throw new \Exception('Solde insuffisant pour ce prêt');
+                    }
+                    $caisse->balance_caisse = $soldeAvant - $montant;
+                    $caisse->total_prets = (float)($caisse->total_prets ?? 0) + $montant;
+                    break;
             }
 
-            // DD 4: Après calculs
-            [
-                'Après calculs' => [
-                    'Type mouvement' => $validated['type_mouvement'],
-                    'Solde avant' => $soldeAvant,
-                    'Montant' => $montant,
-                    'Nouveau solde' => $caisse->balance_caisse,
-                    'Nouveaux totaux' => [
-                        'Emprunts' => $caisse->total_emprunts,
-                        'Remboursements' => $caisse->total_remboursements,
-                        'Retraits' => $caisse->total_retraits
-                    ]
-                ]
-            ];
-
-            // Sauvegarde de la caisse
             $caisse->save();
 
-            // Création du mouvement avec l'ID utilisateur correct
+            // Création du mouvement
             $mouvement = MouvementCaisse::create([
                 'caisse_id' => $caisse->id_caisse,
                 'type_mouvement' => $validated['type_mouvement'],
@@ -264,19 +276,10 @@ class CaisseController extends Controller
                 'motif' => $validated['motif'],
                 'solde_avant' => $soldeAvant,
                 'solde_apres' => $caisse->balance_caisse,
-                'user_id' => $userId
+                'user_id' => $userId,
+                'motif_reference' => $validated['motif_reference'] ?? null,
+                'montant_restant' => in_array($validated['type_mouvement'], ['emprunt', 'pret']) ? $montant : null
             ]);
-
-            // DD 5: Après création du mouvement
-            // Si le `dd` est au milieu du code
-            [
-                'Mouvement créé' => [
-                    'Mouvement' => $mouvement->toArray(),
-                    'Caisse mise à jour' => $caisse->fresh()->toArray()
-                ]
-            ];
-
-            // Ou simplement supprimer la partie complète si elle n'est pas utilisée
 
             DB::commit();
 
@@ -287,23 +290,16 @@ class CaisseController extends Controller
             DB::rollBack();
             Log::error('Erreur dans storeMouvement', [
                 'message' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'request' => $request->all()
             ]);
-
-            // DD en cas d'erreur
-            [
-                'Erreur' => [
-                    'Message' => $e->getMessage(),
-                    'Trace' => $e->getTrace(),
-                    'Request' => $request->all()
-                ]
-            ];
 
             return back()
                 ->withInput()
                 ->with('error', 'Erreur : ' . $e->getMessage());
         }
     }
+
     public function Destroy($id)
     {
 
@@ -364,22 +360,97 @@ class CaisseController extends Controller
 
     public function remboursementSimHall(Request $request)
     {
-        // Récupérer la caisse
-        $caisse = Caisse::first();
-
-        // Vérifier que l'emprunt à rembourser est supérieur à 0
-        if ($caisse->emprunt_sim_hall < $request->montant) {
-            return back()->with('error', 'Le montant du remboursement dépasse le montant de l\'emprunt.');
+        try {
+            // Récupérer la caisse
+            $caisse = Caisse::first();
+            DB::beginTransaction();
+            // Vérifier le type de remboursement (emprunt ou prêt)
+            if ($request->type === 'pret') {
+                // Vérifier que le prêt à rembourser existe
+                $pret = MouvementCaisse::where('type_mouvement', 'pret')
+                    ->where('id_mouvement', $request->mouvement_id)
+                    ->firstOrFail();
+                if ($pret->montant_restant < $request->montant) {
+                    throw new \Exception('Le montant du remboursement dépasse le montant restant du prêt.');
+                }
+                // Mettre à jour le montant restant du prêt
+                $pret->montant_restant -= $request->montant;
+                $pret->save();
+                // Mettre à jour la caisse
+                $caisse->update([
+                    'balance_caisse' => $caisse->balance_caisse + $request->montant,
+                    'total_prets' => $caisse->total_prets - $request->montant
+                ]);
+                // Créer un mouvement de remboursement
+                MouvementCaisse::create([
+                    'caisse_id' => $caisse->id_caisse,
+                    'type_mouvement' => 'remboursement',
+                    'montant' => $request->montant,
+                    'motif' => "Remboursement du prêt : " . $pret->motif,
+                    'solde_avant' => $caisse->balance_caisse - $request->montant,
+                    'solde_apres' => $caisse->balance_caisse,
+                    'user_id' => auth()->user()->id_util,
+                    'motif_reference' => $pret->id_mouvement
+                ]);
+            } else {
+                // Logique existante pour les emprunts Sim Hall
+                if ($caisse->emprunt_sim_hall < $request->montant) {
+                    throw new \Exception('Le montant du remboursement dépasse le montant de l\'emprunt.');
+                }
+                $caisse->update([
+                    'balance_caisse' => $caisse->balance_caisse - $request->montant,
+                    'emprunt_sim_hall' => $caisse->emprunt_sim_hall - $request->montant,
+                    'remboursement_sim_hall' => $caisse->remboursement_sim_hall + $request->montant,
+                ]);
+            }
+            DB::commit();
+            return back()->with('success', 'Remboursement effectué avec succès.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur lors du remboursement', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->with('error', 'Erreur : ' . $e->getMessage());
         }
+    }
+    public function pretCaisse(Request $request)
+    {
 
-        // Effectuer le remboursement et mettre à jour la caisse
-        $caisse->update([
-            'balance_caisse' => $caisse->balance_caisse - $request->montant,
-            'emprunt_sim_hall' => $caisse->emprunt_sim_hall - $request->montant,
-            'remboursement_sim_hall' => $caisse->remboursement_sim_hall + $request->montant,
-        ]);
-
-        return back()->with('success', 'Remboursement effectué à Sim Hall.');
+        try {
+            // Récupérer la caisse
+            $caisse = Caisse::first();
+            // Vérifier que la caisse a suffisamment de fonds
+            if ($caisse->balance_caisse < $request->montant) {
+                return back()->with('error', 'Fonds insuffisants dans la caisse pour ce prêt.');
+            }
+            DB::beginTransaction();
+            // Effectuer le prêt et mettre à jour la caisse
+            $caisse->update([
+                'balance_caisse' => $caisse->balance_caisse - $request->montant,
+                'total_prets' => ($caisse->total_prets ?? 0) + $request->montant,
+            ]);
+            // Créer un mouvement pour le prêt
+            MouvementCaisse::create([
+                'caisse_id' => $caisse->id_caisse,
+                'type_mouvement' => 'pret',
+                'montant' => $request->montant,
+                'motif' => $request->motif ?? 'Prêt',
+                'solde_avant' => $caisse->balance_caisse + $request->montant,
+                'solde_apres' => $caisse->balance_caisse,
+                'user_id' => auth()->user()->id_util,
+                'montant_restant' => $request->montant
+            ]);
+            DB::commit();
+            return back()->with('success', 'Prêt effectué avec succès.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Erreur lors du prêt', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->with('error', 'Erreur lors du prêt : ' . $e->getMessage());
+        }
     }
 
     public function show($id)
@@ -403,5 +474,30 @@ class CaisseController extends Controller
             'caisse' => $caisse,
             'mouvements' => $caisse->mouvements
         ]);
+    }
+
+    public function getOperationsNonRemboursees(Request $request, Caisse $caisse)
+    {
+        $type = $request->query('type', 'emprunt');
+
+        return $caisse->mouvements()
+            ->where('type_mouvement', $type)
+            ->whereRaw('COALESCE(montant_restant, montant) > 0')
+            ->select([
+                'id_mouvement',
+                'motif',
+                'montant',
+                'montant_restant',
+                'created_at'
+            ])
+            ->get()
+            ->map(function ($operation) {
+                return [
+                    'id_mouvement' => $operation->id_mouvement,
+                    'motif' => $operation->motif,
+                    'montant_restant' => $operation->montant_restant ?? $operation->montant,
+                    'date' => $operation->created_at->format('d/m/Y'),
+                ];
+            });
     }
 }
