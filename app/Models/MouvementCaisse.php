@@ -10,6 +10,7 @@ class MouvementCaisse extends Model
     use HasFactory;
 
     protected $table = 'mouvements_caisse';
+    protected $primaryKey = 'id_mouvement';
 
     protected $fillable = [
         'caisse_id',
@@ -71,5 +72,10 @@ class MouvementCaisse extends Model
     public function remboursements()
     {
         return $this->hasMany(MouvementCaisse::class, 'motif_reference');
+    }
+
+    public function mouvementReference()
+    {
+        return $this->belongsTo(MouvementCaisse::class, 'motif_reference', 'id_mouvement');
     }
 }

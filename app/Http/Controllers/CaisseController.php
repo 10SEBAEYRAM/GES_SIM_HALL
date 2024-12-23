@@ -183,7 +183,7 @@ class CaisseController extends Controller
                 'id_caisse' => 'required|exists:caisses,id_caisse',
                 'type_mouvement' => 'required|in:emprunt,remboursement,retrait,pret',
                 'montant' => 'required|numeric|min:0',
-                'motif' => 'required|string',
+                'motif' => 'required|string|max:255',
             ];
 
             // Validation spécifique pour les remboursements
@@ -194,34 +194,46 @@ class CaisseController extends Controller
                     'exists:mouvements_caisse,id_mouvement',
                     function ($attribute, $value, $fail) use ($request) {
                         $mouvement = MouvementCaisse::find($value);
-                        if (!$mouvement || $mouvement->type_mouvement !== $request->input('type_operation')) {
-                            $fail('L\'opération sélectionnée n\'est pas valide.');
+                        if (!$mouvement) {
+                            $fail('L\'opération sélectionnée n\'existe pas.');
+                            return;
+                        }
+                        if ($mouvement->type_mouvement !== $request->input('type_operation')) {
+                            $fail('Le type d\'opération ne correspond pas à l\'opération sélectionnée.');
+                        }
+                        if (($mouvement->montant_restant ?? $mouvement->montant) <= 0) {
+                            $fail('Cette opération a déjà été entièrement remboursée.');
                         }
                     }
                 ];
             }
 
             $validated = $request->validate($rules, [
+                'id_caisse.required' => 'La caisse est requise.',
+                'id_caisse.exists' => 'La caisse sélectionnée n\'existe pas.',
+                'type_mouvement.required' => 'Le type de mouvement est requis.',
+                'type_mouvement.in' => 'Type de mouvement invalide.',
+                'montant.required' => 'Le montant est requis.',
+                'montant.numeric' => 'Le montant doit être un nombre.',
+                'montant.min' => 'Le montant ne peut pas être négatif.',
+                'motif.required' => 'Le motif est requis.',
+                'motif.max' => 'Le motif ne peut pas dépasser 255 caractères.',
                 'type_operation.required' => 'Le type d\'opération est requis pour un remboursement.',
+                'type_operation.in' => 'Type d\'opération invalide.',
                 'motif_reference.required' => 'Veuillez sélectionner l\'opération à rembourser.',
                 'motif_reference.exists' => 'L\'opération sélectionnée n\'existe pas.'
             ]);
 
             DB::beginTransaction();
 
-            $caisse = Caisse::findOrFail($validated['id_caisse']);
+            $caisse = Caisse::lockForUpdate()->findOrFail($validated['id_caisse']);
             $montant = (float)$validated['montant'];
             $soldeAvant = (float)$caisse->balance_caisse;
             $userId = auth()->user()->id_util;
 
             // Gestion spécifique pour les remboursements
             if ($validated['type_mouvement'] === 'remboursement' && isset($validated['motif_reference'])) {
-                $empruntOriginal = MouvementCaisse::findOrFail($validated['motif_reference']);
-
-                if (!$empruntOriginal || !in_array($empruntOriginal->type_mouvement, ['emprunt', 'pret'])) {
-                    throw new \Exception('La référence du motif sélectionné n\'est pas valide.');
-                }
-
+                $empruntOriginal = MouvementCaisse::lockForUpdate()->findOrFail($validated['motif_reference']);
                 $montantRestant = $empruntOriginal->montant_restant ?? $empruntOriginal->montant;
 
                 if ($montant > $montantRestant) {
@@ -234,41 +246,28 @@ class CaisseController extends Controller
                 $validated['motif'] = "Remboursement de " . strtolower($empruntOriginal->type_mouvement) . " : " . $empruntOriginal->motif;
             }
 
-            // Traitement selon le type de mouvement
+            // Traitement selon le type de mouvement avec vérification du solde
             switch ($validated['type_mouvement']) {
                 case 'emprunt':
+                case 'retrait':
+                case 'pret':
                     if ($montant > $soldeAvant) {
-                        throw new \Exception('Solde insuffisant pour cet emprunt');
+                        throw new \Exception("Solde insuffisant pour ce " . strtolower($validated['type_mouvement']));
                     }
                     $caisse->balance_caisse = $soldeAvant - $montant;
-                    $caisse->total_emprunts = (float)($caisse->total_emprunts ?? 0) + $montant;
+                    $totalField = 'total_' . str_plural($validated['type_mouvement']);
+                    $caisse->$totalField = (float)($caisse->$totalField ?? 0) + $montant;
                     break;
 
                 case 'remboursement':
                     $caisse->balance_caisse = $soldeAvant + $montant;
                     $caisse->total_remboursements = (float)($caisse->total_remboursements ?? 0) + $montant;
                     break;
-
-                case 'retrait':
-                    if ($montant > $soldeAvant) {
-                        throw new \Exception('Solde insuffisant pour ce retrait');
-                    }
-                    $caisse->balance_caisse = $soldeAvant - $montant;
-                    $caisse->total_retraits = (float)($caisse->total_retraits ?? 0) + $montant;
-                    break;
-
-                case 'pret':
-                    if ($montant > $soldeAvant) {
-                        throw new \Exception('Solde insuffisant pour ce prêt');
-                    }
-                    $caisse->balance_caisse = $soldeAvant - $montant;
-                    $caisse->total_prets = (float)($caisse->total_prets ?? 0) + $montant;
-                    break;
             }
 
             $caisse->save();
 
-            // Création du mouvement
+            // Création du mouvement avec traçabilité
             $mouvement = MouvementCaisse::create([
                 'caisse_id' => $caisse->id_caisse,
                 'type_mouvement' => $validated['type_mouvement'],
@@ -282,6 +281,13 @@ class CaisseController extends Controller
             ]);
 
             DB::commit();
+
+            Log::info('Mouvement enregistré avec succès', [
+                'mouvement_id' => $mouvement->id_mouvement,
+                'type' => $validated['type_mouvement'],
+                'montant' => $montant,
+                'caisse_id' => $caisse->id_caisse
+            ]);
 
             return redirect()
                 ->route('caisses.index')
