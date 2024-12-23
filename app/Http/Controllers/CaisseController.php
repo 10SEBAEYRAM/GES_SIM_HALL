@@ -9,6 +9,7 @@ use App\Models\MouvementCaisse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 
 
@@ -191,7 +192,7 @@ class CaisseController extends Controller
                 $rules['type_operation'] = 'required|in:emprunt,pret';
                 $rules['motif_reference'] = [
                     'required',
-                    'exists:mouvements_caisse,id_mouvement',
+                    'exists:mouvements_caisse,id_mouvement,',
                     function ($attribute, $value, $fail) use ($request) {
                         $mouvement = MouvementCaisse::find($value);
                         if (!$mouvement) {
@@ -249,18 +250,29 @@ class CaisseController extends Controller
             // Traitement selon le type de mouvement avec vérification du solde
             switch ($validated['type_mouvement']) {
                 case 'emprunt':
+                    $caisse->balance_caisse = $soldeAvant + $montant;
+                    $caisse->total_emprunts = (float)($caisse->total_emprunts ?? 0) + $montant;
+                    break;
+
                 case 'retrait':
+                    if ($montant > $soldeAvant) {
+                        throw new \Exception('Solde insuffisant pour ce retrait');
+                    }
+                    $caisse->balance_caisse = $soldeAvant - $montant;
+                    $caisse->total_retraits = (float)($caisse->total_retraits ?? 0) + $montant;
+                    break;
+
                 case 'pret':
                     if ($montant > $soldeAvant) {
                         throw new \Exception("Solde insuffisant pour ce " . strtolower($validated['type_mouvement']));
                     }
                     $caisse->balance_caisse = $soldeAvant - $montant;
-                    $totalField = 'total_' . str_plural($validated['type_mouvement']);
+                    $totalField = 'total_' . Str::plural($validated['type_mouvement']);
                     $caisse->$totalField = (float)($caisse->$totalField ?? 0) + $montant;
                     break;
 
                 case 'remboursement':
-                    $caisse->balance_caisse = $soldeAvant + $montant;
+                    $caisse->balance_caisse = $soldeAvant - $montant;
                     $caisse->total_remboursements = (float)($caisse->total_remboursements ?? 0) + $montant;
                     break;
             }
@@ -505,5 +517,16 @@ class CaisseController extends Controller
                     'date' => $operation->created_at->format('d/m/Y'),
                 ];
             });
+    }
+
+    public function getMouvementDetails($id)
+    {
+        $mouvement = MouvementCaisse::findOrFail($id);
+        return response()->json([
+            'solde_avant' => $mouvement->solde_avant,
+            'solde_apres' => $mouvement->solde_apres,
+            'type_mouvement' => $mouvement->type_mouvement,
+            'montant' => $mouvement->montant
+        ]);
     }
 }

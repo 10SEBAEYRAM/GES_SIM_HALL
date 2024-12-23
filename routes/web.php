@@ -35,7 +35,8 @@ Route::middleware(['role:admin'])->group(function () {
     Route::get('manage-tarifaire', [GrilleTarifaireController::class, 'index']);
 });
 Route::get('/api/caisses/{caisse}/operations-non-remboursees', [CaisseController::class, 'getOperationsNonRemboursees'])
-    ->name('api.caisses.operations-non-remboursees');
+    ->name('api.caisses.operations-non-remboursees')
+    ->middleware('auth');
 Route::middleware(['role:operator'])->group(function () {
     Route::resource('transactions', TransactionController::class)->only(['create', 'edit', 'store']);
 });
@@ -145,3 +146,5 @@ Route::get('grille_tarifaires/create', [GrilleTarifaireController::class, 'creat
 require __DIR__ . '/auth.php';
 
 Route::get('/api/dashboard-data', [DashboardController::class, 'getDashboardData']);
+
+Route::get('/mouvements/{id}/details', [CaisseController::class, 'getMouvementDetails'])->name('mouvements.details');

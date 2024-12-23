@@ -72,6 +72,7 @@
                         <select id="motif_reference_emprunt" name="motif_reference"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('motif_reference') border-red-500 @enderror">
                             <option value="">Sélectionnez l'emprunt à rembourser</option>
+                            <option value="test">Test</option>
                         </select>
                         @error('motif_reference')
                             <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
@@ -81,8 +82,7 @@
                     <!-- Référence prêt -->
                     <div class="mb-4" id="reference-pret" style="display: none;">
                         <label class="block text-sm font-medium text-gray-700">Prêt à rembourser</label>
-                        <select id="motif_reference_pret" name="motif_reference"
-                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('motif_reference') border-red-500 @enderror">
+                        <select name="motif_reference" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
                             <option value="">Sélectionnez le prêt à rembourser</option>
                         </select>
                     </div>
@@ -155,32 +155,27 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const typeMouvement = document.getElementById('type_mouvement');
-            const typeRemboursement = document.getElementById('type-remboursement');
-            const typeOperation = document.getElementById('type-operation');
-            const referenceEmprunt = document.getElementById('reference-emprunt');
-            const referencePret = document.getElementById('reference-pret');
+            const typeMouvementSelect = document.getElementById('type_mouvement');
+            const typeOperationDiv = document.getElementById('type-remboursement');
+            const referenceEmpruntDiv = document.getElementById('reference-emprunt');
+            const referencePretDiv = document.getElementById('reference-pret');
+            const typeOperationSelect = document.getElementById('type-operation');
+            const motifReferenceEmprunt = document.getElementById('motif_reference_emprunt');
+            const motifReferencePret = document.getElementById('motif_reference_pret');
 
-            // Gestionnaire pour le type de mouvement
-            typeMouvement.addEventListener('change', function() {
+            // Afficher/masquer les champs en fonction du type de mouvement
+            typeMouvementSelect.addEventListener('change', function() {
                 if (this.value === 'remboursement') {
-                    typeRemboursement.style.display = 'block';
-                    referenceEmprunt.style.display = 'none';
-                    referencePret.style.display = 'none';
-                    // Réinitialiser les sélections
-                    typeOperation.value = '';
-                    document.querySelectorAll('select[name="motif_reference"]').forEach(select => {
-                        select.value = '';
-                    });
+                    typeOperationDiv.style.display = 'block';
                 } else {
-                    typeRemboursement.style.display = 'none';
-                    referenceEmprunt.style.display = 'none';
-                    referencePret.style.display = 'none';
+                    typeOperationDiv.style.display = 'none';
+                    referenceEmpruntDiv.style.display = 'none';
+                    referencePretDiv.style.display = 'none';
                 }
             });
 
-            // Gestionnaire pour le type d'opération
-            typeOperation.addEventListener('change', function() {
+            // Gérer l'affichage des références en fonction du type d'opération
+            typeOperationSelect.addEventListener('change', function() {
                 const caisseId = document.getElementById('id_caisse').value;
                 
                 if (!caisseId) {
@@ -189,33 +184,40 @@
                     return;
                 }
 
-                // Cacher les deux sélecteurs de référence et réinitialiser leurs valeurs
-                document.getElementById('motif_reference_emprunt').value = '';
-                document.getElementById('motif_reference_pret').value = '';
-                referenceEmprunt.style.display = 'none';
-                referencePret.style.display = 'none';
-
-                // Afficher le sélecteur approprié et charger les données
                 if (this.value === 'emprunt') {
-                    referenceEmprunt.style.display = 'block';
-                    loadOperations('emprunt', caisseId);
+                    referenceEmpruntDiv.style.display = 'block';
+                    referencePretDiv.style.display = 'none';
+                    chargerOperations(caisseId, 'emprunt', motifReferenceEmprunt);
                 } else if (this.value === 'pret') {
-                    referencePret.style.display = 'block';
-                    loadOperations('pret', caisseId);
+                    referenceEmpruntDiv.style.display = 'none';
+                    referencePretDiv.style.display = 'block';
+                    chargerOperations(caisseId, 'pret', motifReferencePret);
                 }
             });
 
+            // Fonction pour charger les opérations
+            function chargerOperations(caisseId, type, selectElement) {
+                fetch(`/api/caisses/${caisseId}/operations-non-remboursees?type=${type}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        selectElement.innerHTML = '<option value="">Sélectionnez l\'opération à rembourser</option>';
+                        data.forEach(operation => {
+                            selectElement.innerHTML += `
+                                <option value="${operation.id_mouvement}">
+                                    ${operation.motif} - Restant: ${operation.montant_restant} FCFA (${operation.date})
+                                </option>`;
+                        });
+                    })
+                    .catch(error => console.error('Erreur:', error));
+            }
+
             // Validation du formulaire avant soumission
             document.querySelector('form').addEventListener('submit', function(e) {
-                if (typeMouvement.value === 'remboursement') {
-                    const selectedType = typeOperation.value;
-                    let motifReference = '';
-
-                    if (selectedType === 'emprunt') {
-                        motifReference = document.getElementById('motif_reference_emprunt').value;
-                    } else if (selectedType === 'pret') {
-                        motifReference = document.getElementById('motif_reference_pret').value;
-                    }
+                if (typeMouvementSelect.value === 'remboursement') {
+                    const selectedType = typeOperationSelect.value;
+                    const visibleSelect = document.querySelector(
+                        'select[name="motif_reference"]:not([style*="display: none"])');
+                    const motifReference = visibleSelect ? visibleSelect.value : '';
 
                     if (!selectedType || !motifReference) {
                         e.preventDefault();
@@ -224,29 +226,6 @@
                     }
                 }
             });
-
-            function loadOperations(type, caisseId) {
-                const selectElement = type === 'emprunt' ? 
-                    document.getElementById('motif_reference_emprunt') : 
-                    document.getElementById('motif_reference_pret');
-
-                fetch(`/api/caisses/${caisseId}/operations-non-remboursees?type=${type}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        selectElement.innerHTML = `<option value="">Sélectionnez ${type === 'emprunt' ? 'l\'emprunt' : 'le prêt'} à rembourser</option>`;
-                        data.forEach(operation => {
-                            const option = document.createElement('option');
-                            option.value = operation.id_mouvement;
-                            option.textContent = `${operation.motif} - Reste: ${new Intl.NumberFormat('fr-FR').format(operation.montant_restant)} FCFA`;
-                            option.dataset.montantRestant = operation.montant_restant;
-                            selectElement.appendChild(option);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Erreur lors du chargement des opérations:', error);
-                        selectElement.innerHTML = `<option value="">Erreur lors du chargement des ${type}s</option>`;
-                    });
-            }
 
             // Validation du montant de remboursement
             const montantInput = document.querySelector('input[name="montant"]');
