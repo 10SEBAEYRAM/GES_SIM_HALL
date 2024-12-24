@@ -250,18 +250,35 @@ class CaisseController extends Controller
             // Traitement selon le type de mouvement avec vérification du solde
             switch ($validated['type_mouvement']) {
                 case 'emprunt':
+                    // Pour un emprunt, on augmente la balance de la caisse
+                    $caisse->balance_caisse = $soldeAvant + $montant;
+                    $totalField = 'total_' . Str::plural($validated['type_mouvement']);
+                    $caisse->$totalField = (float)($caisse->$totalField ?? 0) + $montant;
+                    break;
+
                 case 'retrait':
                 case 'pret':
+                    // Pour un retrait ou un prêt, on vérifie le solde et on diminue la balance
                     if ($montant > $soldeAvant) {
                         throw new \Exception("Solde insuffisant pour ce " . strtolower($validated['type_mouvement']));
                     }
                     $caisse->balance_caisse = $soldeAvant - $montant;
-                    $totalField = 'total_' . str_plural($validated['type_mouvement']);
+                    $totalField = 'total_' . Str::plural($validated['type_mouvement']);
                     $caisse->$totalField = (float)($caisse->$totalField ?? 0) + $montant;
                     break;
 
                 case 'remboursement':
-                    $caisse->balance_caisse = $soldeAvant + $montant;
+                    // Le comportement du remboursement dépend du type d'opération remboursée
+                    if ($request->input('type_operation') === 'emprunt') {
+                        // Remboursement d'un emprunt : on diminue la balance
+                        if ($montant > $soldeAvant) {
+                            throw new \Exception("Solde insuffisant pour ce remboursement");
+                        }
+                        $caisse->balance_caisse = $soldeAvant - $montant;
+                    } else {
+                        // Remboursement d'un prêt : on augmente la balance
+                        $caisse->balance_caisse = $soldeAvant + $montant;
+                    }
                     $caisse->total_remboursements = (float)($caisse->total_remboursements ?? 0) + $montant;
                     break;
             }
@@ -511,8 +528,26 @@ class CaisseController extends Controller
 
             return response()->json($operations);
         } catch (\Exception $e) {
-            \Log::error('Erreur dans getOperationsNonRemboursees: ' . $e->getMessage());
+            Log::error('Erreur dans getOperationsNonRemboursees: ' . $e->getMessage());
             return response()->json(['error' => 'Erreur lors du chargement des opérations'], 500);
+        }
+    }
+
+    public function getMouvementDetails($id)
+    {
+        try {
+            $mouvement = MouvementCaisse::findOrFail($id);
+
+            return response()->json([
+                'solde_avant' => $mouvement->solde_avant,
+                'solde_apres' => $mouvement->solde_apres,
+                'type_mouvement' => $mouvement->type_mouvement,
+                'montant' => $mouvement->montant,
+                'motif' => $mouvement->motif,
+                'date' => $mouvement->created_at->format('d/m/Y H:i')
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Erreur lors du chargement des détails'], 500);
         }
     }
 }

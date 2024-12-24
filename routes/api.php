@@ -5,6 +5,7 @@ use App\Http\Controllers\GrilleTarifaireController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\MouvementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,4 +39,6 @@ Route::prefix('api')->group(function () {
             })
         ]);
     });
+
+    Route::get('/mouvements/{mouvement}/details', [MouvementController::class, 'getDetails']);
 });

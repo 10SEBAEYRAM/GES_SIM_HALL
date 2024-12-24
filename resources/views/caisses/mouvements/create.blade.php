@@ -144,7 +144,8 @@
                             class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             Annuler
                         </a>
-                        <button type="submit" id="submitButton" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        <button type="submit" id="submitButton"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                             Enregistrer
                         </button>
                     </div>
@@ -225,7 +226,7 @@
                             option.textContent =
                                 `${operation.motif} - Restant: ${operation.montant_restant} FCFA (${operation.date})`;
                             option.dataset.montantRestant = operation.montant_restant.replace(/\s/g,
-                            '');
+                                '');
                             selectElement.appendChild(option);
                         });
                     })
@@ -246,7 +247,7 @@
                         document.getElementById('solde-info').textContent =
                             `Montant maximum autorisé : ${maxMontant.toLocaleString('fr-FR')} FCFA`;
                         document.getElementById('solde-info').classList.remove('text-red-500');
-                        
+
                         // Mettre à jour le champ caché
                         hiddenMotifReference.value = this.value;
                     }
@@ -262,7 +263,7 @@
                     if (montantSaisi > maxMontant) {
                         this.setCustomValidity(
                             `Le montant ne peut pas dépasser ${maxMontant.toLocaleString('fr-FR')} FCFA`
-                            );
+                        );
                         document.getElementById('solde-info').classList.add('text-red-500');
                     } else {
                         this.setCustomValidity('');
@@ -273,6 +274,41 @@
                 }
             });
 
+            // Fonction pour afficher les détails du mouvement
+            window.showMouvementDetails = function(mouvementId) {
+                fetch(`/mouvements/${mouvementId}/details`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('modalSoldeAvant').textContent =
+                            new Intl.NumberFormat('fr-FR').format(data.solde_avant) + ' FCFA';
+                        document.getElementById('modalSoldeApres').textContent =
+                            new Intl.NumberFormat('fr-FR').format(data.solde_apres) + ' FCFA';
+
+                        const difference = data.solde_apres - data.solde_avant;
+                        const differenceElement = document.getElementById('modalDifference');
+                        differenceElement.textContent =
+                            new Intl.NumberFormat('fr-FR').format(Math.abs(difference)) + ' FCFA';
+                        differenceElement.className =
+                            `mt-1 text-lg font-semibold ${difference >= 0 ? 'text-green-600' : 'text-red-600'}`;
+
+                        document.getElementById('mouvementModal').classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        alert('Erreur lors du chargement des détails');
+                    });
+            }
+
+            // Gestion de la fermeture du modal
+            document.getElementById('closeModal')?.addEventListener('click', function() {
+                document.getElementById('mouvementModal').classList.add('hidden');
+            });
+
+            document.getElementById('mouvementModal')?.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
             // Nouvelle gestion de la soumission du formulaire
             form.onsubmit = function(event) {
                 event.preventDefault(); // Empêcher la soumission par défaut
@@ -281,7 +317,7 @@
                 if (typeMouvement.value === 'remboursement') {
                     const selectedType = typeOperation.value;
                     let motifReference = null;
-                    
+
                     if (referenceEmprunt.style.display === 'block') {
                         motifReference = motifReferenceEmprunt.value;
                     } else if (referencePret.style.display === 'block') {
@@ -307,8 +343,8 @@
                     form.appendChild(hiddenInput);
                 }
 
-                
-                console.log('Soumission du formulaire...'); 
+                // Soumettre le formulaire
+                console.log('Soumission du formulaire...'); // Pour le débogage
                 form.submit();
                 return false;
             };
