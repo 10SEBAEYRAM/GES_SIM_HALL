@@ -8,7 +8,6 @@
             <div class="bg-white shadow-lg rounded-lg border border-gray-300 p-6">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Nouveau Mouvement de Caisse</h2>
 
-                <!-- Affichage des erreurs de validation -->
                 @if ($errors->any())
                     <div class="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
                         <div class="flex">
@@ -31,8 +30,30 @@
                     </div>
                 @endif
 
-                <form action="{{ route('caisses.mouvements.store') }}" method="POST"> @csrf
-                    <!-- Type de mouvement -->
+                <form action="{{ route('caisses.mouvements.store') }}" method="POST" id="mouvementForm">
+                    @csrf
+
+                    <!-- Sélection de la Caisse -->
+                    <div class="mb-4">
+                        <label for="id_caisse" class="block text-sm font-medium text-gray-700">Caisse</label>
+                        <select id="id_caisse" name="id_caisse" required
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('id_caisse') border-red-500 @enderror">
+                            <option value="">Sélectionnez une caisse</option>
+                            @foreach ($caisses as $caisse)
+                                <option value="{{ $caisse->id_caisse }}"
+                                    {{ old('id_caisse') == $caisse->id_caisse ? 'selected' : '' }}
+                                    data-solde="{{ $caisse->balance_caisse }}">
+                                    {{ $caisse->nom_caisse }} (Solde:
+                                    {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} FCFA)
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('id_caisse')
+                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Type de Mouvement -->
                     <div class="mb-4">
                         <label for="type_mouvement" class="block text-sm font-medium text-gray-700">Type de
                             Mouvement</label>
@@ -52,60 +73,45 @@
                         @enderror
                     </div>
 
-                    <!-- Type d'opération à rembourser -->
-                    <div class="mb-4" id="type-remboursement" style="display: none;">
-                        <label class="block text-sm font-medium text-gray-700">Type d'opération à rembourser</label>
-                        <select id="type-operation" name="type_operation"
-                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('type_operation') border-red-500 @enderror">
-                            <option value="">Sélectionnez le type d'opération</option>
-                            <option value="emprunt">Emprunt à rembourser</option>
-                            <option value="pret">Prêt à rembourser</option>
-                        </select>
-                        @error('type_operation')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <!-- Options de Remboursement -->
+                    <div id="type-remboursement" style="display: none;">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700">Type d'opération à rembourser</label>
+                            <select id="type-operation" name="type_operation"
+                                class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('type_operation') border-red-500 @enderror">
+                                <option value="">Sélectionnez le type d'opération</option>
+                                <option value="emprunt">Emprunt à rembourser</option>
+                                <option value="pret">Prêt à rembourser</option>
+                            </select>
+                            @error('type_operation')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                    <!-- Référence emprunt -->
-                    <div class="mb-4" id="reference-emprunt" style="display: none;">
-                        <label class="block text-sm font-medium text-gray-700">Emprunt à rembourser</label>
-                        <select id="motif_reference_emprunt" name="motif_reference"
-                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('motif_reference') border-red-500 @enderror">
-                            <option value="">Sélectionnez l'emprunt à rembourser</option>
-                            <option value="test">Test</option>
-                        </select>
-                        @error('motif_reference')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
-                    </div>
+                        <!-- Sélection de l'opération à rembourser -->
+                        <div id="reference-emprunt" class="mb-4" style="display: none;">
+                            <label class="block text-sm font-medium text-gray-700">Emprunt à rembourser</label>
+                            <select id="motif_reference_emprunt" name="motif_reference"
+                                class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('motif_reference') border-red-500 @enderror">
+                                <option value="">Sélectionnez l'emprunt à rembourser</option>
+                            </select>
+                            @error('motif_reference')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                    <!-- Référence prêt -->
-                    <div class="mb-4" id="reference-pret" style="display: none;">
-                        <label class="block text-sm font-medium text-gray-700">Prêt à rembourser</label>
-                        <select name="motif_reference" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
-                            <option value="">Sélectionnez le prêt à rembourser</option>
-                        </select>
-                    </div>
+                        <div id="reference-pret" class="mb-4" style="display: none;">
+                            <label class="block text-sm font-medium text-gray-700">Prêt à rembourser</label>
+                            <select id="motif_reference_pret" name="motif_reference"
+                                class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('motif_reference') border-red-500 @enderror">
+                                <option value="">Sélectionnez le prêt à rembourser</option>
+                            </select>
+                            @error('motif_reference')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                    <!-- Caisse -->
-                    <div class="mb-4">
-                        <label for="id_caisse" class="block text-sm font-medium text-gray-700">Caisse</label>
-                        <select id="id_caisse" name="id_caisse" required
-                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('id_caisse') border-red-500 @enderror">
-                            <option value="">Sélectionnez une caisse</option>
-                            @foreach ($caisses as $caisse)
-                                <option value="{{ $caisse->id_caisse }}"
-                                    {{ old('id_caisse') == $caisse->id_caisse ? 'selected' : '' }}
-                                    data-solde="{{ $caisse->balance_caisse }}"
-                                    data-emprunt="{{ $caisse->emprunt_sim_hall }}">
-                                    {{ $caisse->nom_caisse }} (Solde:
-                                    {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} FCFA)
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('id_caisse')
-                            <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                        @enderror
+                        <input type="hidden" name="motif_reference" id="hidden_motif_reference" value="">
                     </div>
 
                     <!-- Montant -->
@@ -115,14 +121,11 @@
                             <input type="number" id="montant" name="montant" value="{{ old('montant') }}" required
                                 min="0" step="1"
                                 class="mt-1 block w-full p-2 border border-gray-300 rounded-md @error('montant') border-red-500 @enderror">
-                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                <span class="text-gray-500 sm:text-sm">FCFA</span>
-                            </div>
                         </div>
+                        <p id="solde-info" class="mt-1 text-sm"></p>
                         @error('montant')
                             <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                         @enderror
-                        <p id="solde-info" class="mt-2 text-sm text-gray-500"></p>
                     </div>
 
                     <!-- Motif -->
@@ -136,13 +139,12 @@
                     </div>
 
                     <!-- Boutons -->
-                    <div class="flex justify-end space-x-4 mt-6">
+                    <div class="flex justify-end space-x-3 mt-6">
                         <a href="{{ route('caisses.index') }}"
-                            class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition duration-300">
+                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50">
                             Annuler
                         </a>
-                        <button type="submit"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition duration-300">
+                        <button type="submit" id="submitButton" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
                             Enregistrer
                         </button>
                     </div>
@@ -155,101 +157,161 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const typeMouvementSelect = document.getElementById('type_mouvement');
-            const typeOperationDiv = document.getElementById('type-remboursement');
-            const referenceEmpruntDiv = document.getElementById('reference-emprunt');
-            const referencePretDiv = document.getElementById('reference-pret');
-            const typeOperationSelect = document.getElementById('type-operation');
+            const form = document.getElementById('mouvementForm');
+            const typeMouvement = document.getElementById('type_mouvement');
+            const typeRemboursement = document.getElementById('type-remboursement');
+            const typeOperation = document.getElementById('type-operation');
+            const referenceEmprunt = document.getElementById('reference-emprunt');
+            const referencePret = document.getElementById('reference-pret');
             const motifReferenceEmprunt = document.getElementById('motif_reference_emprunt');
             const motifReferencePret = document.getElementById('motif_reference_pret');
+            const montantInput = document.getElementById('montant');
+            const hiddenMotifReference = document.getElementById('hidden_motif_reference');
 
-            // Afficher/masquer les champs en fonction du type de mouvement
-            typeMouvementSelect.addEventListener('change', function() {
-                if (this.value === 'remboursement') {
-                    typeOperationDiv.style.display = 'block';
-                } else {
-                    typeOperationDiv.style.display = 'none';
-                    referenceEmpruntDiv.style.display = 'none';
-                    referencePretDiv.style.display = 'none';
+            // Gestion du type de mouvement
+            typeMouvement.addEventListener('change', function() {
+                typeRemboursement.style.display = this.value === 'remboursement' ? 'block' : 'none';
+                if (this.value !== 'remboursement') {
+                    typeOperation.value = '';
+                    referenceEmprunt.style.display = 'none';
+                    referencePret.style.display = 'none';
+                    montantInput.removeAttribute('max');
+                    montantInput.removeAttribute('data-max-remboursement');
+                    document.getElementById('solde-info').textContent = '';
                 }
             });
 
-            // Gérer l'affichage des références en fonction du type d'opération
-            typeOperationSelect.addEventListener('change', function() {
+            // Gestion du type d'opération
+            typeOperation.addEventListener('change', function() {
                 const caisseId = document.getElementById('id_caisse').value;
-                
                 if (!caisseId) {
                     alert('Veuillez d\'abord sélectionner une caisse');
                     this.value = '';
                     return;
                 }
 
+                referenceEmprunt.style.display = 'none';
+                referencePret.style.display = 'none';
+
                 if (this.value === 'emprunt') {
-                    referenceEmpruntDiv.style.display = 'block';
-                    referencePretDiv.style.display = 'none';
+                    referenceEmprunt.style.display = 'block';
+                    referencePret.style.display = 'none';
+                    motifReferencePret.removeAttribute('name');
+                    motifReferenceEmprunt.setAttribute('name', 'motif_reference');
                     chargerOperations(caisseId, 'emprunt', motifReferenceEmprunt);
                 } else if (this.value === 'pret') {
-                    referenceEmpruntDiv.style.display = 'none';
-                    referencePretDiv.style.display = 'block';
+                    referencePret.style.display = 'block';
+                    referenceEmprunt.style.display = 'none';
+                    motifReferenceEmprunt.removeAttribute('name');
+                    motifReferencePret.setAttribute('name', 'motif_reference');
                     chargerOperations(caisseId, 'pret', motifReferencePret);
                 }
             });
 
-            // Fonction pour charger les opérations
+            // Chargement des opérations
             function chargerOperations(caisseId, type, selectElement) {
+                selectElement.innerHTML = '<option value="">Chargement...</option>';
+
                 fetch(`/api/caisses/${caisseId}/operations-non-remboursees?type=${type}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) throw new Error('Erreur réseau');
+                        return response.json();
+                    })
                     .then(data => {
-                        selectElement.innerHTML = '<option value="">Sélectionnez l\'opération à rembourser</option>';
+                        selectElement.innerHTML = '<option value="">Sélectionnez une opération</option>';
                         data.forEach(operation => {
-                            selectElement.innerHTML += `
-                                <option value="${operation.id_mouvement}">
-                                    ${operation.motif} - Restant: ${operation.montant_restant} FCFA (${operation.date})
-                                </option>`;
+                            const option = document.createElement('option');
+                            option.value = operation.id_mouvement;
+                            option.textContent =
+                                `${operation.motif} - Restant: ${operation.montant_restant} FCFA (${operation.date})`;
+                            option.dataset.montantRestant = operation.montant_restant.replace(/\s/g,
+                            '');
+                            selectElement.appendChild(option);
                         });
                     })
-                    .catch(error => console.error('Erreur:', error));
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        selectElement.innerHTML = '<option value="">Erreur de chargement</option>';
+                    });
             }
 
-            // Validation du formulaire avant soumission
-            document.querySelector('form').addEventListener('submit', function(e) {
-                if (typeMouvementSelect.value === 'remboursement') {
-                    const selectedType = typeOperationSelect.value;
-                    const visibleSelect = document.querySelector(
-                        'select[name="motif_reference"]:not([style*="display: none"])');
-                    const motifReference = visibleSelect ? visibleSelect.value : '';
-
-                    if (!selectedType || !motifReference) {
-                        e.preventDefault();
-                        alert('Veuillez sélectionner une opération à rembourser');
-                        return false;
-                    }
-                }
-            });
-
-            // Validation du montant de remboursement
-            const montantInput = document.querySelector('input[name="montant"]');
-            const referenceSelects = document.querySelectorAll('select[name="motif_reference"]');
-
-            referenceSelects.forEach(select => {
+            // Validation du montant
+            [motifReferenceEmprunt, motifReferencePret].forEach(select => {
                 select.addEventListener('change', function() {
                     const selectedOption = this.options[this.selectedIndex];
-                    if (selectedOption.dataset.montantRestant) {
-                        montantInput.max = selectedOption.dataset.montantRestant;
-                        montantInput.setAttribute('data-max-remboursement', selectedOption.dataset
-                            .montantRestant);
+                    if (selectedOption && selectedOption.dataset.montantRestant) {
+                        const maxMontant = parseFloat(selectedOption.dataset.montantRestant);
+                        montantInput.setAttribute('max', maxMontant);
+                        montantInput.setAttribute('data-max-remboursement', maxMontant);
+                        document.getElementById('solde-info').textContent =
+                            `Montant maximum autorisé : ${maxMontant.toLocaleString('fr-FR')} FCFA`;
+                        document.getElementById('solde-info').classList.remove('text-red-500');
+                        
+                        // Mettre à jour le champ caché
+                        hiddenMotifReference.value = this.value;
                     }
                 });
             });
 
             montantInput.addEventListener('input', function() {
                 const maxRemboursement = this.getAttribute('data-max-remboursement');
-                if (maxRemboursement && parseFloat(this.value) > parseFloat(maxRemboursement)) {
-                    this.setCustomValidity(`Le montant ne peut pas dépasser ${maxRemboursement} FCFA`);
+                if (maxRemboursement) {
+                    const montantSaisi = parseFloat(this.value);
+                    const maxMontant = parseFloat(maxRemboursement);
+
+                    if (montantSaisi > maxMontant) {
+                        this.setCustomValidity(
+                            `Le montant ne peut pas dépasser ${maxMontant.toLocaleString('fr-FR')} FCFA`
+                            );
+                        document.getElementById('solde-info').classList.add('text-red-500');
+                    } else {
+                        this.setCustomValidity('');
+                        document.getElementById('solde-info').classList.remove('text-red-500');
+                    }
                 } else {
                     this.setCustomValidity('');
                 }
             });
+
+            // Nouvelle gestion de la soumission du formulaire
+            form.onsubmit = function(event) {
+                event.preventDefault(); // Empêcher la soumission par défaut
+
+                // Vérifier si c'est un remboursement
+                if (typeMouvement.value === 'remboursement') {
+                    const selectedType = typeOperation.value;
+                    let motifReference = null;
+                    
+                    if (referenceEmprunt.style.display === 'block') {
+                        motifReference = motifReferenceEmprunt.value;
+                    } else if (referencePret.style.display === 'block') {
+                        motifReference = motifReferencePret.value;
+                    }
+
+                    if (!selectedType || !motifReference) {
+                        alert('Veuillez sélectionner une opération à rembourser');
+                        return false;
+                    }
+
+                    // Supprimer l'ancien champ caché s'il existe
+                    const oldHiddenInput = form.querySelector('input[name="motif_reference"]');
+                    if (oldHiddenInput) {
+                        oldHiddenInput.remove();
+                    }
+
+                    // Ajouter le nouveau champ caché
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'motif_reference';
+                    hiddenInput.value = motifReference;
+                    form.appendChild(hiddenInput);
+                }
+
+                
+                console.log('Soumission du formulaire...'); 
+                form.submit();
+                return false;
+            };
         });
     </script>
 @endpush

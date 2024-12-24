@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class MouvementCaisse extends Model
 {
@@ -11,6 +11,7 @@ class MouvementCaisse extends Model
 
     protected $table = 'mouvements_caisse';
     protected $primaryKey = 'id_mouvement';
+    protected $guarded = [];
 
     protected $fillable = [
         'caisse_id',

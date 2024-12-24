@@ -34,9 +34,13 @@ Route::middleware(['role:admin'])->group(function () {
     Route::get('manage-caisse', [CaisseController::class, 'index']);
     Route::get('manage-tarifaire', [GrilleTarifaireController::class, 'index']);
 });
-Route::get('/api/caisses/{caisse}/operations-non-remboursees', [CaisseController::class, 'getOperationsNonRemboursees'])
-    ->name('api.caisses.operations-non-remboursees')
-    ->middleware('auth');
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/api/caisses/{caisse}/operations-non-remboursees', 'CaisseController@getOperationsNonRemboursees');
+    // Other routes...
+});
+Route::middleware(['throttle:60,1'])->group(function () {
+    Route::get('/api/caisses/{caisse}/operations-non-remboursees', 'CaisseController@getOperationsNonRemboursees');
+});
 Route::middleware(['role:operator'])->group(function () {
     Route::resource('transactions', TransactionController::class)->only(['create', 'edit', 'store']);
 });
@@ -148,3 +152,20 @@ require __DIR__ . '/auth.php';
 Route::get('/api/dashboard-data', [DashboardController::class, 'getDashboardData']);
 
 Route::get('/mouvements/{id}/details', [CaisseController::class, 'getMouvementDetails'])->name('mouvements.details');
+
+Route::middleware('auth')->group(function () {
+    // Routes pour les caisses
+    Route::resource('caisses', CaisseController::class);
+    
+    // Route pour créer un mouvement
+    Route::get('/caisses/{caisse}/mouvements/create', [CaisseController::class, 'createMouvement'])
+        ->name('caisses.mouvements.create');
+    
+    // Route pour enregistrer un mouvement
+    Route::post('/caisses/mouvements', [CaisseController::class, 'storeMouvement'])
+        ->name('caisses.mouvements.store');
+    
+    // Route API pour les opérations non remboursées
+    Route::get('/api/caisses/{caisse}/operations-non-remboursees', [CaisseController::class, 'getOperationsNonRemboursees'])
+        ->name('api.caisses.operations-non-remboursees');
+});

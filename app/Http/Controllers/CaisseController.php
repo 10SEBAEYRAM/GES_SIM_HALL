@@ -160,7 +160,7 @@ class CaisseController extends Controller
             ->with('success', 'Caisse mise à jour avec succès');
     }
 
-    public function createMouvement()
+    public function createMouvement(Caisse $caisse)
     {
         if (!auth()->user()->can('create-caisses')) {
             return redirect()->route('caisses.index')
@@ -168,7 +168,7 @@ class CaisseController extends Controller
         }
 
         $caisses = Caisse::all();
-        return view('caisses.mouvements.create', compact('caisses'));
+        return view('caisses.mouvements.create', compact('caisses', 'caisse'));
     }
 
     public function storeMouvement(Request $request)
@@ -192,7 +192,7 @@ class CaisseController extends Controller
                 $rules['type_operation'] = 'required|in:emprunt,pret';
                 $rules['motif_reference'] = [
                     'required',
-                    'exists:mouvements_caisse,id_mouvement,',
+                    'exists:mouvements_caisse,id_mouvement',
                     function ($attribute, $value, $fail) use ($request) {
                         $mouvement = MouvementCaisse::find($value);
                         if (!$mouvement) {
@@ -250,29 +250,18 @@ class CaisseController extends Controller
             // Traitement selon le type de mouvement avec vérification du solde
             switch ($validated['type_mouvement']) {
                 case 'emprunt':
-                    $caisse->balance_caisse = $soldeAvant + $montant;
-                    $caisse->total_emprunts = (float)($caisse->total_emprunts ?? 0) + $montant;
-                    break;
-
                 case 'retrait':
-                    if ($montant > $soldeAvant) {
-                        throw new \Exception('Solde insuffisant pour ce retrait');
-                    }
-                    $caisse->balance_caisse = $soldeAvant - $montant;
-                    $caisse->total_retraits = (float)($caisse->total_retraits ?? 0) + $montant;
-                    break;
-
                 case 'pret':
                     if ($montant > $soldeAvant) {
                         throw new \Exception("Solde insuffisant pour ce " . strtolower($validated['type_mouvement']));
                     }
                     $caisse->balance_caisse = $soldeAvant - $montant;
-                    $totalField = 'total_' . Str::plural($validated['type_mouvement']);
+                    $totalField = 'total_' . str_plural($validated['type_mouvement']);
                     $caisse->$totalField = (float)($caisse->$totalField ?? 0) + $montant;
                     break;
 
                 case 'remboursement':
-                    $caisse->balance_caisse = $soldeAvant - $montant;
+                    $caisse->balance_caisse = $soldeAvant + $montant;
                     $caisse->total_remboursements = (float)($caisse->total_remboursements ?? 0) + $montant;
                     break;
             }
@@ -494,39 +483,36 @@ class CaisseController extends Controller
         ]);
     }
 
-    public function getOperationsNonRemboursees(Request $request, Caisse $caisse)
+    public function getOperationsNonRemboursees(Request $request, $caisse)
     {
-        $type = $request->query('type', 'emprunt');
+        try {
+            $type = $request->query('type');
 
-        return $caisse->mouvements()
-            ->where('type_mouvement', $type)
-            ->whereRaw('COALESCE(montant_restant, montant) > 0')
-            ->select([
-                'id_mouvement',
-                'motif',
-                'montant',
-                'montant_restant',
-                'created_at'
-            ])
-            ->get()
-            ->map(function ($operation) {
-                return [
-                    'id_mouvement' => $operation->id_mouvement,
-                    'motif' => $operation->motif,
-                    'montant_restant' => $operation->montant_restant ?? $operation->montant,
-                    'date' => $operation->created_at->format('d/m/Y'),
-                ];
-            });
-    }
+            $operations = MouvementCaisse::where('caisse_id', $caisse)
+                ->where('type_mouvement', $type)
+                ->whereNull('deleted_at')
+                ->whereRaw('COALESCE(montant_restant, montant) > 0')
+                ->select([
+                    'id_mouvement',
+                    'motif',
+                    'montant',
+                    'montant_restant',
+                    'created_at'
+                ])
+                ->get()
+                ->map(function ($operation) {
+                    return [
+                        'id_mouvement' => $operation->id_mouvement,
+                        'motif' => $operation->motif,
+                        'montant_restant' => number_format($operation->montant_restant ?? $operation->montant, 0, ',', ' '),
+                        'date' => $operation->created_at->format('d/m/Y'),
+                    ];
+                });
 
-    public function getMouvementDetails($id)
-    {
-        $mouvement = MouvementCaisse::findOrFail($id);
-        return response()->json([
-            'solde_avant' => $mouvement->solde_avant,
-            'solde_apres' => $mouvement->solde_apres,
-            'type_mouvement' => $mouvement->type_mouvement,
-            'montant' => $mouvement->montant
-        ]);
+            return response()->json($operations);
+        } catch (\Exception $e) {
+            \Log::error('Erreur dans getOperationsNonRemboursees: ' . $e->getMessage());
+            return response()->json(['error' => 'Erreur lors du chargement des opérations'], 500);
+        }
     }
 }
