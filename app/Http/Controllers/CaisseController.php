@@ -174,6 +174,13 @@ class CaisseController extends Controller
     public function storeMouvement(Request $request)
     {
         try {
+            $caisse = Caisse::findOrFail($request->id_caisse);
+
+            // Vérifier si la caisse est active
+            if (!$caisse->canPerformOperations()) {
+                throw new \Exception("Cette caisse est inactive. Aucune opération n'est autorisée.");
+            }
+
             Log::info('Début storeMouvement', [
                 'request' => $request->all(),
                 'user' => auth()->user()->id_util
@@ -351,6 +358,10 @@ class CaisseController extends Controller
 
     public function empruntSimHall(Request $request)
     {
+        $caisse = Caisse::first();
+        if (!$caisse->canPerformOperations()) {
+            return back()->with('error', "Cette caisse est inactive. Aucune opération n'est autorisée.");
+        }
         // Récupérer la caisse
         $caisse = Caisse::first();
 
@@ -365,6 +376,10 @@ class CaisseController extends Controller
 
     public function retraitCaisse(Request $request)
     {
+        $caisse = Caisse::first();
+        if (!$caisse->canPerformOperations()) {
+            return back()->with('error', "Cette caisse est inactive. Aucune opération n'est autorisée.");
+        }
         // Récupérer la caisse
         $caisse = Caisse::first();
 
@@ -385,6 +400,10 @@ class CaisseController extends Controller
     public function remboursementSimHall(Request $request)
     {
         try {
+            $caisse = Caisse::first();
+            if (!$caisse->canPerformOperations()) {
+                throw new \Exception("Cette caisse est inactive. Aucune opération n'est autorisée.");
+            }
             // Récupérer la caisse
             $caisse = Caisse::first();
             DB::beginTransaction();
@@ -548,6 +567,33 @@ class CaisseController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Erreur lors du chargement des détails'], 500);
+        }
+    }
+
+    public function toggleStatus(string $id)
+    {
+        try {
+            $caisse = Caisse::findOrFail($id);
+
+            // Ajoutez un log pour déboguer
+            \Log::info('Toggle status pour caisse', [
+                'id' => $id,
+                'ancien_status' => $caisse->status,
+                'nouveau_status' => !$caisse->status
+            ]);
+
+            $caisse->status = !$caisse->status;
+            $caisse->save();
+
+            return redirect()->back()->with('success', 'Statut mis à jour avec succès');
+        } catch (\Exception $e) {
+            // Ajoutez un log d'erreur
+            \Log::error('Erreur toggle status', [
+                'id' => $id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Erreur lors de la mise à jour du statut : ' . $e->getMessage());
         }
     }
 }

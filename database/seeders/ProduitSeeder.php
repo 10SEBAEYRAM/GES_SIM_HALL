@@ -15,9 +15,9 @@ class ProduitSeeder extends Seeder
     {
 
         $produits = [
-            ['nom_prod' => 'FLOOZ', 'balance' => 0, 'actif' => true],
-            ['nom_prod' => 'TMONEY', 'balance' => 0, 'actif' => true],
-            ['nom_prod' => 'WESTEN UNION', 'balance' => 0, 'actif' => true],
+            ['nom_prod' => 'FLOOZ', 'balance' => 0, 'status' => true],
+            ['nom_prod' => 'TMONEY', 'balance' => 0, 'status' => true],
+            ['nom_prod' => 'WESTEN UNION', 'balance' => 0, 'status' => true],
         ];
 
         foreach ($produits as $produit) {

@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::create('mouvements_produits', function (Blueprint $table) {
             $table->id('id_mouvement');
             $table->unsignedBigInteger('produit_id');
-            $table->decimal('montant', 15, 2);
             $table->string('type_mouvement'); // CREDIT/DEBIT
             $table->text('description');
             

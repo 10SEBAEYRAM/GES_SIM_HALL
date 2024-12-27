@@ -68,44 +68,51 @@
                                     <td class="px-6 py-4 text-gray-300">{{ number_format($produit->balance, 0, ',', ' ') }}
                                         FCFA</td>
                                     <td class="px-6 py-4">
-                                        <span
-                                            class="px-3 py-1 rounded-full text-xs font-medium {{ $produit->status ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300' }}">
-                                            {{ $produit->status ? 'Actif' : 'Actif' }}
-                                        </span>
+                                        @if ($produit->status)
+                                            <span class="badge bg-success">Actif</span>
+                                        @else
+                                            <span class="badge bg-danger">Inactif</span>
+                                        @endif
                                     </td>
-                                    <td class="px-6 py-4 text-right">
+                                    <td class="px-6 py-4 text-right text-sm font-medium">
                                         <div class="flex gap-3 justify-end">
-                                            <!-- Bouton Ajouter Mouvement -->
-                                            <a href="{{ route('mouvements-produits.create', ['produit_id' => $produit->id_prod]) }}"
-                                                class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-blue-300">
-                                                <i class="fas fa-plus"></i>
-                                                <span>Mouvement</span>
-                                            </a>
-
-                                            <!-- Bouton Détails -->
+                                            {{-- Bouton Voir détails --}}
                                             <a href="{{ route('mouvements-produits.show', $produit->id_prod) }}"
-                                                class="bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-indigo-300">
-                                                <i class="fas fa-eye"></i>
-                                                <span>Détails</span>
+                                                class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-indigo-700">
+                                                Voir détails
                                             </a>
 
-                                            <!-- Bouton Modifier -->
+                                            @if ($produit->status)
+                                                {{-- Bouton Ajouter un Mouvement (seulement si le produit est actif) --}}
+                                                <a href="{{ route('mouvements-produits.create', ['produit' => $produit->id_prod]) }}"
+                                                    class="bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-green-700">
+                                                    Ajouter un Mouvement
+                                                </a>
+                                            @else
+                                                {{-- Bouton désactivé avec message d'info --}}
+                                                <button disabled
+                                                    class="bg-gray-400 text-white px-4 py-2 rounded-md cursor-not-allowed opacity-50"
+                                                    title="Le produit doit être actif pour ajouter un mouvement">
+                                                    Ajouter un Mouvement
+                                                </button>
+                                            @endif
+
+                                            {{-- Bouton Modifier --}}
                                             <a href="{{ route('produits.edit', $produit->id_prod) }}"
-                                                class="bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-yellow-300">
-                                                <i class="fas fa-edit"></i>
-                                                <span>Modifier</span>
+                                                class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-blue-700">
+                                                Modifier
                                             </a>
 
-                                            <!-- Bouton Supprimer -->
-                                            <form action="{{ route('produits.destroy', $produit->id_prod) }}"
+                                            {{-- Bouton Toggle Status --}}
+                                            <form action="{{ route('produits.toggle-status', $produit->id_prod) }}"
                                                 method="POST" class="inline-block">
                                                 @csrf
-                                                @method('DELETE')
+                                                @method('PATCH')
                                                 <button type="submit"
-                                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')"
-                                                    class="bg-red-600/20 hover:bg-red-600/30 text-red-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-red-300">
-                                                    <i class="fas fa-trash-alt"></i>
-                                                    <span>Supprimer</span>
+                                                    class="{{ $produit->status ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 border-emerald-700' : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-red-700' }} text-white px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border">
+                                                    <i
+                                                        class="fas {{ $produit->status ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
+                                                    <span>{{ $produit->status ? 'Actif' : 'Inactif' }}</span>
                                                 </button>
                                             </form>
                                         </div>

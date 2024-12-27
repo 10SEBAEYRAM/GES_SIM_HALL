@@ -239,7 +239,7 @@ class DashboardController extends Controller
         $previousUsers = User::whereBetween('created_at', [$previousStartDate, $startDate])->count();
 
         // Compte des produits actifs
-        $activeProducts = Produit::where('actif', true)->count();
+        $activeProducts = Produit::where('status', true)->count();
 
         // Transactions
         $currentTransactions = Transaction::whereBetween('created_at', [$startDate, $endDate])->sum('montant_trans');
@@ -256,7 +256,7 @@ class DashboardController extends Controller
         $transactionsParAnnee = $this->getTransactionsByPeriod('year');
 
         // Solde des produits actifs
-        $produitsBalances = Produit::where('actif', true)
+        $produitsBalances = Produit::where('status', true)
             ->select('nom_prod', 'balance')
             ->get();
 

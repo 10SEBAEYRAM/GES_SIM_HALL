@@ -21,6 +21,12 @@
 
                 <!-- Corps -->
                 <div class="px-4 sm:px-6 lg:px-8 py-6">
+                    @if (!$caisse->isActive())
+                        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+                            <p class="font-bold">Attention</p>
+                            <p>Cette caisse est actuellement inactive. Aucune opération n'est autorisée.</p>
+                        </div>
+                    @endif
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate__animated animate__fadeIn">
                         <!-- Informations de base -->
                         <div class="bg-yellow-100 rounded-xl p-6 space-y-4">
@@ -112,58 +118,63 @@
                                                 Actions</th>
                                         </tr>
                                     </thead>
-                                 <tbody class="bg-white divide-y divide-gray-200">
-    @foreach ($mouvements as $mouvement)
-        <tr class="{{ in_array($mouvement->type_mouvement, ['emprunt', 'pret']) ? 'bg-yellow-50' : '' }}">
-            <td class="px-6 py-4 whitespace-nowrap">
-                {{ $mouvement->created_at ? $mouvement->created_at->format('d/m/Y H:i') : 'N/A' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                {{ ucfirst($mouvement->type_mouvement ?? 'N/A') }}
-            </td>
-            <!-- Montant Initial -->
-            <td class="px-6 py-4 whitespace-nowrap">
-                @if (in_array($mouvement->type_mouvement, ['pret', 'emprunt']))
-                    {{ number_format($mouvement->montant ?? 0, 0, ',', ' ') }} FCFA
-                @elseif ($mouvement->type_mouvement === 'remboursement' && $mouvement->mouvementReference)
-                    {{ number_format($mouvement->mouvementReference->montant ?? 0, 0, ',', ' ') }} FCFA
-                @else
-                    -
-                @endif
-            </td>
-            <!-- Montant Remboursé -->
-            <td class="px-6 py-4 whitespace-nowrap">
-                @if ($mouvement->type_mouvement === 'remboursement')
-                    {{ number_format($mouvement->montant ?? 0, 0, ',', ' ') }} FCFA
-                @else
-                    -
-                @endif
-            </td>
-            <!-- Montant Restant -->
-            <td class="px-6 py-4 whitespace-nowrap">
-                @if ($mouvement->type_mouvement === 'remboursement' && $mouvement->mouvementReference)
-                    {{ number_format($mouvement->mouvementReference->montant - $mouvement->mouvementReference->remboursements->where('created_at', '<=', $mouvement->created_at)->sum('montant'), 0, ',', ' ') }} FCFA
-                @else
-                    -
-                @endif
-            </td>
-            <td class="px-6 py-4">{{ $mouvement->motif ?? 'N/A' }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                {{ $mouvement->user->nom_util ?? 'N/A' }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <button onclick="showMouvementDetails({{ $mouvement->id_mouvement }})"
-                    class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Détails
-                </button>
-            </td>
-        </tr>
-    @endforeach
-</tbody>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        @foreach ($mouvements as $mouvement)
+                                            <tr
+                                                class="{{ in_array($mouvement->type_mouvement, ['emprunt', 'pret']) ? 'bg-yellow-50' : '' }}">
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    {{ $mouvement->created_at ? $mouvement->created_at->format('d/m/Y H:i') : 'N/A' }}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    {{ ucfirst($mouvement->type_mouvement ?? 'N/A') }}
+                                                </td>
+                                                <!-- Montant Initial -->
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    @if (in_array($mouvement->type_mouvement, ['pret', 'emprunt']))
+                                                        {{ number_format($mouvement->montant ?? 0, 0, ',', ' ') }} FCFA
+                                                    @elseif ($mouvement->type_mouvement === 'remboursement' && $mouvement->mouvementReference)
+                                                        {{ number_format($mouvement->mouvementReference->montant ?? 0, 0, ',', ' ') }}
+                                                        FCFA
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <!-- Montant Remboursé -->
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    @if ($mouvement->type_mouvement === 'remboursement')
+                                                        {{ number_format($mouvement->montant ?? 0, 0, ',', ' ') }} FCFA
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <!-- Montant Restant -->
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    @if ($mouvement->type_mouvement === 'remboursement' && $mouvement->mouvementReference)
+                                                        {{ number_format($mouvement->mouvementReference->montant - $mouvement->mouvementReference->remboursements->where('created_at', '<=', $mouvement->created_at)->sum('montant'), 0, ',', ' ') }}
+                                                        FCFA
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <td class="px-6 py-4">{{ $mouvement->motif ?? 'N/A' }}</td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    {{ $mouvement->user->nom_util ?? 'N/A' }}
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap">
+                                                    <button onclick="showMouvementDetails({{ $mouvement->id_mouvement }})"
+                                                        class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                                        <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        </svg>
+                                                        Détails
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
                                 </table>
                             </div>
                         </div>

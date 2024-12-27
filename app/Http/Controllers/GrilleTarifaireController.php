@@ -19,7 +19,7 @@ class GrilleTarifaireController extends Controller
     {
         // Récupérer les données nécessaires
         $typeTransactions = TypeTransaction::all();
-        $produits = Produit::where('actif', true)->get();
+        $produits = Produit::where('status', true)->get();
 
         // Construction de la requête de base
         $query = GrilleTarifaire::with(['typeTransaction', 'produit']);
@@ -56,7 +56,7 @@ class GrilleTarifaireController extends Controller
                 ->with('error', 'Vous n\'êtes pas autorisé à modifier cette grille tarifaire.');
         }
 
-        $produits = Produit::where('actif', true)->get();
+        $produits = Produit::where('status', true)->get();
         $typeTransactions = TypeTransaction::all(); // Récupération des types de transactions
 
         return view('grille_tarifaires.create', compact('typeTransactions', 'produits'));
@@ -154,7 +154,7 @@ class GrilleTarifaireController extends Controller
         }
     
         $grilleTarifaire = GrilleTarifaire::findOrFail($id); // Renommée ici
-        $produits = Produit::where('actif', true)->get();
+        $produits = Produit::where('status', true)->get();
         $typeTransactions = TypeTransaction::all();
     
         return view('grille_tarifaires.edit', compact('grilleTarifaire', 'produits', 'typeTransactions'));

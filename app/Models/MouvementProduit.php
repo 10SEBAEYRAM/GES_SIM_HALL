@@ -47,9 +47,9 @@ class MouvementProduit extends Model
         return $this->belongsTo(Produit::class, 'produit_id', 'id_prod');
     }
 
-     // Méthode pour calculer la commission totale du produit
-     public function getCommissionProduitAttribute()
-     {
-         return $this->commission_depot + $this->commission_retrait;
-     }
+    // Méthode pour calculer la commission totale du produit
+    public function getCommissionProduitAttribute()
+    {
+        return $this->commission_depot + $this->commission_retrait;
+    }
 }

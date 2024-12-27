@@ -21,7 +21,7 @@ class TransactionController extends Controller
         $transactions = Transaction::with(['produit', 'typeTransaction', 'user'])->get();
 
         // Récupérer les produits actifs et les caisses
-        $produits = Produit::where('actif', true)->get();
+        $produits = Produit::where('status', true)->get();
         $caisses = Caisse::all();
 
         // Récupérer les dates des transactions avec les totaux
@@ -42,19 +42,26 @@ class TransactionController extends Controller
 
     public function create()
     {
-        $caisses = Caisse::all();
-        $produits = Produit::where('actif', true)->get();
+        // Ne récupérer que les caisses actives
+        $caisses = Caisse::where('status', true)->get();
+        $produits = Produit::where('status', true)->get();
         $typeTransactions = TypeTransaction::all();
 
         // Passe les données à la vue
         return view('transactions.create', compact('caisses', 'produits', 'typeTransactions'));
     }
-   
+
 
 
     public function store(Request $request)
     {
         try {
+            $caisse = Caisse::findOrFail($request->id_caisse);
+
+            if (!$caisse->canPerformOperations()) {
+                throw new \Exception("Cette caisse est inactive. Aucune transaction n'est autorisée.");
+            }
+
             DB::beginTransaction();
 
             $validated = $request->validate([

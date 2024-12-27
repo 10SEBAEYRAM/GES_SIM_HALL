@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Produit;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
+use App\Models\MouvementProduit;
 
 class ProduitController extends Controller
 {
@@ -15,43 +16,26 @@ class ProduitController extends Controller
      */
     public function data(Request $request)
     {
-        // Vérification de la requête Ajax
         if ($request->ajax()) {
-            // Récupération de tous les produits avec une requête
             $produits = Produit::query();
 
-            // Utilisation de DataTables
             return DataTables::of($produits)
-                // Formatage de la colonne balance
                 ->addColumn('balance', function ($produit) {
                     return number_format($produit->balance, 2, ',', ' ') . ' FCFA';
                 })
-
-                // Colonne de statut avec du HTML conditionnel
                 ->addColumn('status', function ($produit) {
-                    return $produit->actif
+                    return $produit->status
                         ? '<span class="badge bg-success">Actif</span>'
                         : '<span class="badge bg-danger">Inactif</span>';
                 })
-
-                // Colonne d'actions avec boutons Modifier et Supprimer
                 ->addColumn('action', function ($produit) {
                     return view('produits.actions', compact('produit'))->render();
                 })
-
-                // Autoriser le rendu de HTML brut
                 ->rawColumns(['status', 'action'])
-
-                // Générer la réponse DataTables
                 ->make(true);
         }
-
-        // Optionnel : gérer le cas où ce n'est pas une requête Ajax
         return response()->json(['error' => 'Requête non autorisée'], 403);
     }
-
-
-
 
     public function index()
     {
@@ -86,10 +70,10 @@ class ProduitController extends Controller
             $validated = $request->validate([
                 'nom_prod' => 'required|string|max:50|unique:produits',
                 'balance' => 'required|numeric|min:0',
-                'actif' => 'nullable|boolean',
+                'status' => 'nullable|boolean',
             ]);
 
-            $validated['actif'] = $request->has('actif') ? filter_var($request->input('actif'), FILTER_VALIDATE_BOOLEAN) : false;
+            $validated['status'] = $request->has('status') ? filter_var($request->input('status'), FILTER_VALIDATE_BOOLEAN) : false;
 
             Produit::create($validated);
 
@@ -135,10 +119,10 @@ class ProduitController extends Controller
             $validated = $request->validate([
                 'nom_prod' => 'required|string|max:50|unique:produits,nom_prod,' . $id . ',id_prod',
                 'balance' => 'required|numeric|min:0',
-                'actif' => 'nullable|boolean',
+                'status' => 'nullable|boolean',
             ]);
 
-            $validated['actif'] = $request->has('actif') ? filter_var($request->input('actif'), FILTER_VALIDATE_BOOLEAN) : false;
+            $validated['status'] = $request->has('status') ? filter_var($request->input('status'), FILTER_VALIDATE_BOOLEAN) : false;
 
             $produit->update($validated);
 
@@ -151,9 +135,6 @@ class ProduitController extends Controller
                 ->with('error', 'Erreur : ' . $e->getMessage());
         }
     }
-
-
-
 
     /**
      * Supprime un produit spécifique de la base de données.
@@ -182,27 +163,26 @@ class ProduitController extends Controller
         }
     }
 
-    public function ajouterCommission($produitId, $montant, $reference)
+    public function toggleStatus(string $id)
     {
-        $produit = Produit::findOrFail($produitId);
-        
         try {
-            $produit->addMouvement(
-                $montant,
-                'CREDIT',
-                'Commission sur transaction',
-                $reference
-            );
+            $produit = Produit::findOrFail($id);
+            $produit->status = !$produit->status;
+            $produit->save();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Commission ajoutée avec succès'
-            ]);
+            return redirect()->back()->with('success', 'Statut mis à jour avec succès');
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Erreur lors de l\'ajout de la commission: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Erreur lors de la mise à jour du statut');
         }
+    }
+
+    public function show($id)
+    {
+        $produit = Produit::findOrFail($id);
+        $mouvements = MouvementProduit::where('produit_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('produits.show', compact('produit', 'mouvements'));
     }
 }

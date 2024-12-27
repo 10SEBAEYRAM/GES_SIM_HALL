@@ -11,7 +11,7 @@ class MouvementProduitController extends Controller
     public function create()
     {
         // Récupérer tous les produits actifs
-        $produits = Produit::where('actif', true)->get();
+        $produits = Produit::where('status', true)->get();
 
         return view('mouvements_produits.create', compact('produits'));
     }
@@ -20,6 +20,7 @@ class MouvementProduitController extends Controller
     {
         $validated = $request->validate([
             'produit_id' => 'required|exists:produits,id_prod',
+            'type_mouvement' => 'required|string',
             'description' => 'required|string',
             'volume_depot' => 'required|integer|min:0',
             'valeur_depot' => 'required|numeric|min:0',
@@ -39,7 +40,7 @@ class MouvementProduitController extends Controller
             // Création du mouvement avec les données du formulaire
             $mouvement = MouvementProduit::create([
                 'produit_id' => $validated['produit_id'],
-                'type_mouvement' => 'CREDIT',
+                'type_mouvement' => $validated['type_mouvement'],
                 'description' => $validated['description'],
                 'volume_depot' => $validated['volume_depot'],
                 'valeur_depot' => $validated['valeur_depot'],
@@ -61,9 +62,9 @@ class MouvementProduitController extends Controller
                 ->route('produits.index')
                 ->with('success', 'Commission de ' . number_format($validated['commission_produit'], 0, ',', ' ') . ' FCFA ajoutée avec succès');
         } catch (\Exception $e) {
-            return back()
-                ->withInput()
-                ->with('error', 'Erreur lors de l\'ajout de la commission : ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with('error', 'Erreur : ' . $e->getMessage());
         }
     }
 

@@ -13,7 +13,7 @@
 @section('content')
     {{-- Par celle-ci --}}
     {{-- Dans resources/views/caisses/index.blade.php --}}
-   
+
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white shadow-lg rounded-lg border border-gray-300 p-6">
@@ -26,7 +26,7 @@
                             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md border border-blue-700 transition duration-300 ease-in-out">
                             Créer une nouvelle Caisse
                         </a>
-                        
+
                     </div>
                 </div>
 
@@ -93,45 +93,56 @@
                     </thead>
                     <tbody>
                         @foreach ($caisses as $caisse)
-                        <tr class="hover:bg-gray-100 transition duration-200">
-                            <td class="px-6 py-4 whitespace-nowrap">{{ $caisse->nom_caisse }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} XOF
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">{{ $caisse->created_at->format('d-m-Y') }}</td>
-                            <td class="px-6 py-4 text-right text-sm font-medium">
-                                <div class="flex gap-3 justify-end">
-                                    {{-- Bouton Voir détails --}}
-                                    <a href="{{ route('caisses.show', $caisse->id_caisse) }}"
-                                        class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-indigo-700">
-                                        Voir détails
-                                    </a>
-                                        {{-- Bouton Ajouter un Mouvement --}}
-                                    <a href="{{ route('caisses.mouvements.create', ['caisse' => $caisse->id_caisse]) }}"
-                                        class="bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-green-700">
-                                        Ajouter un Mouvement
-                                    </a>
+                            <tr class="hover:bg-gray-100 transition duration-200">
+                                <td class="px-6 py-4 whitespace-nowrap">{{ $caisse->nom_caisse }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} XOF
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ $caisse->created_at->format('d-m-Y') }}</td>
+                                <td class="px-6 py-4 text-right text-sm font-medium">
+                                    <div class="flex gap-3 justify-end">
+                                        {{-- Bouton Voir détails --}}
+                                        <a href="{{ route('caisses.show', $caisse->id_caisse) }}"
+                                            class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:from-indigo-600 hover:to-indigo-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-indigo-700">
+                                            Voir détails
+                                        </a>
+
+                                        @if ($caisse->isActive())
+                                            {{-- Bouton Ajouter un Mouvement --}}
+                                            <a href="{{ route('caisses.mouvements.create', ['caisse' => $caisse->id_caisse]) }}"
+                                                class="bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-green-700">
+                                                Ajouter un Mouvement
+                                            </a>
+                                        @else
+                                            <button disabled
+                                                class="bg-gray-400 text-white px-4 py-2 rounded-md cursor-not-allowed opacity-50">
+                                                Ajouter un Mouvement
+                                            </button>
+                                        @endif
+
                                         {{-- Bouton Modifier --}}
-                                    <a href="{{ route('caisses.edit', $caisse->id_caisse) }}"
-                                        class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-blue-700">
-                                        Modifier
-                                    </a>
-                                        {{-- Bouton Supprimer --}}
-                                    <form action="{{ route('caisses.destroy', $caisse->id_caisse) }}" method="POST"
-                                        class="inline-block">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                            class="bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-red-700"
-                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette caisse ?')">
-                                            Supprimer
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-</tbody>
+                                        <a href="{{ route('caisses.edit', $caisse->id_caisse) }}"
+                                            class="bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border border-blue-700">
+                                            Modifier
+                                        </a>
+
+                                        {{-- Bouton Toggle Status --}}
+                                        <form action="{{ route('caisses.toggle-status', $caisse->id_caisse) }}"
+                                            method="POST" class="inline-block">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit"
+                                                class="{{ $caisse->status ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 border-emerald-700' : 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-red-700' }} text-white px-4 py-2 rounded-md shadow transform transition duration-200 hover:scale-105 border">
+                                                <i
+                                                    class="fas {{ $caisse->status ? 'fa-toggle-on' : 'fa-toggle-off' }}"></i>
+                                                <span>{{ $caisse->status ? 'Actif' : 'Inactif' }}</span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
                 </table>
             </div>
         </div>

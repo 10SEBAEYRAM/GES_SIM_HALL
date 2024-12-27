@@ -21,7 +21,8 @@ class Caisse extends Model
         'total_emprunts',
         'total_remboursements',
         'total_retraits',
-        'total_prets'
+        'total_prets',
+        'status'
     ];
 
     protected $casts = [
@@ -29,7 +30,8 @@ class Caisse extends Model
         'total_emprunts' => 'decimal:2',
         'total_remboursements' => 'decimal:2',
         'total_retraits' => 'decimal:2',
-        'total_prets' => 'decimal:2'
+        'total_prets' => 'decimal:2',
+        'status' => 'boolean'
     ];
 
     // Relation avec les mouvements de caisse
@@ -82,5 +84,15 @@ class Caisse extends Model
             ->groupBy('motif')
             ->having(DB::raw('montant_total - montant_rembourse'), '>', 0)
             ->get();
+    }
+
+    public function isActive()
+    {
+        return $this->status === true;
+    }
+
+    public function canPerformOperations()
+    {
+        return $this->isActive();
     }
 }

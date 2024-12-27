@@ -211,16 +211,26 @@ class Transaction extends Model
     public function validateBalances($montant)
     {
         $type = $this->typeTransaction->nom_type_transa;
-        
+
+        // Vérifier si la caisse est active
+        $caisse = Caisse::find($this->id_caisse);
+        if (!$caisse || !$caisse->isActive()) {
+            throw new \Exception("Cette caisse est inactive ou n'existe pas. Transaction impossible.");
+        }
+
+        // Vérifier si le produit est actif
+        $produit = Produit::find($this->produit_id);
+        if (!$produit || !$produit->status) {
+            throw new \Exception("Ce produit est inactif ou n'existe pas. Transaction impossible.");
+        }
+
         if ($type === 'Dépôt') {
-            $produit = Produit::find($this->produit_id);
             if ($montant > $produit->balance) {
                 throw new \Exception("Solde produit insuffisant. Solde disponible : " . number_format($produit->balance, 0, ',', ' ') . " FCFA");
             }
         }
 
         if ($type === 'Retrait') {
-            $caisse = Caisse::find($this->id_caisse);
             if ($montant > $caisse->balance_caisse) {
                 throw new \Exception("Solde caisse insuffisant. Solde disponible : " . number_format($caisse->balance_caisse, 0, ',', ' ') . " FCFA");
             }

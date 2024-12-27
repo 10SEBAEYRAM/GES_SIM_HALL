@@ -157,18 +157,25 @@ Route::get('/mouvements/{id}/details', [CaisseController::class, 'getMouvementDe
 Route::middleware('auth')->group(function () {
     // Routes pour les caisses
     Route::resource('caisses', CaisseController::class);
-    
+
     // Route pour créer un mouvement
     Route::get('/caisses/{caisse}/mouvements/create', [CaisseController::class, 'createMouvement'])
         ->name('caisses.mouvements.create');
-    
+
     // Route pour enregistrer un mouvement
     Route::post('/caisses/mouvements', [CaisseController::class, 'storeMouvement'])
         ->name('caisses.mouvements.store');
-    
+
     // Route API pour les opérations non remboursées
     Route::get('/api/caisses/{caisse}/operations-non-remboursees', [CaisseController::class, 'getOperationsNonRemboursees'])
         ->name('api.caisses.operations-non-remboursees');
+    Route::patch('/produits/{id}/toggle-status', [ProduitController::class, 'toggleStatus'])
+        ->name('produits.toggle-status');
+    Route::resource('mouvements-produits', MouvementProduitController::class);
 });
 
-Route::resource('mouvements-produits', MouvementProduitController::class);
+// Ajouter avec les autres routes de caisses
+Route::patch('/caisses/{caisse}/toggle-status', [CaisseController::class, 'toggleStatus'])
+    ->name('caisses.toggle-status');
+
+Route::get('/produits/{id}/show', [ProduitController::class, 'show'])->name('produits.show');

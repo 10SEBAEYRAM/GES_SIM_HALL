@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id('id_prod');
             $table->string('nom_prod');
             $table->decimal('balance', 15, 2)->default(0);
-            $table->boolean('actif')->default(true);
+            $table->boolean('status')->default(true);
             $table->timestamps();
             $table->softDeletes();
         });

@@ -38,41 +38,52 @@
                     </div>
 
                     <!-- Caisse -->
-                    <!-- Caisse -->
                     <div class="mb-4">
                         <label for="id_caisse" class="block text-sm font-medium text-gray-700">Sélectionner une
                             Caisse</label>
-                        <select id="id_caisse" name="id_caisse"
-                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            required>
-                            <option value="">-- Sélectionnez une caisse --</option>
-                            @foreach ($caisses as $caisse)
-                                <option value="{{ $caisse->id_caisse }}"
-                                    {{ old('id_caisse') == $caisse->id_caisse ? 'selected' : '' }}>
-                                    {{ $caisse->nom_caisse }} - {{ number_format($caisse->balance_caisse, 0, ',', ' ') }}
-                                    FCFA
-                                </option>
-                            @endforeach
-                        </select>
+                        @if ($caisses->isEmpty())
+                            <div class="mt-2 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+                                <p class="font-bold">Attention</p>
+                                <p>Aucune caisse active n'est disponible pour effectuer une transaction.</p>
+                            </div>
+                        @else
+                            <select id="id_caisse" name="id_caisse"
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                required>
+                                <option value="">-- Sélectionnez une caisse --</option>
+                                @foreach ($caisses as $caisse)
+                                    <option value="{{ $caisse->id_caisse }}"
+                                        {{ old('id_caisse') == $caisse->id_caisse ? 'selected' : '' }}>
+                                        {{ $caisse->nom_caisse }} -
+                                        {{ number_format($caisse->balance_caisse, 0, ',', ' ') }} FCFA
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                     </div>
-
-
 
                     <!-- Produit -->
                     <div class="space-y-2">
                         <label class="block text-sm font-medium text-gray-700">Produit</label>
-                        <select name="produit_id" id="produit_id"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                            required>
-                            <option value="">Sélectionnez un produit</option>
-                            @foreach ($produits as $produit)
-                                <option value="{{ $produit->id_prod }}" data-balance="{{ $produit->balance }}"
-                                    {{ old('id_prod') == $produit->id_prod ? 'selected' : '' }}>
-                                    {{ $produit->nom_prod }} (Solde: {{ number_format($produit->balance, 0, ',', ' ') }}
-                                    FCFA)
-                                </option>
-                            @endforeach
-                        </select>
+                        @if ($produits->isEmpty())
+                            <div class="mt-2 p-4 bg-red-100 border-l-4 border-red-500 text-red-700">
+                                <p class="font-bold">Attention</p>
+                                <p>Aucun produit actif n'est disponible pour effectuer une transaction.</p>
+                            </div>
+                        @else
+                            <select name="produit_id" id="produit_id"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                required>
+                                <option value="">Sélectionnez un produit</option>
+                                @foreach ($produits as $produit)
+                                    <option value="{{ $produit->id_prod }}" data-balance="{{ $produit->balance }}"
+                                        {{ old('id_prod') == $produit->id_prod ? 'selected' : '' }}>
+                                        {{ $produit->nom_prod }} (Solde:
+                                        {{ number_format($produit->balance, 0, ',', ' ') }} FCFA)
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
                     </div>
 
                     <!-- Montant -->
@@ -160,7 +171,8 @@
 
                     <!-- Frais de service -->
                     <div class="space-y-2" id="fraisServiceContainer">
-                        <label for="frais_service" id="fraisServiceLabel" class="block text-sm font-medium text-gray-700">
+                        <label for="frais_service" id="fraisServiceLabel"
+                            class="block text-sm font-medium text-gray-700">
                             Frais de service
                         </label>
                         <input type="number" name="frais_service" id="frais_service"
@@ -172,13 +184,12 @@
                     </div>
 
                     <!-- Boutons -->
-                    <div class="flex justify-end space-x-4">
+                    <div class="flex justify-end gap-4">
                         <a href="{{ route('transactions.index') }}"
-                            class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                            Annuler
-                        </a>
+                            class="bg-gray-500 text-white px-4 py-2 rounded">Annuler</a>
                         <button type="submit"
-                            class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            class="bg-blue-500 text-white px-4 py-2 rounded {{ $caisses->isEmpty() || $produits->isEmpty() ? 'opacity-50 cursor-not-allowed' : '' }}"
+                            {{ $caisses->isEmpty() || $produits->isEmpty() ? 'disabled' : '' }}>
                             Créer
                         </button>
                     </div>
