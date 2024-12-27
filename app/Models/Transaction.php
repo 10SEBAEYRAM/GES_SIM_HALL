@@ -207,4 +207,25 @@ class Transaction extends Model
     {
         return $this->statut === self::STATUT_ANNULE;
     }
+
+    public function validateBalances($montant)
+    {
+        $type = $this->typeTransaction->nom_type_transa;
+        
+        if ($type === 'Dépôt') {
+            $produit = Produit::find($this->produit_id);
+            if ($montant > $produit->balance) {
+                throw new \Exception("Solde produit insuffisant. Solde disponible : " . number_format($produit->balance, 0, ',', ' ') . " FCFA");
+            }
+        }
+
+        if ($type === 'Retrait') {
+            $caisse = Caisse::find($this->id_caisse);
+            if ($montant > $caisse->balance_caisse) {
+                throw new \Exception("Solde caisse insuffisant. Solde disponible : " . number_format($caisse->balance_caisse, 0, ',', ' ') . " FCFA");
+            }
+        }
+
+        return true;
+    }
 }

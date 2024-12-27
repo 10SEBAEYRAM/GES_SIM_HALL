@@ -181,4 +181,28 @@ class ProduitController extends Controller
                 ->with('error', 'Une erreur est survenue lors de la suppression du produit : ' . $e->getMessage());
         }
     }
+
+    public function ajouterCommission($produitId, $montant, $reference)
+    {
+        $produit = Produit::findOrFail($produitId);
+        
+        try {
+            $produit->addMouvement(
+                $montant,
+                'CREDIT',
+                'Commission sur transaction',
+                $reference
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Commission ajoutée avec succès'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de l\'ajout de la commission: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

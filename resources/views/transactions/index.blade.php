@@ -79,12 +79,7 @@
             </div>
         </div>
 
-        <!-- Graphique -->
-        <div class="backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
-    <h3 class="text-xl font-semibold text-purple-300 mb-4">Totaux des Transactions par Date</h3>
-    <!-- Modification de la hauteur de h-96 à h-64 -->
-    <canvas id="transactionsChart" class="w-full h-64"></canvas>
-</div>
+        
 
         <!-- Table des Transactions -->
         <div class="backdrop-blur-lg rounded-xl overflow-hidden shadow-lg animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
@@ -162,6 +157,12 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+        <!-- Graphique -->
+        <div class="backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
+            <h3 class="text-xl font-semibold text-purple-300 mb-4">Totaux des Transactions par Date</h3>
+           
+            <canvas id="transactionsChart" class="w-full h-64"></canvas>
         </div>
     </div>
 </div>

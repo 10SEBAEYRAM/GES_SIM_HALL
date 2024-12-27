@@ -99,4 +99,15 @@ class Produit extends Model
         $this->balance = $this->transactions->sum('montant_trans');
         $this->save();
     }
+
+    public function mouvements()
+    {
+        return $this->hasMany(MouvementProduit::class, 'produit_id', 'id_prod');
+    }
+
+    public function dernierMouvement()
+    {
+        return $this->hasOne(MouvementProduit::class, 'produit_id', 'id_prod')
+                    ->latest();
+    }
 }

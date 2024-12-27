@@ -8,7 +8,8 @@ use App\Http\Controllers\{
     GrilleTarifaireController,
     TransactionController,
     CaisseController,
-    DashboardController
+    DashboardController,
+    MouvementProduitController
 };
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Log;
@@ -169,3 +170,5 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/caisses/{caisse}/operations-non-remboursees', [CaisseController::class, 'getOperationsNonRemboursees'])
         ->name('api.caisses.operations-non-remboursees');
 });
+
+Route::resource('mouvements-produits', MouvementProduitController::class);

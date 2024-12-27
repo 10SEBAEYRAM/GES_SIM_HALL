@@ -49,6 +49,8 @@ class TransactionController extends Controller
         // Passe les données à la vue
         return view('transactions.create', compact('caisses', 'produits', 'typeTransactions'));
     }
+   
+
 
     public function store(Request $request)
     {
@@ -68,8 +70,8 @@ class TransactionController extends Controller
                 'numero_compteur' => 'required_if:motif,paiement_ceet',
                 'numero_validation' => 'required_if:motif,paiement_ceet',
                 'numero_carte_paiement' => 'required_if:motif,paiement_canal',
-           
-             ]);
+
+            ]);
 
             // Récupérer la grille tarifaire correspondante
             try {
@@ -80,11 +82,11 @@ class TransactionController extends Controller
 
                 // Construction de la requête étape par étape
                 $query = GrilleTarifaire::query();
-                
+
                 // Première étape : filtrer par type_transaction et produit
                 $query->where('type_transaction_id', $type_transaction_id)
-                      ->where('produit_id', $produit_id);
-                
+                    ->where('produit_id', $produit_id);
+
                 // Debug de la première étape
                 [
                     'Étape 1 - Paramètres convertis' => [
@@ -101,7 +103,7 @@ class TransactionController extends Controller
                             'type' => gettype($montant)
                         ]
                     ],
-                    'Étape 1 - Résultats initiaux' => $query->get()->map(function($item) {
+                    'Étape 1 - Résultats initiaux' => $query->get()->map(function ($item) {
                         return [
                             'id' => $item->id_grille_tarifaire,
                             'type_transaction_id' => [
@@ -128,47 +130,47 @@ class TransactionController extends Controller
                     ]
                 ];
 
-                
-// Deuxième étape : vérifier les montants
-$montantFormatted = floatval($montant);
 
-// Vérifions d'abord si une grille existe
-$grilleTarifaire = $query
-    ->where('montant_min', '<=', $montantFormatted)
-    ->where('montant_max', '>=', $montantFormatted)
-    ->first();
+                // Deuxième étape : vérifier les montants
+                $montantFormatted = floatval($montant);
 
-// Ajoutons un log pour voir les valeurs exactes
-// dd('Tentative de recherche grille tarifaire', [
-//     'montant' => $montantFormatted,
-//     'type_transaction' => $validated['type_transaction_id'],
-//     'produit' => $validated['produit_id']
-// ]);
-Log::info('SQL généré', [
-    'sql' => $query->toSql(),
-    'bindings' => $query->getBindings()
-]);
-Log::info('SQL généré', [
-    'sql' => $query->toSql(),
-    'bindings' => $query->getBindings()
-]);
+                // Vérifions d'abord si une grille existe
+                $grilleTarifaire = $query
+                    ->where('montant_min', '<=', $montantFormatted)
+                    ->where('montant_max', '>=', $montantFormatted)
+                    ->first();
 
-if (!$grilleTarifaire) {
-    Log::warning('Aucune grille tarifaire trouvée pour:', [
-        'type_transaction' => $validated['type_transaction_id'],
-        'produit' => $validated['produit_id'],
-        'montant' => $montant
-    ]);
-    return back()
-        ->withInput()
-        ->with('error', 'Aucune grille tarifaire trouvée pour ce montant et ce type de transaction.');
-}
+                // Ajoutons un log pour voir les valeurs exactes
+                // dd('Tentative de recherche grille tarifaire', [
+                //     'montant' => $montantFormatted,
+                //     'type_transaction' => $validated['type_transaction_id'],
+                //     'produit' => $validated['produit_id']
+                // ]);
+                Log::info('SQL généré', [
+                    'sql' => $query->toSql(),
+                    'bindings' => $query->getBindings()
+                ]);
+                Log::info('SQL généré', [
+                    'sql' => $query->toSql(),
+                    'bindings' => $query->getBindings()
+                ]);
+
+                if (!$grilleTarifaire) {
+                    Log::warning('Aucune grille tarifaire trouvée pour:', [
+                        'type_transaction' => $validated['type_transaction_id'],
+                        'produit' => $validated['produit_id'],
+                        'montant' => $montant
+                    ]);
+                    return back()
+                        ->withInput()
+                        ->with('error', 'Aucune grille tarifaire trouvée pour ce montant et ce type de transaction.');
+                }
             } catch (\Exception $e) {
                 Log::error('Erreur lors de la recherche de la grille tarifaire: ' . $e->getMessage(), [
                     'exception' => $e,
                     'trace' => $e->getTraceAsString()
                 ]);
-                
+
                 return back()
                     ->withInput()
                     ->with('error', 'Erreur lors de la recherche de la grille tarifaire: ' . $e->getMessage());
@@ -253,7 +255,7 @@ if (!$grilleTarifaire) {
     public function getCommission(Request $request)
     {
         try {
-            
+
 
             // Validate the request
             $validator = Validator::make($request->all(), [
@@ -263,7 +265,7 @@ if (!$grilleTarifaire) {
             ]);
 
             if ($validator->fails()) {
-               
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation échouée',
@@ -274,7 +276,7 @@ if (!$grilleTarifaire) {
             // Find the product
             $produit = Produit::find($request->produit_id);
             if (!$produit) {
-              
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Produit non trouvé'
@@ -288,8 +290,8 @@ if (!$grilleTarifaire) {
                     $request->type_transaction_id
                 );
 
-               
-               $montant = $request->montant_trans;
+
+                $montant = $request->montant_trans;
 
 
 
@@ -319,7 +321,7 @@ if (!$grilleTarifaire) {
             ], 500);
         }
     }
-    
+
 
     public function destroy($id)
     {
@@ -375,5 +377,4 @@ if (!$grilleTarifaire) {
         }
         $caisse->save();
     }
-    
 }
