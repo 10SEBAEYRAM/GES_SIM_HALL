@@ -57,7 +57,56 @@
             </div>
             @endforeach
         </div>
-                <!-- Solde des Caisses -->
+
+   <!-- Totaux des Commissions par types de transactions -->
+<div class="backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
+    <h3 class="text-xl font-semibold text-purple-300 mb-4">Totaux des Commissions par types de transactions</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        @foreach($produits as $produit)
+            <div class="backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20 hover:from-purple-900/30 hover:to-slate-900/30 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-gray-400 text-sm">{{ $produit->nom_prod }}</h4>
+                        @if($produit->nom_prod == 'FLOOZ')
+                            <p class="text-lg font-bold text-purple-300 mt-1">
+                                Commission Dépôt : {{ number_format($commissionsParProduit[$produit->nom_prod]['commission_depot'] ?? 0, 0, ',', ' ') }} FCFA
+                            </p>
+                            <p class="text-lg font-bold text-purple-300 mt-1">
+                                Commission Retrait : {{ number_format($commissionsParProduit[$produit->nom_prod]['commission_retrait'] ?? 0, 0, ',', ' ') }} FCFA
+                            </p>
+                        @else
+                            <p class="text-lg font-bold text-purple-300 mt-1">
+                                Dépôt : {{ number_format($commissionsParProduit[$produit->nom_prod]['dépôt'] ?? 0, 0, ',', ' ') }} FCFA
+                            </p>
+                            <p class="text-lg font-bold text-purple-300 mt-1">
+                                Retrait : {{ number_format($commissionsParProduit[$produit->nom_prod]['retrait'] ?? 0, 0, ',', ' ') }} FCFA
+                            </p>
+                        @endif
+                    </div>
+                    <div class="p-3 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+                        <i class="fas fa-coins text-purple-400 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+
+<!-- Totaux des Commissions par Produit -->
+<div class="backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
+    <h3 class="text-xl font-semibold text-purple-300 mb-4">Totaux des Commissions par Produit</h3>
+    <div id="commissions-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        @foreach($commissionsParProduit as $produitNom => $commission)
+            <div class="backdrop-blur-lg rounded-xl p-6 mb-4 border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
+                <h4 class="text-gray-400 text-sm">Produit ID: {{ $produitNom }}</h4>
+                <p class="text-lg font-bold text-purple-300 mt-1">
+                    Total Commission: {{ number_format($commission['commission_totale'] ?? 0, 0, ',', ' ') }} FCFA
+                </p>
+            </div>
+        @endforeach
+    </div>
+</div>
+</div>    <!-- Solde des Caisses -->
                 <div class="backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
             <h3 class="text-xl font-semibold text-purple-300 mb-4">Solde des Caisses</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -81,83 +130,84 @@
 
         
 
-        <!-- Table des Transactions -->
-        <div class="backdrop-blur-lg rounded-xl overflow-hidden shadow-lg animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
-            <div class="p-6">
-                <table id="transactionsTable" class="w-full">
-                    <thead>
-                        <tr class="border-b border-purple-500/10">
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Date/Heure</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Type</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Produit</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Montant</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Commission</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Bénéficiaire</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Statut</th>
-                            <th class="px-6 py-3 text-right text-sm font-semibold text-purple-300">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-purple-500/10">
-                        @foreach($transactions as $transaction)
-                        <tr class="hover:bg-purple-900/10 transition-colors duration-200">
-                            <td class="px-6 py-4 text-gray-300">
-                                {{ $transaction->created_at->format('d/m/Y H:i:s') }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center space-x-3">
-                                    <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
-                                        {{ strtoupper(substr($transaction->typeTransaction->nom_type_transa, 0, 2)) }}
-                                    </div>
-                                    <span class="text-gray-300">{{ $transaction->typeTransaction->nom_type_transa }}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-gray-300">
-                                {{ $transaction->produit->nom_prod }}
-                            </td>
-                            <td class="px-6 py-4 text-gray-300">
-                                {{ number_format($transaction->montant_trans, 0, ',', ' ') }} FCFA
-                            </td>
-                            <td class="px-6 py-4 text-gray-300">
-                                {{ number_format($transaction->commission_grille_tarifaire, 0, ',', ' ') }} FCFA
-                            </td>
-                            <td class="px-6 py-4 text-gray-300">
-                                {{ $transaction->num_beneficiaire }}
-                            </td>
-                            <td class="px-6 py-4">
-                                <span class="px-3 py-1 rounded-full text-xs font-medium 
-                                    @if($transaction->statut === 'COMPLETE') bg-emerald-500/10 text-emerald-300 border border-emerald-500/30
-                                    @elseif($transaction->statut === 'ANNULE') bg-red-500/10 text-red-300 border border-red-500/30
-                                    @else bg-yellow-500/10 text-yellow-300 border border-yellow-500/30 
-                                    @endif">
-                                    {{ $transaction->statut }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-right">
-                                <div class="flex gap-3 justify-end">
-                                    <a href="{{ route('transactions.show', $transaction->id_transaction) }}"
-                                        class="bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-blue-500/30">
-                                        <i class="fas fa-eye"></i>
-                                        <span>Détails</span>
-                                    </a>
-                                    <form action="{{ route('transactions.destroy', $transaction->id_transaction) }}" 
-                                          method="POST" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                            onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')"
-                                            class="bg-red-500/10 hover:bg-red-500/20 text-red-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-red-500/30">
-                                            <i class="fas fa-trash-alt"></i>
-                                            <span>Supprimer</span>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
+       <!-- Table des Transactions -->
+
+       <div class="backdrop-blur-lg rounded-xl overflow-hidden shadow-lg animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
+    <div class="p-6">
+        <table id="transactionsTable" class="w-full">
+            <thead>
+                <tr class="border-b border-purple-500/10">
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Date/Heure</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Type</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Produit</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Montant</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Commission Générale</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Bénéficiaire</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-purple-300">Statut</th>
+                    <th class="px-6 py-3 text-right text-sm font-semibold text-purple-300">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-purple-500/10">
+                @foreach($transactions as $transaction)
+                <tr class="hover:bg-purple-900/10 transition-colors duration-200">
+                    <td class="px-6 py-4 text-gray-300">
+                        {{ $transaction->created_at->format('d/m/Y H:i:s') }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold">
+                                {{ strtoupper(substr($transaction->typeTransaction->nom_type_transa, 0, 2)) }}
+                            </div>
+                            <span class="text-gray-300">{{ $transaction->typeTransaction->nom_type_transa }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-300">
+                        {{ $transaction->produit->nom_prod }}
+                    </td>
+                    <td class="px-6 py-4 text-gray-300">
+                        {{ number_format($transaction->montant_trans, 0, ',', ' ') }} FCFA
+                    </td>
+                    <td class="px-6 py-4 text-gray-300">
+                        {{ number_format($transaction->commission_grille_tarifaire, 0, ',', ' ') }} FCFA
+                    </td>
+                    <td class="px-6 py-4 text-gray-300">
+                        {{ $transaction->num_beneficiaire }}
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium 
+                            @if($transaction->statut === 'COMPLETE') bg-emerald-500/10 text-emerald-300 border border-emerald-500/30
+                            @elseif($transaction->statut === 'ANNULE') bg-red-500/10 text-red-300 border border-red-500/30
+                            @else bg-yellow-500/10 text-yellow-300 border border-yellow-500/30 
+                            @endif">
+                            {{ $transaction->statut }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex gap-3 justify-end">
+                            <a href="{{ route('transactions.show', $transaction->id_transaction) }}"
+                                class="bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-blue-500/30">
+                                <i class="fas fa-eye"></i>
+                                <span>Détails</span>
+                            </a>
+                            <form action="{{ route('transactions.destroy', $transaction->id_transaction) }}" 
+                                  method="POST" class="inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                    onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')"
+                                    class="bg-red-500/10 hover:bg-red-500/20 text-red-300 px-4 py-2 rounded-lg transition-all duration-200 flex items-center space-x-2 border border-red-500/30">
+                                    <i class="fas fa-trash-alt"></i>
+                                    <span>Supprimer</span>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
         <!-- Graphique -->
         <div class="backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
             <h3 class="text-xl font-semibold text-purple-300 mb-4">Totaux des Transactions par Date</h3>

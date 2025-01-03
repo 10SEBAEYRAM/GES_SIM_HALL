@@ -35,7 +35,6 @@
                     </div>
                 </div>
             </div>
-       
 
             <!-- Total Produits -->
             <div class="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl p-6 transform hover:scale-105 transition-all duration-300 shadow-lg animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
@@ -102,54 +101,113 @@
                 </div>
             </div>
         </div>
-      <!-- Graphiques -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <!-- Graphique à barres -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInLeft">
-                <h3 class="text-xl font-bold text-white mb-6">Transactions par Type</h3>
-                <canvas id="barChart" class="w-full h-64"></canvas>
-            </div>
 
-            <!-- Graphique circulaire -->
-            <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInRight">
-                <h3 class="text-xl font-bold text-white mb-6">Répartition des Transactions</h3>
-                <canvas id="pieChart" class="w-full h-64"></canvas>
-            </div>
-        </div>
-        <!-- Transactions par Type -->
-        <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp">
-    <h3 class="text-xl font-bold text-white mb-6">Transactions par Type</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @forelse($typeTransactions as $type_transaction)
-                <div class="bg-white/5 rounded-lg p-6 transform hover:scale-105 transition-all duration-300">
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="text-white font-medium">
-                            {{ $type_transaction->nom_type_transa ?? 'Type inconnu' }}
-                        </span>
-                        <div class="bg-indigo-500/30 rounded-full p-2">
-                            <i class="fas fa-chart-line text-indigo-400"></i>
-                        </div>
+<!-- Totaux des Commissions par types de transactions -->
+<div class="backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
+    <h3 class="text-xl font-semibold text-purple-300 mb-4">Totaux des Commissions par types de transactions</h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        @foreach($produits as $produit)
+            @php
+                // Nettoyer le nom du produit pour correspondre à la clé dans $commissionsParProduit
+                $nomProduit = trim(str_replace(["\r\n", "\r", "\n"], '', $produit->nom_prod));
+            @endphp
+            <div class="backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20 hover:from-purple-900/30 hover:to-slate-900/30 transition-all duration-300">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="text-gray-400 text-sm">{{ $produit->nom_prod }}</h4>
+                        @if($nomProduit == 'FLOOZ')
+                            <p class="text-lg font-bold text-purple-300 mt-1">
+                                Commission Dépôt : {{ number_format($commissionsParProduit[$nomProduit]['commission_depot'] ?? 0, 0, ',', ' ') }} FCFA
+                            </p>
+                            <p class="text-lg font-bold text-purple-300 mt-1">
+                                Commission Retrait : {{ number_format($commissionsParProduit[$nomProduit]['commission_retrait'] ?? 0, 0, ',', ' ') }} FCFA
+                            </p>
+                        @else
+                            <p class="text-lg font-bold text-purple-300 mt-1">
+                                Dépôt : {{ number_format($commissionsParProduit[$nomProduit]['dépôt'] ?? 0, 0, ',', ' ') }} FCFA
+                            </p>
+                            <p class="text-lg font-bold text-purple-300 mt-1">
+                                Retrait : {{ number_format($commissionsParProduit[$nomProduit]['retrait'] ?? 0, 0, ',', ' ') }} FCFA
+                            </p>
+                        @endif
                     </div>
-                    <p class="text-2xl font-bold text-indigo-400">
-                        {{ number_format($type_transaction->montant_total ?? 0, 0, ',', ' ') }} FCFA
-                    </p>
+                    <div class="p-3 rounded-lg bg-gradient-to-br from-purple-500/10 to-pink-500/10">
+                        <i class="fas fa-coins text-purple-400 text-xl"></i>
+                    </div>
                 </div>
-            @empty
-                <p class="text-white">Aucune transaction disponible pour le moment.</p>
-            @endforelse
-        </div>
+            </div>
+        @endforeach
+    </div>
+</div>
+<!-- Totaux des Commissions par Produit -->
+<div class="backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
+    <h3 class="text-xl font-semibold text-purple-300 mb-4">Totaux des Commissions par Produit</h3>
+    <div id="commissions-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        @foreach($commissionsParProduit as $produitNom => $commission)
+            <div class="backdrop-blur-lg rounded-xl p-6 mb-4 border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20">
+                <h4 class="text-gray-400 text-sm">{{ $produitNom }}</h4>
+                <p class="text-lg font-bold text-purple-300 mt-1">
+                    {{ number_format($commission['commission_totale'], 0, ',', ' ') }} FCFA
+                </p>
+            </div>
+        @endforeach
+    </div>
+</div>
+        <!-- Graphiques -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Graphique à barres -->
+    <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInLeft">
+        <h3 class="text-xl font-bold text-white mb-6">Transactions par Produit (Dépôt vs Retrait)</h3>
+        <canvas id="barChart" class="w-full h-64"></canvas>
+    </div>
+
+    <!-- Graphique circulaire -->
+    <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 animate__animated animate__fadeInRight">
+        <h3 class="text-xl font-bold text-white mb-6">Répartition des Transactions par Produit</h3>
+        <canvas id="pieChart" class="w-full h-64"></canvas>
+    </div>
 </div>
 
+        <!-- Transactions par Type -->
+        <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6 mb-8 animate__animated animate__fadeInUp">
+            <h3 class="text-xl font-bold text-white mb-6">Transactions par Type</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @forelse($typeTransactions as $type_transaction)
+                    <div class="bg-white/5 rounded-lg p-6 transform hover:scale-105 transition-all duration-300">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-white font-medium">
+                                {{ $type_transaction->nom_type_transa ?? 'Type inconnu' }}
+                            </span>
+                            <div class="bg-indigo-500/30 rounded-full p-2">
+                                <i class="fas fa-chart-line text-indigo-400"></i>
+                            </div>
+                        </div>
+                        <p class="text-2xl font-bold text-indigo-400">
+                            {{ number_format($type_transaction->montant_total ?? 0, 0, ',', ' ') }} FCFA
+                        </p>
+                    </div>
+                @empty
+                    <p class="text-white">Aucune transaction disponible pour le moment.</p>
+                @endforelse
+            </div>
+        </div>
     </div>
 </div>
 
 @push('styles')
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
 @endpush
-
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Passer les données PHP à JavaScript
+   
+    const chartData = {
+        labels: {!! json_encode($chartData['labels']) !!}, // Noms des produits
+        depot: {!! json_encode($chartData['depot']) !!},   // Montants des dépôts par produit
+        retrait: {!! json_encode($chartData['retrait']) !!} // Montants des retraits par produit
+    };
+
     // Configuration des graphiques
     let barChart;
     let pieChart;
@@ -162,25 +220,28 @@
         barChart = new Chart(barCtx, {
             type: 'bar',
             data: {
-                labels: data.labels,
-                datasets: [{
-                    label: 'Montant des transactions',
-                    data: data.values,
-                    backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(139, 92, 246, 0.8)',
-                        'rgba(239, 68, 68, 0.8)'
-                    ],
-                    borderWidth: 1
-                }]
+                labels: data.labels, // Noms des produits
+                datasets: [
+                    {
+                        label: 'Dépôt',
+                        data: data.depot, // Montants des dépôts
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)', // Couleur pour les dépôts
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Retrait',
+                        data: data.retrait, // Montants des retraits
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)', // Couleur pour les retraits
+                        borderWidth: 1
+                    }
+                ]
             },
             options: {
                 responsive: true,
                 plugins: {
                     legend: {
                         labels: {
-                            color: 'white'
+                            color: 'white' // Couleur du texte de la légende
                         }
                     }
                 },
@@ -188,18 +249,18 @@
                     y: {
                         beginAtZero: true,
                         ticks: {
-                            color: 'white'
+                            color: 'white' // Couleur des ticks de l'axe Y
                         },
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
+                            color: 'rgba(255, 255, 255, 0.1)' // Couleur de la grille de l'axe Y
                         }
                     },
                     x: {
                         ticks: {
-                            color: 'white'
+                            color: 'white' // Couleur des ticks de l'axe X
                         },
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
+                            color: 'rgba(255, 255, 255, 0.1)' // Couleur de la grille de l'axe X
                         }
                     }
                 }
@@ -212,14 +273,14 @@
         pieChart = new Chart(pieCtx, {
             type: 'doughnut',
             data: {
-                labels: data.labels,
+                labels: data.labels, // Noms des produits
                 datasets: [{
-                    data: data.values,
+                    data: data.labels.map((label, index) => data.depot[index] + data.retrait[index]), // Montants totaux (dépôts + retraits)
                     backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(139, 92, 246, 0.8)',
-                        'rgba(239, 68, 68, 0.8)'
+                        'rgba(59, 130, 246, 0.8)', // Couleur pour le produit 1
+                        'rgba(239, 68, 68, 0.8)',  // Couleur pour le produit 2
+                        'rgba(16, 185, 129, 0.8)', // Couleur pour le produit 3
+                        'rgba(139, 92, 246, 0.8)'  // Couleur pour le produit 4
                     ]
                 }]
             },
@@ -229,12 +290,45 @@
                     legend: {
                         position: 'bottom',
                         labels: {
-                            color: 'white'
+                            color: 'white' // Couleur du texte de la légende
                         }
                     }
                 }
             }
         });
+    }
+
+    // Fonction pour mettre à jour les commissions
+    function updateCommissions(commissionsData) {
+        const commissionsContainer = document.getElementById('commissions-container');
+        if (!commissionsContainer) return;
+
+        // Vider le contenu existant
+        commissionsContainer.innerHTML = '';
+
+        // Ajouter les nouvelles données
+      
+
+for (const [produitId, commission] of Object.entries(commissionsData)) {
+    const commissionElement = document.createElement('div');
+    commissionElement.className = 'backdrop-blur-lg rounded-xl p-6 mb-4 border border-purple-500/10 bg-gradient-to-br from-purple-900/20 to-slate-900/20';
+
+    // Accédez à la commission totale
+    const totalCommission = parseFloat(commission.commission_totale);
+
+    // Vérifiez si la commission est un nombre valide
+    if (isNaN(totalCommission)) {
+        console.error(`Commission invalide pour le produit ${produitId}:`, commission.commission_totale);
+    }
+
+    commissionElement.innerHTML = `
+        <h4 class="text-gray-400 text-sm"> ${produitId}</h4>
+        <p class="text-lg font-bold text-purple-300 mt-1">
+            Total Commission: ${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalCommission)} FCFA
+        </p>
+    `;
+    commissionsContainer.appendChild(commissionElement);
+}
     }
 
     // Fonction pour mettre à jour les données
@@ -252,6 +346,11 @@
                         element.textContent = new Intl.NumberFormat('fr-FR').format(data.statistics[key]) + ' FCFA';
                     }
                 });
+
+                // Mise à jour des commissions
+                if (data.commissionsParProduit) {
+                    updateCommissions(data.commissionsParProduit);
+                }
             });
     }
 
@@ -262,11 +361,13 @@
 
     // Initialisation des graphiques au chargement
     document.addEventListener('DOMContentLoaded', function() {
-        const initialData = {
-            labels: {!! json_encode($chartData['labels']) !!},
-            values: {!! json_encode($chartData['values']) !!}
-        };
-        initCharts(initialData);
+        initCharts(chartData);
+
+        // Initialisation des commissions si elles existent
+        const initialCommissions = {!! json_encode($commissionsParProduit ?? []) !!};
+        if (Object.keys(initialCommissions).length > 0) {
+            updateCommissions(initialCommissions);
+        }
     });
 
     // Animation au scroll

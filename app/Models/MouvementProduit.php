@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Http\Controllers\ProduitController;
 
 class MouvementProduit extends Model
 {
@@ -52,4 +53,6 @@ class MouvementProduit extends Model
     {
         return $this->commission_depot + $this->commission_retrait;
     }
+
+ 
 }

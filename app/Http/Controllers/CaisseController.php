@@ -556,11 +556,13 @@ class CaisseController extends Controller
     {
         try {
             $mouvement = MouvementCaisse::findOrFail($id);
+            $montantRestant = $mouvement->montant_restant ?? $mouvement->montant; // Calculer ou récupérer le montant restant
 
             return response()->json([
                 'solde_avant' => $mouvement->solde_avant,
                 'solde_apres' => $mouvement->solde_apres,
                 'type_mouvement' => $mouvement->type_mouvement,
+                'montant_restant' => $montantRestant,
                 'montant' => $mouvement->montant,
                 'motif' => $mouvement->motif,
                 'date' => $mouvement->created_at->format('d/m/Y H:i')

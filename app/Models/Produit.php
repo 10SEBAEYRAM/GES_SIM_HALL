@@ -111,4 +111,14 @@ class Produit extends Model
     {
         return $query->where('status', false);
     }
+
+   
+
+    public function mouvements()
+    {
+        return $this->hasMany(MouvementProduit::class, 'produit_id', 'id_prod');
+    }
 }
+
+    
+

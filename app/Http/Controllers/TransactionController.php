@@ -12,34 +12,75 @@ use App\Models\Caisse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use App\Models\GrilleTarifaire;
-
+use App\Models\MouvementProduit;
 class TransactionController extends Controller
 {
+
+
+
     public function index()
     {
-        // Récupérer les transactions avec leurs relations
         $transactions = Transaction::with(['produit', 'typeTransaction', 'user'])->get();
 
-        // Récupérer les produits actifs et les caisses
+        // Récupérer les produits actifs
         $produits = Produit::where('status', true)->get();
-        $caisses = Caisse::all();
+      // Récupérer les produits actifs et les caisses
+      $produits = Produit::where('status', true)->get();
+      $caisses = Caisse::all();
 
-        // Récupérer les dates des transactions avec les totaux
+          // Récupérer les dates des transactions avec les totaux
         $transactionsDates = Transaction::selectRaw('DATE(created_at) as date, SUM(montant_trans) as total')
-            ->groupBy('date')
-            ->orderBy('date', 'asc')
-            ->get();
+        ->groupBy('date')
+        ->orderBy('date', 'asc')
+        ->get();
 
-        // Préparer les données pour le graphique
-        $data = [
-            'labels' => $transactionsDates->pluck('date'),   // Les dates
-            'totals' => $transactionsDates->pluck('total'), // Les totaux
-        ];
-
+        // Calculer les totaux de commissions par produit
+        $commissionsParProduit = [];
+        foreach ($produits as $produit) {
+            if ($produit->nom_prod === 'FLOOZ') {
+                $mouvements = MouvementProduit::where('produit_id', $produit->id_prod)
+                    ->selectRaw('SUM(volume_depot) as total_volume_depot, SUM(valeur_depot) as total_valeur_depot, SUM(commission_depot) as total_commission_depot, SUM(volume_retrait) as total_volume_retrait, SUM(valeur_retrait) as total_valeur_retrait, SUM(commission_retrait) as total_commission_retrait')
+                    ->first();
+    
+                // Déboguer les valeurs
+             
+    
+                $commissionsParProduit[$produit->id_prod] = [
+                    'volume_depot' => $mouvements->total_volume_depot ?? 0,
+                    'valeur_depot' => $mouvements->total_valeur_depot ?? 0,
+                    'commission_depot' => $mouvements->total_commission_depot ?? 0,
+                    'volume_retrait' => $mouvements->total_volume_retrait ?? 0,
+                    'valeur_retrait' => $mouvements->total_valeur_retrait ?? 0,
+                    'commission_retrait' => $mouvements->total_commission_retrait ?? 0,
+                ];
+            } else {
+                // Cas général pour les autres produits
+                $commissionsDepot = Transaction::where('produit_id', $produit->id_prod)
+                    ->whereHas('typeTransaction', function ($query) {
+                        $query->where('nom_type_transa', 'Dépôt');
+                    })
+                    ->sum('commission_grille_tarifaire');
+    
+                $commissionsRetrait = Transaction::where('produit_id', $produit->id_prod)
+                    ->whereHas('typeTransaction', function ($query) {
+                        $query->where('nom_type_transa', 'Retrait');
+                    })
+                    ->sum('commission_grille_tarifaire');
+    
+                $commissionsParProduit[$produit->id_prod] = [
+                    'depot' => $commissionsDepot,
+                    'retrait' => $commissionsRetrait,
+                ];
+                $data = [
+                    'labels' => $transactionsDates->pluck('date'),
+                    'totals' => $transactionsDates->pluck('total'),
+                ];
+            }
+        }
+    
         // Retourner la vue avec toutes les données nécessaires
-        return view('transactions.index', compact('transactions', 'produits', 'caisses', 'data'));
+        return view('transactions.index', compact('transactions', 'produits', 'caisses', 'data', 'commissionsParProduit'));
     }
-
     public function create()
     {
         // Ne récupérer que les caisses actives
@@ -50,25 +91,21 @@ class TransactionController extends Controller
         // Passe les données à la vue
         return view('transactions.create', compact('caisses', 'produits', 'typeTransactions'));
     }
-
-
-
     public function store(Request $request)
     {
         try {
             $caisse = Caisse::findOrFail($request->id_caisse);
-
+    
             if (!$caisse->canPerformOperations()) {
                 throw new \Exception("Cette caisse est inactive. Aucune transaction n'est autorisée.");
             }
-
+    
             DB::beginTransaction();
-
+    
             $validated = $request->validate([
                 'type_transaction_id' => 'required|exists:type_transactions,id_type_transa',
                 'produit_id' => 'required|exists:produits,id_prod',
                 'montant' => 'required|numeric|min:0',
-                // 'commission_grille_tarifaire' => 'required|numeric|min:0',  // Ajout de la validation de la commission
                 'num_beneficiaire' => 'required|string|max:255',
                 'frais_service' => 'numeric|nullable',
                 'motif' => 'string|nullable|in:transfert,paiement_ceet,paiement_canal',
@@ -77,149 +114,81 @@ class TransactionController extends Controller
                 'numero_compteur' => 'required_if:motif,paiement_ceet',
                 'numero_validation' => 'required_if:motif,paiement_ceet',
                 'numero_carte_paiement' => 'required_if:motif,paiement_canal',
-
             ]);
-
-            // Récupérer la grille tarifaire correspondante
+    
+            // Récupérer la caisse, produit et type de transaction
+            $caisse = Caisse::findOrFail($validated['id_caisse']);
+            $produit = Produit::findOrFail($validated['produit_id']);
+            $typeTransaction = TypeTransaction::findOrFail($validated['type_transaction_id']);
+            $nomTransaction = $typeTransaction->nom_type_transa;
+    
+            // Les soldes avant
+            $solde_caisse_avant = $caisse->balance_caisse;
+            $solde_produit_avant = $produit->balance;
+    
+            // Vérification des soldes
+            if ($nomTransaction === "Dépôt" && $validated['montant'] > $solde_produit_avant) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Vous n\'avez pas suffisamment d\'argent sur le compte pour effectuer ce dépôt.');
+            }
+    
+            if ($nomTransaction === "Retrait" && $validated['montant'] > $solde_caisse_avant) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'Vous n\'avez pas suffisamment d\'argent dans la caisse pour effectuer ce retrait.');
+            }
+    
+            // Recherche de la grille tarifaire (facultative)
+            $commission = 0; // Par défaut, la commission est à 0
             try {
-                // Convertir explicitement les valeurs
                 $type_transaction_id = (int) $validated['type_transaction_id'];
                 $produit_id = (int) $validated['produit_id'];
                 $montant = (float) $validated['montant'];
-
-                // Construction de la requête étape par étape
-                $query = GrilleTarifaire::query();
-
-                // Première étape : filtrer par type_transaction et produit
-                $query->where('type_transaction_id', $type_transaction_id)
-                    ->where('produit_id', $produit_id);
-
-                // Debug de la première étape
-                [
-                    'Étape 1 - Paramètres convertis' => [
-                        'type_transaction_id' => [
-                            'valeur' => $type_transaction_id,
-                            'type' => gettype($type_transaction_id)
-                        ],
-                        'produit_id' => [
-                            'valeur' => $produit_id,
-                            'type' => gettype($produit_id)
-                        ],
-                        'montant' => [
-                            'valeur' => $montant,
-                            'type' => gettype($montant)
-                        ]
-                    ],
-                    'Étape 1 - Résultats initiaux' => $query->get()->map(function ($item) {
-                        return [
-                            'id' => $item->id_grille_tarifaire,
-                            'type_transaction_id' => [
-                                'valeur' => $item->type_transaction_id,
-                                'type' => gettype($item->type_transaction_id)
-                            ],
-                            'produit_id' => [
-                                'valeur' => $item->produit_id,
-                                'type' => gettype($item->produit_id)
-                            ],
-                            'montant_min' => [
-                                'valeur' => $item->montant_min,
-                                'type' => gettype($item->montant_min)
-                            ],
-                            'montant_max' => [
-                                'valeur' => $item->montant_max,
-                                'type' => gettype($item->montant_max)
-                            ]
-                        ];
-                    })->toArray(),
-                    'Étape 1 - SQL' => [
-                        'requête' => $query->toSql(),
-                        'paramètres' => $query->getBindings()
-                    ]
-                ];
-
-
-                // Deuxième étape : vérifier les montants
-                $montantFormatted = floatval($montant);
-
-                // Vérifions d'abord si une grille existe
-                $grilleTarifaire = $query
-                    ->where('montant_min', '<=', $montantFormatted)
-                    ->where('montant_max', '>=', $montantFormatted)
+    
+                $grilleTarifaire = GrilleTarifaire::where('type_transaction_id', $type_transaction_id)
+                    ->where('produit_id', $produit_id)
+                    ->where('montant_min', '<=', $montant)
+                    ->where('montant_max', '>=', $montant)
                     ->first();
-
-                // Ajoutons un log pour voir les valeurs exactes
-                // dd('Tentative de recherche grille tarifaire', [
-                //     'montant' => $montantFormatted,
-                //     'type_transaction' => $validated['type_transaction_id'],
-                //     'produit' => $validated['produit_id']
-                // ]);
-                Log::info('SQL généré', [
-                    'sql' => $query->toSql(),
-                    'bindings' => $query->getBindings()
-                ]);
-                Log::info('SQL généré', [
-                    'sql' => $query->toSql(),
-                    'bindings' => $query->getBindings()
-                ]);
-
-                if (!$grilleTarifaire) {
-                    Log::warning('Aucune grille tarifaire trouvée pour:', [
-                        'type_transaction' => $validated['type_transaction_id'],
-                        'produit' => $validated['produit_id'],
-                        'montant' => $montant
-                    ]);
-                    return back()
-                        ->withInput()
-                        ->with('error', 'Aucune grille tarifaire trouvée pour ce montant et ce type de transaction.');
+    
+                if ($grilleTarifaire) {
+                    $commission = $grilleTarifaire->commission_grille_tarifaire;
                 }
             } catch (\Exception $e) {
                 Log::error('Erreur lors de la recherche de la grille tarifaire: ' . $e->getMessage(), [
                     'exception' => $e,
                     'trace' => $e->getTraceAsString()
                 ]);
-
-                return back()
-                    ->withInput()
-                    ->with('error', 'Erreur lors de la recherche de la grille tarifaire: ' . $e->getMessage());
             }
-
-            // Récupérer la caisse, produit et type de transaction
-            $caisse = Caisse::findOrFail($validated['id_caisse']);
-            $produit = Produit::findOrFail($validated['produit_id']);
-            $typeTransaction = TypeTransaction::findOrFail($validated['type_transaction_id']);
-            $nomTransaction = $typeTransaction->nom_type_transa;
-
-            // Les soldes avant
-            $solde_caisse_avant = $caisse->balance_caisse;
-            $solde_produit_avant = $produit->balance;
-
-            // Calcul des soldes après avec la commission de la grille tarifaire
+    
+            // Calcul des soldes après
             $solde_produit_apres = $nomTransaction === "Dépôt"
-                ? ($solde_produit_avant - $validated['montant'] + $grilleTarifaire->commission_grille_tarifaire)
-                : ($solde_produit_avant + $validated['montant'] + $grilleTarifaire->commission_grille_tarifaire);
-
+                ? ($solde_produit_avant - $validated['montant'] + $commission)
+                : ($solde_produit_avant + $validated['montant'] + $commission);
+    
             // Gestion des frais de service
             $frais_service = $request->has('frais_service') ? $validated['frais_service'] : 0;
-
+    
             // Calcul du solde caisse après
             $solde_caisse_apres = $nomTransaction === "Dépôt"
                 ? ($solde_caisse_avant + $validated['montant'] + $frais_service)
                 : ($solde_caisse_avant - $validated['montant']);
-
+    
             // Vérification du solde
-            if ($solde_caisse_apres < 0) {
+            if ($solde_produit_apres < 0 || $solde_caisse_apres < 0) {
                 return back()
                     ->withInput()
-                    ->with('error', 'Solde insuffisant dans la caisse pour effectuer cette transaction.');
+                    ->with('error', 'Solde insuffisant pour effectuer cette transaction.');
             }
-
-            // Création de la transaction avec la commission de la grille tarifaire
+    
+            // Création de la transaction
             $transaction = Transaction::create([
                 'type_transaction_id' => $validated['type_transaction_id'],
                 'produit_id' => $validated['produit_id'],
                 'user_id' => auth()->user()->id_util,
                 'montant_trans' => $validated['montant'],
-                'commission_grille_tarifaire' => $grilleTarifaire->commission_grille_tarifaire,
+                'commission_grille_tarifaire' => $commission, // Commission facultative
                 'frais_service' => $frais_service,
                 'num_beneficiaire' => $validated['num_beneficiaire'],
                 'motif' => $request->input('motif', "pas de motif"),
@@ -233,26 +202,25 @@ class TransactionController extends Controller
                 'numero_validation' => $request->input('numero_validation'),
                 'numero_carte_paiement' => $request->input('numero_carte_paiement'),
             ]);
-
+    
             // Mise à jour des soldes
             $produit->update(['balance' => $solde_produit_apres]);
             $caisse->update(['balance_caisse' => $solde_caisse_apres]);
-
+    
             DB::commit();
-
+    
             return redirect()
                 ->route('transactions.index')
                 ->with('success', 'Transaction effectuée avec succès.');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur lors de la création de la transaction : ' . $e->getMessage());
-
+    
             return back()
                 ->withInput()
                 ->with('error', 'Une erreur est survenue lors de la création de la transaction : ' . $e->getMessage());
         }
     }
-
     public function show($id)
     {
         $transaction = Transaction::with(['produit', 'typeTransaction', 'user'])->findOrFail($id);

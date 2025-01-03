@@ -14,7 +14,15 @@
                         </ul>
                     </div>
                 @endif
-
+                @if (session()->has('error'))
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+        <ul>
+            @foreach ((array) session()->get('error') as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
                 <form action="{{ route('transactions.store') }}" method="POST" class="space-y-6">
                     @csrf
 

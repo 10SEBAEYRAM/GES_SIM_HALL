@@ -44,7 +44,7 @@
                     <thead>
                         <tr class="border-b border-indigo-500/30">
                             <th class="px-6 py-3 text-left text-sm font-semibold text-white">Nom</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-white">Description</th>
+                            <!-- <th class="px-6 py-3 text-left text-sm font-semibold text-white">Description</th> -->
                             <th class="px-6 py-3 text-right text-sm font-semibold text-white">Actions</th>
                         </tr>
                     </thead>
@@ -59,7 +59,7 @@
                                     <span class="text-white">{{ $type->nom_type_transa }}</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 text-gray-300">{{ $type->description_type_trans }}</td>
+                            <!-- <td class="px-6 py-4 text-gray-300">{{ $type->description_type_trans }}</td> -->
                             <td class="px-6 py-4 text-right">
                                 <div class="flex gap-3 justify-end">
                                     <a href="{{ route('type-transactions.edit', $type->id_type_transa) }}"

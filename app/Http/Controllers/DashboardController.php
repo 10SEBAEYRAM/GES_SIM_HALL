@@ -10,57 +10,130 @@ use App\Models\TypeTransaction;
 
 use App\Models\Caisse;
 use Carbon\Carbon;
+
+use App\Models\MouvementProduit;
 use DB;
 
 class DashboardController extends Controller
 {
     protected $dashboardService;
     public function index(Request $request)
-{
-    try {
-        // Récupération des données existantes
-        $caisses = Caisse::select('id_caisse', 'nom_caisse', 'balance_caisse')->get();
-        $produits = Produit::select('id_prod', 'nom_prod', 'balance')->get();
-        
-        // Correction de la requête pour les types de transactions
-        $typeTransactions = TypeTransaction::select(
-                'type_transactions.id_type_transa',
-                'type_transactions.nom_type_transa'
-            )
-            ->leftJoin('transactions', 'type_transactions.id_type_transa', '=', 'transactions.type_transaction_id')
-            ->selectRaw('COALESCE(SUM(transactions.montant_trans), 0) as montant_total')
-            ->groupBy('type_transactions.id_type_transa', 'type_transactions.nom_type_transa')
-            ->get();
-
-        $totalBalance = $caisses->sum('balance_caisse');
-        $totalProduits = $produits->sum('balance');
-        $totalTransactions = Transaction::sum('montant_trans');
-
-        // Préparation des données pour les graphiques
-        $chartData = [
-            'labels' => $typeTransactions->pluck('nom_type_transa')->toArray(),
-            'values' => $typeTransactions->pluck('montant_total')->toArray()
-        ];
-
-        return view('dashboard.index', compact(
-            'caisses',
-            'produits',
-            'typeTransactions',
-            'totalBalance',
-            'totalProduits',
-            'totalTransactions',
-            'chartData',
-            // 'pieChartData',
-            // 'statistics'
+    {
+        try {
+            // Récupération des données existantes
+            $caisses = Caisse::select('id_caisse', 'nom_caisse', 'balance_caisse')->get();
+            $produits = Produit::select('id_prod', 'nom_prod', 'balance')->get();
+    
+            // Récupérer les transactions groupées par type de transaction
+            $typeTransactions = TypeTransaction::select(
+                    'type_transactions.id_type_transa',
+                    'type_transactions.nom_type_transa'
+                )
+                ->leftJoin('transactions', 'type_transactions.id_type_transa', '=', 'transactions.type_transaction_id')
+                ->selectRaw('COALESCE(SUM(transactions.montant_trans), 0) as montant_total')
+                ->groupBy('type_transactions.id_type_transa', 'type_transactions.nom_type_transa')
+                ->get();
+    
+            // Récupérer les transactions groupées par produit et type de transaction
+            $transactionsParProduit = Transaction::select(
+                    'produit_id',
+                    'type_transaction_id',
+                    DB::raw('SUM(montant_trans) as montant_total')
+                )
+                ->groupBy('produit_id', 'type_transaction_id')
+                ->get();
+    
+            // Préparer les données pour les graphiques
+            $chartData = [
+                'labels' => [], // Noms des produits
+                'depot' => [],  // Montants des dépôts par produit
+                'retrait' => [] // Montants des retraits par produit
+            ];
+    
+            foreach ($produits as $produit) {
+                $chartData['labels'][] = $produit->nom_prod;
+    
+                // Calculer les montants des dépôts et retraits pour chaque produit
+                $depot = $transactionsParProduit
+                    ->where('produit_id', $produit->id_prod)
+                    ->where('type_transaction_id', TypeTransaction::where('nom_type_transa', 'Dépôt')->first()->id_type_transa)
+                    ->sum('montant_total');
+    
+                $retrait = $transactionsParProduit
+                    ->where('produit_id', $produit->id_prod)
+                    ->where('type_transaction_id', TypeTransaction::where('nom_type_transa', 'Retrait')->first()->id_type_transa)
+                    ->sum('montant_total');
+    
+                $chartData['depot'][] = $depot;
+                $chartData['retrait'][] = $retrait;
+            }
+    
+            // Calculer les totaux de commissions par produit
+            $commissionsParProduit = [];
+            foreach ($produits as $produit) {
+                // Nettoyer le nom du produit en supprimant les caractères invisibles
+                $nomProduit = trim(str_replace(["\r\n", "\r", "\n"], '', $produit->nom_prod));
             
-        ));
-    } catch (\Exception $e) {
-        dd($e->getMessage());
+                if ($nomProduit === 'FLOOZ') {
+                    // Cas spécifique pour FLOOZ
+                    $mouvements = MouvementProduit::where('produit_id', $produit->id_prod)
+                        ->selectRaw('SUM(commission_depot) as total_commission_depot, SUM(commission_retrait) as total_commission_retrait')
+                        ->first();
+            
+                    $commissionsParProduit[$nomProduit] = [
+                        'commission_depot' => (float)($mouvements->total_commission_depot ?? 0),
+                        'commission_retrait' => (float)($mouvements->total_commission_retrait ?? 0),
+                        'commission_totale' => (float)(($mouvements->total_commission_depot ?? 0) + ($mouvements->total_commission_retrait ?? 0)),
+                    ];
+                } else {
+                    // Cas général pour les autres produits
+                    $commissionsDepot = Transaction::where('produit_id', $produit->id_prod)
+                        ->whereHas('typeTransaction', function ($query) {
+                            $query->where('nom_type_transa', 'Dépôt');
+                        })
+                        ->sum('commission_grille_tarifaire');
+            
+                    $commissionsRetrait = Transaction::where('produit_id', $produit->id_prod)
+                        ->whereHas('typeTransaction', function ($query) {
+                            $query->where('nom_type_transa', 'Retrait');
+                        })
+                        ->sum('commission_grille_tarifaire');
+            
+                    $commissionsParProduit[$nomProduit] = [
+                        'dépôt' => (float)$commissionsDepot,
+                        'retrait' => (float)$commissionsRetrait,
+                        'commission_totale' => (float)($commissionsDepot + $commissionsRetrait),
+                    ];
+                }
+            
+            }
+            // dd($commissionsParProduit);
+    
+            // Autres données nécessaires
+            $totalBalance = $caisses->sum('balance_caisse');
+            $totalProduits = $produits->sum('balance');
+            $totalTransactions = Transaction::sum('montant_trans');
+    
+            return view('dashboard.index', compact(
+                'caisses',
+                'produits',
+                'typeTransactions',
+                'totalBalance',
+                'totalProduits',
+                'totalTransactions',
+                'chartData',
+                'commissionsParProduit'
+            ));
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+        }
+
+        
+
     }
-}
 
 
-    public function filter(Request $request)
+public function filter(Request $request)
 {
     $period = $request->input('period', 'day');
     
@@ -99,12 +172,52 @@ class DashboardController extends Controller
         'averageAmount' => $transactions->avg('montant_trans'),
     ];
 
+    // Calculer les totaux de commissions par produit
+    $commissionsParProduit = [];
+    $produits = Produit::all(); // Récupérer tous les produits
+
+    foreach ($produits as $produit) {
+        if ($produit->nom_prod === 'FLOOZ') {
+            $mouvements = MouvementProduit::where('produit_id', $produit->id_prod)
+                ->whereBetween('created_at', [$startDate, now()])
+                ->selectRaw('SUM(commission_depot) as total_commission_depot, SUM(commission_retrait) as total_commission_retrait')
+                ->first();
+    
+            $commissionsParProduit[$produit->id_prod] = [
+                'commission_depot' => $mouvements->total_commission_depot ?? 0,
+                'commission_retrait' => $mouvements->total_commission_retrait ?? 0,
+                'total_commission' => ($mouvements->total_commission_depot ?? 0) + ($mouvements->total_commission_retrait ?? 0),
+            ];
+        } else {
+            // Cas général pour les autres produits
+            $commissionsDepot = Transaction::where('produit_id', $produit->id_prod)
+                ->whereHas('typeTransaction', function ($query) {
+                    $query->where('nom_type_transa', 'Dépôt');
+                })
+                ->whereBetween('created_at', [$startDate, now()])
+                ->sum('commission_grille_tarifaire');
+    
+            $commissionsRetrait = Transaction::where('produit_id', $produit->id_prod)
+                ->whereHas('typeTransaction', function ($query) {
+                    $query->where('nom_type_transa', 'Retrait');
+                })
+                ->whereBetween('created_at', [$startDate, now()])
+                ->sum('commission_grille_tarifaire');
+    
+            $commissionsParProduit[$produit->nom_prod] = [
+                'depot' => $commissionsDepot,
+                'retrait' => $commissionsRetrait,
+                'total_commission' => $commissionsDepot + $commissionsRetrait,
+            ];
+        }
+    }
+
     return response()->json([
         'chartData' => $chartData,
-        'statistics' => $statistics
+        'statistics' => $statistics,
+        'commissionsParProduit' => $commissionsParProduit // Ajouter les commissions à la réponse
     ]);
 }
-
 
     public function getChartData(Request $request)
     {

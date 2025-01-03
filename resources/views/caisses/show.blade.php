@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('content')
@@ -153,7 +154,7 @@
                                                         {{ number_format($mouvement->mouvementReference->montant - $mouvement->mouvementReference->remboursements->where('created_at', '<=', $mouvement->created_at)->sum('montant'), 0, ',', ' ') }}
                                                         FCFA
                                                     @else
-                                                        -
+                                                        {{ number_format($mouvement->montant ?? 0, 0, ',', ' ') }} FCFA
                                                     @endif
                                                 </td>
                                                 <td class="px-6 py-4">{{ $mouvement->motif ?? 'N/A' }}</td>
@@ -362,16 +363,12 @@
                             differenceElement.className =
                                 `mt-1 text-lg font-semibold ${difference >= 0 ? 'text-green-600' : 'text-red-600'}`;
 
-                            // Montant restant (pour prêts et emprunts)
+                            // Montant restant (toujours affiché)
                             const montantRestantDiv = document.getElementById('modalMontantRestantDiv');
-                            if (['pret', 'emprunt'].includes(data.type_mouvement)) {
-                                montantRestantDiv.classList.remove('hidden');
-                                const montantRestant = parseFloat(data.montant_restant) || 0;
-                                document.getElementById('modalMontantRestant').textContent =
-                                    new Intl.NumberFormat('fr-FR').format(montantRestant) + ' FCFA';
-                            } else {
-                                montantRestantDiv.classList.add('hidden');
-                            }
+                            montantRestantDiv.classList.remove('hidden');
+                            const montantRestant = parseFloat(data.montant_restant) || 0;
+                            document.getElementById('modalMontantRestant').textContent =
+                                new Intl.NumberFormat('fr-FR').format(montantRestant) + ' FCFA';
 
                             // Informations de remboursement
                             const remboursementInfo = document.getElementById('modalRemboursementInfo');
